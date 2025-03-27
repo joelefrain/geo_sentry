@@ -1,0 +1,16 @@
+[process]
+start_row = 22
+columns = [3, 5, 8]
+column_names = ["time", "terrain_level", "measure"]
+
+[process.attributes]
+stick_up = "E13"
+bottom_well_elevation = "H16"
+depth = "E12"
+
+[process.custom_functions]
+
+[location.attributes]
+north = "F16"
+east = "E16"
+elevation = "H16"

@@ -1,0 +1,54 @@
+# Databases
+*.db
+*.sqlite
+
+# IDE settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Test files and caches
+__pycache__/
+*.pyc
+test_*/
+tests/
+
+# Virtual environments
+.venv/
+venv/
+
+# Data
+data/
+.qodo
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Environment variables
+.env
+.env.*
+
+# Build artifacts
+dist/
+build/
+
+# Custom exclusions
+.qodo
+
+# Supporting files
+*.csv
+*.json
+*.html
+*.dxf
+*.txt
+!requirements.txt

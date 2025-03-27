@@ -1,0 +1,24 @@
+[process]
+start_row = 18
+columns = [1, 2, 3, 4]
+column_names = ["time", "digits", "temperature", "diff_e_res"]
+
+[process.attributes]
+sensor_level = "F9"
+lineal_factor = "C12"
+temperature_factor = "C13"
+
+[process.custom_functions]
+
+[process.selected_attr]
+cell = ["D4", "E4"]
+custom_functions = [
+    "lambda row, idx=None: row['time'] == df['time'].min()",
+    "lambda row, idx=None: row['time'] == df['time'].min()"
+]
+column = ["digits", "temperature"]
+
+[location.attributes]
+north = "F6"
+east = "F7"
+elevation = "F9"

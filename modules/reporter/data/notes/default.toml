@@ -1,0 +1,63 @@
+# Configuraciones de estilo para títulos
+[title]
+fontName = "Helvetica-BoldOblique"
+alignment = 0
+leftIndent = 0
+fontSize = 10
+spaceBefore = 6
+spaceAfter = 0
+
+# Configuraciones de estilo para el contenido
+[content]
+fontName = "Helvetica"
+alignment = 4
+
+# Configuraciones para listas numeradas
+[formats.bullet]
+bulletType = "bullet"
+bulletColor = "black"
+bulletFontName = "Symbol"
+bulletFormat = "%s"
+fontSize = 10
+leftIndent = 6
+rightIndent = 0
+spaceBefore = 0
+spaceAfter = 6
+bulletOffsetY = 0
+bulletDedent = 4
+
+[formats.numbered]
+bulletType = "1"
+bulletColor = "black"
+bulletFontName = "Helvetica"
+bulletFormat = "%s."
+fontSize = 10
+leftIndent = 8
+rightIndent = 0
+spaceBefore = 0
+spaceAfter = 6
+bulletOffsetY = 0
+bulletDedent = 6
+
+[formats.alphabet]
+bulletType = "i"
+bulletColor = "black"
+bulletFontName = "Helvetica"
+bulletFormat = "%s."
+fontSize = 10
+leftIndent = 8
+rightIndent = 0
+spaceBefore = 0
+spaceAfter = 6
+bulletOffsetY = 0
+bulletDedent = 6
+
+[formats.paragraph]
+bulletType = "paragraph"
+fontName = "Helvetica"
+alignment = 4  # 4 = justify
+fontSize = 10
+leftIndent = 0
+rightIndent = 0
+spaceBefore = 0
+spaceAfter = 6

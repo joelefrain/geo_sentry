@@ -1,0 +1,13 @@
+[process]
+start_row = 20
+columns = [3, 6, 7, 8]
+column_names = ["time", "east", "north", "elevation"]
+
+[process.attributes]
+
+[process.custom_functions]
+
+[location.attributes]
+north = "F14"
+east = "E14"
+elevation = "G14"
