@@ -204,7 +204,6 @@ class ReportBuilder:
         doc = self.create_report(pdf_path, margins)
         elements = [Spacer(1, vertical_padding), table]
         doc.build(elements)
-        print(f"PDF generated: {pdf_path}")
 
     def calculate_vertical_padding(self, content_height, adjusted_row_heights):
         available_space = content_height - sum(adjusted_row_heights)

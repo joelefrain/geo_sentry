@@ -42,6 +42,10 @@ logs/
 dist/
 build/
 
+# Cache files
+__pycache__/
+*.pyc
+
 # Custom exclusions
 .qodo
 
@@ -51,4 +55,5 @@ build/
 *.html
 *.dxf
 *.txt
+*.pdf
 !requirements.txt

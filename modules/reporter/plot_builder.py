@@ -1,5 +1,8 @@
 import os
 import sys
+import tomli
+from adjustText import adjust_text
+import matplotlib.patheffects as path_effects
 
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
@@ -21,6 +24,30 @@ PlotConfig.setup_matplotlib()
 
 
 class PlotBuilder:
+    """
+    A versatile plotting class for creating and managing matplotlib-based plots.
+
+    This class provides functionality for creating various types of plots including:
+    - Data series plots
+    - DXF file visualizations
+    - Color bands
+    - Arrows and annotations
+
+    The class manages plot lifecycle, styling, and resource cleanup automatically.
+
+    Attributes
+    ----------
+    fig : plt.Figure
+        The main matplotlib figure object.
+    ax1 : plt.Axes
+        Primary axes for plotting.
+    ax2 : plt.Axes
+        Secondary axes for additional plots (optional).
+    show_legend : bool
+        Controls legend visibility.
+    default_styles : dict
+        Plotting styles loaded from TOML configuration.
+    """
     def __init__(self):
         """
         Initialize the Plotter class.
@@ -30,6 +57,15 @@ class PlotBuilder:
         self.ax2: plt.Axes = None
         self.show_legend: bool = False
         self._is_closed: bool = False
+        
+        # Load default styles from TOML
+        style_path = os.path.join(os.path.dirname(__file__), "data/notes/charts/note_styles.toml")
+        try:
+            with open(style_path, "rb") as f:
+                self.default_styles = tomli.load(f)
+        except Exception as e:
+            raise(f"Warning: Could not load styles from {style_path}: {e}")
+            self.default_styles = {}
 
     def __del__(self):
         """Cleanup when object is deleted."""
@@ -61,37 +97,59 @@ class PlotBuilder:
         format_params: dict = None,
         **kwargs
     ) -> None:
-        # Ensure previous figure is closed before creating a new one
-        self.close()
         """
-        Create a plot from multiple data series.
+        Create a plot from multiple data series with optional DXF overlay.
+
+        This method supports plotting multiple data series on the same axes,
+        with customizable appearance and optional DXF file integration.
 
         Parameters
         ----------
-        data : list
-            List of data series to plot.
+        data : list of dict
+            List of data series, where each series is a dictionary containing:
+            - x : array-like, x-coordinates
+            - y : array-like, y-coordinates
+            - color : str, optional, line color
+            - linetype : str, optional, line style
+            - lineweight : float, optional, line width
+            - marker : str, optional, marker style
+            - label : str, optional, series label
+            - note : str or list, optional, annotations
+        dxf_path : str, optional
+            Path to DXF file for overlay.
         size : tuple, optional
-            Size of the plot (width, height), by default (4, 3).
+            Plot dimensions (width, height) in inches. Default (4, 3).
         title_x : str, optional
-            Title for the X-axis, by default "".
+            X-axis label.
         title_y : str, optional
-            Title for the Y-axis, by default "".
+            Y-axis label.
         title_chart : str, optional
-            Title for the chart, by default "".
+            Chart title.
         show_legend : bool, optional
-            Whether to show the legend, by default False.
+            Whether to display legend. Default False.
         xlim : tuple, optional
-            Limits for the X-axis, by default None.
+            X-axis limits (min, max).
         ylim : tuple, optional
-            Limits for the Y-axis, by default None.
+            Y-axis limits (min, max).
         invert_y : bool, optional
-            Whether to invert the Y-axis, by default False.
+            Invert Y-axis direction. Default False.
+        dxf_params : dict, optional
+            Style parameters for DXF entities.
         format_params : dict, optional
-            Dictionary containing formatting parameters:
-            - show_grid (bool): Whether to show grid lines
-            - show_xticks (bool): Whether to show x-axis ticks
-            - show_yticks (bool): Whether to show y-axis ticks
+            Formatting parameters including:
+            - show_grid : bool, grid visibility
+            - show_xticks : bool, x-axis ticks visibility
+            - show_yticks : bool, y-axis ticks visibility
+
+        Notes
+        -----
+        - The method automatically cleans up previous plots
+        - DXF overlay is rendered before data series
+        - Legend is only shown if labeled artists exist
         """
+        # Ensure previous figure is closed before creating a new one
+        self.close()
+
         self._initialize_plot(size)
         self.show_legend = show_legend
 
@@ -111,9 +169,6 @@ class PlotBuilder:
             title_x, title_y, title_chart, xlim, ylim, invert_y, format_params
         )
 
-        if show_legend:
-            self.ax1.legend()
-
     def add_secondary_y_axis(
         self,
         data: list,
@@ -123,18 +178,34 @@ class PlotBuilder:
         **kwargs
     ) -> None:
         """
-        Add a secondary Y-axis to the plot.
+        Add a secondary Y-axis with its own data series.
+
+        Creates a twin axis for plotting additional data series with a different scale.
+        Particularly useful for comparing quantities with different units or ranges.
 
         Parameters
         ----------
-        data : list
-            List of data series to plot on the secondary Y-axis.
+        data : list of dict
+            List of data series for secondary axis, with same structure as plot_series.
+            Additional key:
+            - secondary_y : bool, must be True for secondary axis plotting
         title_y2 : str, optional
-            Title for the secondary Y-axis, by default "".
+            Label for secondary Y-axis.
         ylim : tuple, optional
-            Limits for the secondary Y-axis, by default None.
+            Y-axis limits for secondary axis (min, max).
         invert_y : bool, optional
-            Whether to invert the secondary Y-axis, by default False.
+            Invert secondary Y-axis direction. Default False.
+
+        Raises
+        ------
+        RuntimeError
+            If called before creating primary plot.
+
+        Notes
+        -----
+        - Only plots series with secondary_y=True
+        - Independent scaling from primary Y-axis
+        - Maintains synchronized X-axis with primary plot
         """
         if self.fig is None or self.ax1 is None:
             raise RuntimeError(
@@ -226,7 +297,7 @@ class PlotBuilder:
         ylim=None,
         invert_y=False,
         **kwargs
-    ):
+    ) -> None:
         """
         Plot polylines from a DXF file using the class's figure and axes.
 
@@ -402,6 +473,12 @@ class PlotBuilder:
             self.ax1.invert_yaxis()
         plt.title(title_chart)
 
+        # Only show legend if there are labeled artists and show_legend is True
+        if self.show_legend:
+            handles, labels = self.ax1.get_legend_handles_labels()
+            if handles and labels:  # Only create legend if there are labeled artists
+                self.ax1.legend()
+
     def _add_single_color_band(
         self, range_band: list, color_band: list, name_band: list, index: int, **kwargs
     ) -> None:
@@ -432,6 +509,110 @@ class PlotBuilder:
             label=name_band[index],
         )
 
+    def _add_notes(
+        self,
+        x_point: float,
+        y_point: float,
+        dx: float,
+        dy: float,
+        series: dict
+    ) -> None:
+        """
+        Add text annotations to the plot with automatic positioning.
+
+        Handles single or multiple text annotations with customizable appearance
+        and automatic collision avoidance using adjustText.
+
+        Parameters
+        ----------
+        x_point : float
+            X-coordinate of anchor point.
+        y_point : float
+            Y-coordinate of anchor point.
+        dx : float
+            X-offset from anchor point.
+        dy : float
+            Y-offset from anchor point.
+        series : dict
+            Configuration dictionary containing:
+            - note : str or list
+                Text to display. Single string or list of strings.
+            - note_style : dict, optional
+                Style parameters:
+                - fontsize : int
+                - bbox : dict
+                - other matplotlib text properties
+            - adjust_text_params : dict, optional
+                Parameters for adjustText algorithm
+
+        Notes
+        -----
+        - Uses path effects for better text visibility
+        - Automatically handles multiple notes spacing
+        - Falls back to default styles if not specified
+        - Single notes skip adjustment for better performance
+        """
+        notes = series.get('note')
+        if not notes:
+            return
+
+        # Convert single note to list
+        if isinstance(notes, str):
+            notes = [notes]
+
+        # Get fontsize from data or use default
+        fontsize = series.get('fontsize', self.default_styles.get('note_style', {}).get('fontsize', 10))
+        
+        # Get default styles from TOML
+        default_note_style = self.default_styles.get('note_style', {})
+        default_adjust_params = self.default_styles.get('adjust_text_params', {})
+
+        # Create note style with path effects
+        note_style = {
+            "fontsize": fontsize,
+            "bbox": default_note_style.get('bbox', {}),
+            "path_effects": [
+                path_effects.withStroke(
+                    linewidth=default_note_style.get('linewidth', 8),
+                    foreground=default_note_style.get('foreground', "white"),
+                )
+            ],
+        }
+        
+        # Override with user provided styles
+        if 'note_style' in series:
+            note_style.update(series['note_style'])
+
+        # Get adjust text parameters
+        adjust_text_params = default_adjust_params.copy()
+        if 'adjust_text_params' in series:
+            adjust_text_params.update(series['adjust_text_params'])
+
+        texts = []
+        base_x = x_point + dx * 1.2
+        base_y = y_point + dy * 1.2
+        
+        for note in notes:
+            text = self.ax1.text(
+                base_x,
+                base_y,
+                note,
+                **note_style
+            )
+            texts.append(text)
+
+        # Special handling for single text to avoid adjust_text issues
+        if len(texts) == 1:
+            return
+        
+        # Only use adjust_text for multiple texts
+        adjust_text(
+            texts,
+            x=[base_x] * len(texts),
+            y=[base_y] * len(texts),
+            **adjust_text_params
+        )
+
     def _add_single_arrow(
         self,
         series: dict,
@@ -446,11 +627,7 @@ class PlotBuilder:
         Parameters
         ----------
         series : dict
-            Data series to add the arrow to. Can include:
-            - note: str, optional
-                Text note to add near the arrow
-            - fontsize: int, optional
-                Font size for the note text
+            Data series to add the arrow to.
         position : str
             Position of the arrow ('first' or 'last').
         angle : float
@@ -482,25 +659,8 @@ class PlotBuilder:
         )
         self.ax1.add_patch(arrow)
 
-        # Add note if provided
-        note = series.get('note')
-        if note:
-            fontsize = series.get('fontsize', 8)
-            # Calculate optimal note position based on arrow angle
-            note_x = x_point + dx * 1.2
-            note_y = y_point + dy * 1.2
-            
-            # Add text with automatic positioning
-            self.ax1.annotate(
-                note,
-                xy=(x_point, y_point),
-                xytext=(note_x, note_y),
-                fontsize=fontsize,
-                bbox=dict(facecolor='white', edgecolor='none', alpha=0.7),
-                ha='center',
-                va='center'
-            )
-
+        # Handle notes if provided using the auxiliary method
+        self._add_notes(x_point, y_point, dx, dy, series)
 
     def _create_legend_drawing(self, box_width: int, box_height: int) -> "Drawing":
         """
@@ -580,7 +740,7 @@ class PlotMerger:
 
     def add_object(
         self, obj, position: Tuple[int, int], span: Tuple[int, int] = (1, 1)
-    ):
+    ) -> None:
         """
         Add an object to a specific position in the grid.
 
@@ -597,7 +757,7 @@ class PlotMerger:
         self.positions.append(position)
         self.spans.append(span)
 
-    def create_grid(self, rows: int, cols: int):
+    def create_grid(self, rows: int, cols: int) -> "PlotMerger":
         """
         Create the grid structure.
 

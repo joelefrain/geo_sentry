@@ -112,8 +112,10 @@ if __name__ == "__main__":
     
     notes = [note_number_records, note_freq_monit, note_max_record, note_last_record]
     sections = [
+        {'title': 'Ubicación:', 'content': ['Talud izquierdo'], 'format_type': 'paragraph'},
+        {'title': 'Material:', 'content': ['Desmonte de mina'], 'format_type': 'paragraph'},
         {'title': 'Notas:', 'content': notes, 'format_type': 'alphabet'},
-        {'title': 'Ubicación', 'content': ['Talud izquierdo', 'Esquina derecha'], 'format_type': 'paragraph'}
+        
     ]
 
     # Crear instancia del manejador de notas con estilo de bullets
@@ -162,12 +164,12 @@ if __name__ == "__main__":
                 "marker": "o",
                 "secondary_y": False,
                 "label": "",
-                "note": sensor_code,
-                "fontsize": 10,
+                "note": [sensor_code],
+                "fontsize": 15,
             },
         ],
         "dxf_path": dxf_path,
-        "size": (6, 4),
+        "size": (5, 5),
         "title_x": "",
         "title_y": "",
         "title_chart": "",
@@ -182,7 +184,7 @@ if __name__ == "__main__":
             "show_xticks": False,
             "show_yticks": False,
         },
-        "markersize": 10,
+        "markersize": 15,
     }
 
     upper_plotter_args = {
