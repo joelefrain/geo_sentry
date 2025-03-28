@@ -53,6 +53,8 @@ __pycache__/
 # Supporting files
 *.csv
 *.json
+*.geojson
+*.xml
 *.html
 *.dxf
 *.txt

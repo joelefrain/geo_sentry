@@ -4,7 +4,7 @@ base_columns = ["time_0", "depth_0", "stick_up_0", "bottom_well_elevation_0"]
 
 [abs]
 diff_time_abs = "lambda df, base: (df['time'] - base['time_0']).dt.total_seconds() / (24 * 3600)"
-water_height = "lambda df, base: base['depth_0'] + base['stick_up_0'] + df['measure']"
+water_height = "lambda df, base: base['depth_0'] + base['stick_up_0'] - df['measure']"
 pore_pressure = "lambda df: df['water_height'] * 10"
 piezometric_level = "lambda df, base: np.where(df['water_height'] < 0, base['bottom_well_elevation_0'], base['bottom_well_elevation_0'] + df['water_height'])"
 
@@ -36,19 +36,21 @@ target_phrase = "columna de agua"
 levels = 2
 
 [plot.upper_cell]
-series = ["terrain_level", "piezometric_level", "bottom_well_elevation"]
+serie = ["terrain_level", "piezometric_level", "bottom_well_elevation"]
 title_x = "time"
 title_y = "title_elevation"
-colors = ["brown", "skyblue", "green"]
-linetype = ["-", "-", "-"]
-lineweight = [1.5, 1.5, 1.5]
-marker = ["o", "s", "s"]
+color = ["brown", "skyblue", "green"]
+linestyle = ["-", "-", "-"]
+linewidth = [1.5, 1.5, 1.5]
+marker = ["", "s", ""]
+markersize = [0, 2.5, 0]
 
 [plot.lower_cell]
-series = ["water_height"]
+serie = ["water_height"]
 title_x = "time"
 title_y = "water_height"
-colors = ["skyblue"]
-linetype = ["-"]
-lineweight = [1.5]
+color = ["skyblue"]
+linestyle = ["-"]
+linewidth = [1.5]
 marker = ["o"]
+markersize = [2.5]

@@ -22,13 +22,12 @@ from typing import Tuple, List
 PlotConfig.setup_matplotlib()
 
 
-
 class PlotBuilder:
     """A versatile class for creating and managing publication-quality plots.
-    
-    This class provides a comprehensive interface for generating professional plots 
+
+    This class provides a comprehensive interface for generating professional plots
     with support for multiple data visualization features and automatic resource management.
-    
+
     Key Features
     -----------
     * Multiple data series plotting with customizable styles
@@ -37,7 +36,7 @@ class PlotBuilder:
     * Automatic arrow annotations with customizable positioning
     * Smart text annotation placement with collision avoidance
     * Legend management and customization
-    
+
     Attributes
     ----------
     fig : matplotlib.figure.Figure
@@ -50,7 +49,7 @@ class PlotBuilder:
         Controls legend visibility
     default_styles : dict
         Plot styles loaded from TOML configuration
-        
+
     Examples
     --------
     Basic line plot:
@@ -60,14 +59,14 @@ class PlotBuilder:
     ...     'y': [4, 5, 6],
     ...     'label': 'Data'
     ... }])
-    
+
     Plot with DXF overlay:
     >>> plotter.plot_series(
     ...     data=[{'x': [0, 1], 'y': [0, 1]}],
     ...     dxf_path='drawing.dxf',
     ...     title_chart='Plot with DXF'
     ... )
-    
+
     Notes
     -----
     - Manages plot lifecycle and resource cleanup automatically
@@ -75,6 +74,7 @@ class PlotBuilder:
     - Thread-safe plot generation and cleanup
     - Memory-efficient resource management
     """
+
     def __init__(self, style_file: str = "default"):
         """
         Initialize the Plotter class.
@@ -90,9 +90,11 @@ class PlotBuilder:
         self.ax2: plt.Axes = None
         self.show_legend: bool = False
         self._is_closed: bool = False
-        
+
         # Load default styles from TOML
-        style_path = os.path.join(os.path.dirname(__file__), f"data/charts/{style_file}.toml")
+        style_path = os.path.join(
+            os.path.dirname(__file__), f"data/charts/{style_file}.toml"
+        )
         try:
             with open(style_path, "rb") as f:
                 self.default_styles = tomli.load(f)
@@ -128,27 +130,26 @@ class PlotBuilder:
         invert_y: bool = False,
         dxf_params: dict = {},
         format_params: dict = None,
-        **kwargs
     ) -> None:
         """Create a sophisticated multi-series plot with optional overlays.
-        
+
         Provides a high-level interface for creating complex plots with multiple
         data series, optional DXF overlays, and extensive customization options.
-        
+
         Parameters
         ----------
         data : list[dict]
             List of data series to plot. Each dict supports:
-            
+
             * x : array-like
                 X-coordinates for the series
             * y : array-like
                 Y-coordinates for the series
             * color : str, optional
                 Line/marker color (default: 'blue')
-            * linetype : str, optional
+            * linestyle : str, optional
                 Line style (default: '-')
-            * lineweight : float, optional
+            * linewidth : float, optional
                 Line width (default: 1.0)
             * marker : str, optional
                 Marker style (default: 'o')
@@ -156,7 +157,7 @@ class PlotBuilder:
                 Series label for legend
             * note : str or list[str], optional
                 Annotations to add
-                
+
         dxf_path : str, optional
             Path to DXF file for overlay
         size : tuple[float, float], optional
@@ -175,7 +176,7 @@ class PlotBuilder:
             Y-axis limits (min, max)
         invert_y : bool, optional
             Invert Y-axis if True (default: False)
-            
+
         Examples
         --------
         Simple line plot:
@@ -184,13 +185,13 @@ class PlotBuilder:
         ...     'y': [0, 1, 4],
         ...     'label': 'Quadratic'
         ... }])
-        
+
         Multiple styled series:
         >>> plotter.plot_series([
         ...     {'x': [0,1], 'y': [0,1], 'color': 'blue'},
         ...     {'x': [0,1], 'y': [1,0], 'color': 'red'}
         ... ], title_chart='Two Lines')
-        
+
         Notes
         -----
         - Automatically cleans up previous plots
@@ -215,7 +216,7 @@ class PlotBuilder:
                 self.ax1.plot(x, y, **dxf_params)
 
         for series in data:
-            self._plot_single_series(self.ax1, series, **kwargs)
+            self._plot_single_series(self.ax1, series)
 
         self._finalize_plot(
             title_x, title_y, title_chart, xlim, ylim, invert_y, format_params
@@ -227,7 +228,7 @@ class PlotBuilder:
         title_y2: str = "",
         ylim: tuple = None,
         invert_y: bool = False,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Add a secondary Y-axis with its own data series.
@@ -348,7 +349,7 @@ class PlotBuilder:
         xlim=None,
         ylim=None,
         invert_y=False,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Plot polylines from a DXF file using the class's figure and axes.
@@ -460,8 +461,8 @@ class PlotBuilder:
             series["x"],
             series["y"],
             color=series.get("color", "blue"),
-            linestyle=series.get("linetype", "-"),
-            linewidth=series.get("lineweight", 1),
+            linestyle=series.get("linestyle", "-"),
+            linewidth=series.get("linewidth", 1),
             marker=series.get("marker", "o"),
             label=series.get("label", None),
             **kwargs,
@@ -512,7 +513,7 @@ class PlotBuilder:
         """Apply formatting parameters to the plot."""
         # Grid visibility
         self.ax1.grid(format_params.get("show_grid", True))
-        
+
         # Ticks visibility
         if not format_params.get("show_xticks", True):
             self.ax1.set_xticks([])
@@ -532,7 +533,7 @@ class PlotBuilder:
         """Handle legend visibility based on conditions."""
         if not self.show_legend:
             return
-            
+
         handles, labels = self.ax1.get_legend_handles_labels()
         if handles and labels:
             self.ax1.legend()
@@ -568,12 +569,7 @@ class PlotBuilder:
         )
 
     def _add_notes(
-        self,
-        x_point: float,
-        y_point: float,
-        dx: float,
-        dy: float,
-        series: dict
+        self, x_point: float, y_point: float, dx: float, dy: float, series: dict
     ) -> None:
         """
         Add text annotations to the plot with automatic positioning.
@@ -610,7 +606,7 @@ class PlotBuilder:
         - Falls back to default styles if not specified
         - Single notes skip adjustment for better performance
         """
-        notes = series.get('note')
+        notes = series.get("note")
         if not notes:
             return
 
@@ -619,56 +615,53 @@ class PlotBuilder:
             notes = [notes]
 
         # Get fontsize from data or use default
-        fontsize = series.get('fontsize', self.default_styles.get('note_style', {}).get('fontsize', 10))
-        
+        fontsize = series.get(
+            "fontsize", self.default_styles.get("note_style", {}).get("fontsize", 10)
+        )
+
         # Get default styles from TOML
-        default_note_style = self.default_styles.get('note_style', {})
-        default_adjust_params = self.default_styles.get('adjust_text_params', {})
+        default_note_style = self.default_styles.get("note_style", {})
+        default_adjust_params = self.default_styles.get("adjust_text_params", {})
 
         # Create note style with path effects
         note_style = {
             "fontsize": fontsize,
-            "bbox": default_note_style.get('bbox', {}),
+            "bbox": default_note_style.get("bbox", {}),
             "path_effects": [
                 path_effects.withStroke(
-                    linewidth=default_note_style.get('linewidth', 8),
-                    foreground=default_note_style.get('foreground', "white"),
+                    linewidth=default_note_style.get("linewidth", 8),
+                    foreground=default_note_style.get("foreground", "white"),
                 )
             ],
         }
-        
+
         # Override with user provided styles
-        if 'note_style' in series:
-            note_style.update(series['note_style'])
+        if "note_style" in series:
+            note_style.update(series["note_style"])
 
         # Get adjust text parameters
         adjust_text_params = default_adjust_params.copy()
-        if 'adjust_text_params' in series:
-            adjust_text_params.update(series['adjust_text_params'])
+        if "adjust_text_params" in series:
+            adjust_text_params.update(series["adjust_text_params"])
 
         texts = []
         base_x = x_point + dx * 1.2
         base_y = y_point + dy * 1.2
-        
+
         for note in notes:
-            text = self.ax1.text(
-                base_x,
-                base_y,
-                note,
-                **note_style
-            )
+            text = self.ax1.text(base_x, base_y, note, **note_style)
             texts.append(text)
 
         # Special handling for single text to avoid adjust_text issues
         if len(texts) == 1:
             return
-        
+
         # Only use adjust_text for multiple texts
         adjust_text(
             texts,
             x=[base_x] * len(texts),
             y=[base_y] * len(texts),
-            **adjust_text_params
+            **adjust_text_params,
         )
 
     def _add_single_arrow(
@@ -780,16 +773,16 @@ class PlotBuilder:
 
 class PlotMerger:
     """A utility class for combining multiple plots into a grid layout.
-    
+
     Provides functionality to arrange multiple plot objects in a customizable
     grid layout with automatic scaling and positioning.
-    
+
     Parameters
     ----------
     fig_size : tuple[int, int], optional
         Maximum figure dimensions (width, height) in inches
         Default is (8, 6)
-    
+
     Attributes
     ----------
     fig_width : float
@@ -804,7 +797,7 @@ class PlotMerger:
         Cell spans for each object
     grid_dims : tuple[int, int], optional
         Grid dimensions (rows, cols)
-    
+
     Examples
     --------
     >>> merger = PlotMerger(fig_size=(10, 8))
@@ -812,13 +805,14 @@ class PlotMerger:
     >>> merger.add_object(plot1, (0, 0))
     >>> merger.add_object(plot2, (0, 1))
     >>> drawing = merger.build()
-    
+
     Notes
     -----
     - Automatically handles object scaling
     - Preserves aspect ratios
     - Memory-efficient object handling
     """
+
     def __init__(self, fig_size: Tuple[int, int] = (8, 6)):
         """Initialize PlotMerger with figure dimensions in points."""
         self._initialize_dimensions(fig_size)
@@ -833,7 +827,9 @@ class PlotMerger:
         self.fig_width = fig_size[0] * POINTS_PER_INCH
         self.fig_height = fig_size[1] * POINTS_PER_INCH
 
-    def add_object(self, obj, position: Tuple[int, int], span: Tuple[int, int] = (1, 1)) -> None:
+    def add_object(
+        self, obj, position: Tuple[int, int], span: Tuple[int, int] = (1, 1)
+    ) -> None:
         """Add an object to the grid with position and span."""
         self.objects.append(obj)
         self.positions.append(position)
@@ -851,9 +847,11 @@ class PlotMerger:
 
         drawing = Drawing(self.fig_width, self.fig_height)
         cell_dimensions = self._get_cell_dimensions(cell_spacing)
-        
+
         for obj_data in self._iter_objects():
-            self._add_object_to_drawing(drawing, obj_data, cell_dimensions, color_border, cell_spacing)
+            self._add_object_to_drawing(
+                drawing, obj_data, cell_dimensions, color_border, cell_spacing
+            )
 
         return drawing
 
@@ -873,12 +871,12 @@ class PlotMerger:
         return zip(self.objects, self.positions, self.spans)
 
     def _add_object_to_drawing(
-        self, 
-        drawing: Drawing, 
-        obj_data: Tuple, 
+        self,
+        drawing: Drawing,
+        obj_data: Tuple,
         cell_dims: Tuple[float, float],
         color_border: str,
-        cell_spacing: float
+        cell_spacing: float,
     ) -> None:
         """Add a single object and its border to the drawing."""
         obj, (row, col), (row_span, col_span) = obj_data
@@ -889,8 +887,7 @@ class PlotMerger:
         scale = self._get_scale_factor(span_dims, (obj.width, obj.height))
         scaled_size = (obj.width * scale, obj.height * scale)
         position = self._get_object_position(
-            cell_dims, row, col, row_span, span_dims, 
-            scaled_size, cell_spacing
+            cell_dims, row, col, row_span, span_dims, scaled_size, cell_spacing
         )
 
         # Add transformed object
@@ -899,25 +896,19 @@ class PlotMerger:
 
         # Add cell border
         border = self._create_border(
-            cell_dims, row, col, row_span, col_span,
-            color_border, cell_spacing
+            cell_dims, row, col, row_span, col_span, color_border, cell_spacing
         )
         drawing.add(border)
 
     def _get_span_size(
-        self, 
-        cell_dims: Tuple[float, float], 
-        row_span: int, 
-        col_span: int
+        self, cell_dims: Tuple[float, float], row_span: int, col_span: int
     ) -> Tuple[float, float]:
         """Calculate total span width and height."""
         cell_width, cell_height = cell_dims
         return (cell_width * col_span, cell_height * row_span)
 
     def _get_scale_factor(
-        self, 
-        container: Tuple[float, float], 
-        content: Tuple[float, float]
+        self, container: Tuple[float, float], content: Tuple[float, float]
     ) -> float:
         """Calculate scale factor preserving aspect ratio."""
         return min(container[0] / content[0], container[1] / content[1])
@@ -930,13 +921,13 @@ class PlotMerger:
         row_span: int,
         span_dims: Tuple[float, float],
         scaled_size: Tuple[float, float],
-        spacing: float
+        spacing: float,
     ) -> Tuple[float, float]:
         """Calculate centered position for the object."""
         cell_width, cell_height = cell_dims
         span_width, span_height = span_dims
         scaled_width, scaled_height = scaled_size
-        
+
         x = col * (cell_width + spacing) + (span_width - scaled_width) / 2
         y = (self.grid_dims[0] - row - row_span) * (cell_height + spacing) + (
             span_height - scaled_height
@@ -948,7 +939,7 @@ class PlotMerger:
         obj,
         scale: float,
         position: Tuple[float, float],
-        scaled_size: Tuple[float, float]
+        scaled_size: Tuple[float, float],
     ) -> Group:
         """Create a transformed group containing the object."""
         group = Group()
@@ -968,7 +959,7 @@ class PlotMerger:
         row_span: int,
         col_span: int,
         color: str,
-        spacing: float
+        spacing: float,
     ) -> Rect:
         """Create a border rectangle for the cell."""
         cell_width, cell_height = cell_dims

@@ -15,7 +15,7 @@ from libs.utils.logger_config import get_logger, log_execution_time
 from modules.reporter.plot_builder import PlotBuilder, PlotMerger
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.note_handler import NotesHandler
-from libs.utils.calculations import round_decimal
+from libs.utils.calculations import round_decimal, get_iqr_limits
 from libs.utils.df_helpers import read_df_on_time_from_csv
 
 logger = get_logger("scripts.chart_plotter")
@@ -86,22 +86,26 @@ if __name__ == "__main__":
     # levels = config["plot"]["format_type"]["levels"]
 
     # Upper cell configuration
-    upper_series = config["plot"]["upper_cell"]["series"]
-    upper_colors = config["plot"]["upper_cell"]["colors"]
-    upper_linetypes = config["plot"]["upper_cell"]["linetype"]
-    upper_lineweights = config["plot"]["upper_cell"]["lineweight"]
+    upper_series = config["plot"]["upper_cell"]["serie"]
+    upper_colors = config["plot"]["upper_cell"]["color"]
+    upper_linestyles = config["plot"]["upper_cell"]["linestyle"]
+    upper_linewidths = config["plot"]["upper_cell"]["linewidth"]
     upper_markers = config["plot"]["upper_cell"]["marker"]
+    upper_markersizes = config["plot"]["upper_cell"]["markersize"]
     upper_labels = [config["names"]["es"][s] for s in upper_series]
+    upper_serie_x = config["plot"]["upper_cell"]["title_x"]
     upper_title_x = config["names"]["es"][config["plot"]["upper_cell"]["title_x"]]
     upper_title_y = config["names"]["es"][config["plot"]["upper_cell"]["title_y"]]
 
     # Lower cell configuration
-    lower_series = config["plot"]["lower_cell"]["series"]
-    lower_colors = config["plot"]["lower_cell"]["colors"]
-    lower_linetypes = config["plot"]["lower_cell"]["linetype"]
-    lower_lineweights = config["plot"]["lower_cell"]["lineweight"]
+    lower_series = config["plot"]["lower_cell"]["serie"]
+    lower_colors = config["plot"]["lower_cell"]["color"]
+    lower_linestyles = config["plot"]["lower_cell"]["linestyle"]
+    lower_linewidths = config["plot"]["lower_cell"]["linewidth"]
     lower_markers = config["plot"]["lower_cell"]["marker"]
+    lower_markersizes = config["plot"]["lower_cell"]["markersize"]
     lower_labels = [config["names"]["es"][s] for s in lower_series]
+    lower_serie_x = config["plot"]["lower_cell"]["title_x"]
     lower_title_x = config["names"]["es"][config["plot"]["lower_cell"]["title_x"]]
     lower_title_y = config["names"]["es"][config["plot"]["lower_cell"]["title_y"]]
 
@@ -145,45 +149,53 @@ if __name__ == "__main__":
 
     upper_data = [
         {
-            "x": df["time"].tolist(),
+            "x": df[upper_serie_x].tolist(),
             "y": df[s].tolist(),
             "color": c,
-            "linetype": lt,
-            "lineweight": lw,
+            "linestyle": lt,
+            "linewidth": lw,
             "marker": m,
+            "markersize": ms,
             "secondary_y": False,
             "label": l,
         }
-        for s, c, lt, lw, m, l in zip(
+        for s, c, lt, lw, m, ms, l in zip(
             upper_series,
             upper_colors,
-            upper_linetypes,
-            upper_lineweights,
+            upper_linestyles,
+            upper_linewidths,
             upper_markers,
+            upper_markersizes,
             upper_labels,
         )
     ]
 
     lower_data = [
         {
-            "x": df_filtered["time"].tolist(),
+            "x": df_filtered[lower_serie_x].tolist(),
             "y": df_filtered[s].tolist(),
             "color": c,
-            "linetype": lt,
-            "lineweight": lw,
+            "linestyle": lt,
+            "linewidth": lw,
             "marker": m,
+            "markersize": ms,
             "secondary_y": False,
             "label": l,
         }
-        for s, c, lt, lw, m, l in zip(
+        for s, c, lt, lw, m, ms, l in zip(
             lower_series,
             lower_colors,
-            lower_linetypes,
-            lower_lineweights,
+            lower_linestyles,
+            lower_linewidths,
             lower_markers,
+            lower_markersizes,
             lower_labels,
         )
     ]
+
+    # Calculate ylim for upper and lower plots using get_iqr_limits
+    upper_ylim = get_iqr_limits(df[upper_series[0]])
+    lower_ylim = get_iqr_limits(df_filtered[lower_series[0]])
 
     map_plotter_args = {
         "data": [
@@ -191,13 +203,14 @@ if __name__ == "__main__":
                 "x": [east],
                 "y": [north],
                 "color": "red",
-                "linetype": "",
-                "lineweight": 0,
+                "linestyle": "",
+                "linewidth": 0,
                 "marker": "o",
                 "secondary_y": False,
                 "label": "",
                 "note": [sensor_code],
                 "fontsize": 15,
+                "markersize": 25,
             },
         ],
         "dxf_path": dxf_path,
@@ -216,7 +229,6 @@ if __name__ == "__main__":
             "show_xticks": False,
             "show_yticks": False,
         },
-        "markersize": 15,
     }
 
     upper_plotter_args = {
@@ -226,7 +238,7 @@ if __name__ == "__main__":
         "title_y": upper_title_y,
         "title_chart": upper_title,
         "show_legend": True,
-        # "ylim": [0, 1],
+        "ylim": upper_ylim,  # Set ylim for upper plot
     }
 
     lower_plotter_args = {
@@ -236,7 +248,7 @@ if __name__ == "__main__":
         "title_y": lower_title_y,
         "title_chart": lower_title,
         "show_legend": True,
-        # "ylim": [0, 1],
+        "ylim": lower_ylim,  # Set ylim for lower plot
     }
 
     map_plotter = PlotBuilder(style_file="default")
