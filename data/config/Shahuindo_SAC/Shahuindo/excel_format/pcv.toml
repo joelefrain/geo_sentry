@@ -14,10 +14,6 @@ barometric_load = "lambda row: 0"
 
 [process.selected_attr]
 cell = ["D10", "F10"]
-custom_functions = [
-    "lambda row, idx=None: row['time'] == df['time'].min()",
-    "lambda row, idx=None: row['time'] == df['time'].min()"
-]
 column = ["digits", "temperature"]
 
 [location.attributes]

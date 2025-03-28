@@ -9,6 +9,7 @@ bottom_well_elevation = "H16"
 depth = "E12"
 
 [process.custom_functions]
+measure = "lambda row: -row['measure']"
 
 [location.attributes]
 north = "F16"

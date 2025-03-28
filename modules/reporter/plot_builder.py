@@ -10,7 +10,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 from libs.utils.plot_config import PlotConfig
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import ezdxf
@@ -23,34 +22,68 @@ from typing import Tuple, List
 PlotConfig.setup_matplotlib()
 
 
+
 class PlotBuilder:
-    """
-    A versatile plotting class for creating and managing matplotlib-based plots.
-
-    This class provides functionality for creating various types of plots including:
-    - Data series plots
-    - DXF file visualizations
-    - Color bands
-    - Arrows and annotations
-
-    The class manages plot lifecycle, styling, and resource cleanup automatically.
-
+    """A versatile class for creating and managing publication-quality plots.
+    
+    This class provides a comprehensive interface for generating professional plots 
+    with support for multiple data visualization features and automatic resource management.
+    
+    Key Features
+    -----------
+    * Multiple data series plotting with customizable styles
+    * DXF file visualization and overlay support
+    * Color bands and region highlighting
+    * Automatic arrow annotations with customizable positioning
+    * Smart text annotation placement with collision avoidance
+    * Legend management and customization
+    
     Attributes
     ----------
-    fig : plt.Figure
-        The main matplotlib figure object.
-    ax1 : plt.Axes
-        Primary axes for plotting.
-    ax2 : plt.Axes
-        Secondary axes for additional plots (optional).
+    fig : matplotlib.figure.Figure
+        Main figure container for the plot
+    ax1 : matplotlib.axes.Axes
+        Primary plotting axes
+    ax2 : matplotlib.axes.Axes, optional
+        Secondary axes for dual-axis plots
     show_legend : bool
-        Controls legend visibility.
+        Controls legend visibility
     default_styles : dict
-        Plotting styles loaded from TOML configuration.
+        Plot styles loaded from TOML configuration
+        
+    Examples
+    --------
+    Basic line plot:
+    >>> plotter = PlotBuilder()
+    >>> plotter.plot_series([{
+    ...     'x': [1, 2, 3],
+    ...     'y': [4, 5, 6],
+    ...     'label': 'Data'
+    ... }])
+    
+    Plot with DXF overlay:
+    >>> plotter.plot_series(
+    ...     data=[{'x': [0, 1], 'y': [0, 1]}],
+    ...     dxf_path='drawing.dxf',
+    ...     title_chart='Plot with DXF'
+    ... )
+    
+    Notes
+    -----
+    - Manages plot lifecycle and resource cleanup automatically
+    - Uses TOML files for style configuration
+    - Thread-safe plot generation and cleanup
+    - Memory-efficient resource management
     """
-    def __init__(self):
+    def __init__(self, style_file: str = "default"):
         """
         Initialize the Plotter class.
+
+        Parameters
+        ----------
+        style_file : str, optional
+            Name of the TOML file containing plot styles, by default "default.toml"
+            The file should be located in data/charts/ directory.
         """
         self.fig: plt.Figure = None
         self.ax1: plt.Axes = None
@@ -59,13 +92,13 @@ class PlotBuilder:
         self._is_closed: bool = False
         
         # Load default styles from TOML
-        style_path = os.path.join(os.path.dirname(__file__), "data/notes/charts/note_styles.toml")
+        style_path = os.path.join(os.path.dirname(__file__), f"data/charts/{style_file}.toml")
         try:
             with open(style_path, "rb") as f:
                 self.default_styles = tomli.load(f)
         except Exception as e:
-            raise(f"Warning: Could not load styles from {style_path}: {e}")
             self.default_styles = {}
+            raise RuntimeError(f"Could not load styles from {style_path}: {e}")
 
     def __del__(self):
         """Cleanup when object is deleted."""
@@ -97,55 +130,74 @@ class PlotBuilder:
         format_params: dict = None,
         **kwargs
     ) -> None:
-        """
-        Create a plot from multiple data series with optional DXF overlay.
-
-        This method supports plotting multiple data series on the same axes,
-        with customizable appearance and optional DXF file integration.
-
+        """Create a sophisticated multi-series plot with optional overlays.
+        
+        Provides a high-level interface for creating complex plots with multiple
+        data series, optional DXF overlays, and extensive customization options.
+        
         Parameters
         ----------
-        data : list of dict
-            List of data series, where each series is a dictionary containing:
-            - x : array-like, x-coordinates
-            - y : array-like, y-coordinates
-            - color : str, optional, line color
-            - linetype : str, optional, line style
-            - lineweight : float, optional, line width
-            - marker : str, optional, marker style
-            - label : str, optional, series label
-            - note : str or list, optional, annotations
+        data : list[dict]
+            List of data series to plot. Each dict supports:
+            
+            * x : array-like
+                X-coordinates for the series
+            * y : array-like
+                Y-coordinates for the series
+            * color : str, optional
+                Line/marker color (default: 'blue')
+            * linetype : str, optional
+                Line style (default: '-')
+            * lineweight : float, optional
+                Line width (default: 1.0)
+            * marker : str, optional
+                Marker style (default: 'o')
+            * label : str, optional
+                Series label for legend
+            * note : str or list[str], optional
+                Annotations to add
+                
         dxf_path : str, optional
-            Path to DXF file for overlay.
-        size : tuple, optional
-            Plot dimensions (width, height) in inches. Default (4, 3).
+            Path to DXF file for overlay
+        size : tuple[float, float], optional
+            Plot dimensions in inches (default: (4, 3))
         title_x : str, optional
-            X-axis label.
+            X-axis label
         title_y : str, optional
-            Y-axis label.
+            Y-axis label
         title_chart : str, optional
-            Chart title.
+            Chart title
         show_legend : bool, optional
-            Whether to display legend. Default False.
-        xlim : tuple, optional
-            X-axis limits (min, max).
-        ylim : tuple, optional
-            Y-axis limits (min, max).
+            Show legend if True (default: False)
+        xlim : tuple[float, float], optional
+            X-axis limits (min, max)
+        ylim : tuple[float, float], optional
+            Y-axis limits (min, max)
         invert_y : bool, optional
-            Invert Y-axis direction. Default False.
-        dxf_params : dict, optional
-            Style parameters for DXF entities.
-        format_params : dict, optional
-            Formatting parameters including:
-            - show_grid : bool, grid visibility
-            - show_xticks : bool, x-axis ticks visibility
-            - show_yticks : bool, y-axis ticks visibility
-
+            Invert Y-axis if True (default: False)
+            
+        Examples
+        --------
+        Simple line plot:
+        >>> plotter.plot_series([{
+        ...     'x': [0, 1, 2],
+        ...     'y': [0, 1, 4],
+        ...     'label': 'Quadratic'
+        ... }])
+        
+        Multiple styled series:
+        >>> plotter.plot_series([
+        ...     {'x': [0,1], 'y': [0,1], 'color': 'blue'},
+        ...     {'x': [0,1], 'y': [1,0], 'color': 'red'}
+        ... ], title_chart='Two Lines')
+        
         Notes
         -----
-        - The method automatically cleans up previous plots
-        - DXF overlay is rendered before data series
-        - Legend is only shown if labeled artists exist
+        - Automatically cleans up previous plots
+        - DXF overlays are rendered first
+        - Series are plotted in order provided
+        - Legend only shows if labels exist
+        - Thread-safe plot generation
         """
         # Ensure previous figure is closed before creating a new one
         self.close()
@@ -443,41 +495,47 @@ class PlotBuilder:
         invert_y : bool
             Whether to invert the Y-axis.
         format_params : dict, optional
-            Dictionary containing formatting parameters:
-            - show_grid (bool): Whether to show grid lines
-            - show_xticks (bool): Whether to show x-axis ticks
-            - show_yticks (bool): Whether to show y-axis ticks
+            Dictionary containing formatting parameters.
         """
+        self._set_titles(title_x, title_y, title_chart)
+        self._apply_format_params(format_params or {})
+        self._set_axis_limits(xlim, ylim, invert_y)
+        self._handle_legend()
+
+    def _set_titles(self, title_x: str, title_y: str, title_chart: str) -> None:
+        """Set all plot titles."""
         self.ax1.set_xlabel(title_x)
         self.ax1.set_ylabel(title_y)
+        plt.title(title_chart)
 
-        # Apply formatting based on format_params
-        if format_params is None:
-            format_params = {}
-
+    def _apply_format_params(self, format_params: dict) -> None:
+        """Apply formatting parameters to the plot."""
         # Grid visibility
-        show_grid = format_params.get("show_grid", True)
-        self.ax1.grid(show_grid)
-
+        self.ax1.grid(format_params.get("show_grid", True))
+        
         # Ticks visibility
         if not format_params.get("show_xticks", True):
             self.ax1.set_xticks([])
         if not format_params.get("show_yticks", True):
             self.ax1.set_yticks([])
 
+    def _set_axis_limits(self, xlim: tuple, ylim: tuple, invert_y: bool) -> None:
+        """Set axis limits and orientation."""
         if xlim:
             self.ax1.set_xlim(xlim)
         if ylim:
             self.ax1.set_ylim(ylim)
         if invert_y:
             self.ax1.invert_yaxis()
-        plt.title(title_chart)
 
-        # Only show legend if there are labeled artists and show_legend is True
-        if self.show_legend:
-            handles, labels = self.ax1.get_legend_handles_labels()
-            if handles and labels:  # Only create legend if there are labeled artists
-                self.ax1.legend()
+    def _handle_legend(self) -> None:
+        """Handle legend visibility based on conditions."""
+        if not self.show_legend:
+            return
+            
+        handles, labels = self.ax1.get_legend_handles_labels()
+        if handles and labels:
+            self.ax1.legend()
 
     def _add_single_color_band(
         self, range_band: list, color_band: list, name_band: list, index: int, **kwargs
@@ -721,340 +779,201 @@ class PlotBuilder:
 
 
 class PlotMerger:
+    """A utility class for combining multiple plots into a grid layout.
+    
+    Provides functionality to arrange multiple plot objects in a customizable
+    grid layout with automatic scaling and positioning.
+    
+    Parameters
+    ----------
+    fig_size : tuple[int, int], optional
+        Maximum figure dimensions (width, height) in inches
+        Default is (8, 6)
+    
+    Attributes
+    ----------
+    fig_width : float
+        Figure width in points
+    fig_height : float
+        Figure height in points
+    objects : list
+        Plot objects to arrange
+    positions : list[tuple[int, int]]
+        Grid positions for each object
+    spans : list[tuple[int, int]]
+        Cell spans for each object
+    grid_dims : tuple[int, int], optional
+        Grid dimensions (rows, cols)
+    
+    Examples
+    --------
+    >>> merger = PlotMerger(fig_size=(10, 8))
+    >>> merger.create_grid(2, 2)
+    >>> merger.add_object(plot1, (0, 0))
+    >>> merger.add_object(plot2, (0, 1))
+    >>> drawing = merger.build()
+    
+    Notes
+    -----
+    - Automatically handles object scaling
+    - Preserves aspect ratios
+    - Memory-efficient object handling
+    """
     def __init__(self, fig_size: Tuple[int, int] = (8, 6)):
-        """
-        Initialize the structure to combine plots.
-
-        Parameters
-        ----------
-        fig_size : tuple of int, optional
-            Maximum figure size in inches (width, height). Default is (8, 6).
-        """
-        self.fig_width = fig_size[0] * 72  # Convert inches to points (1 in = 72 pt)
-        self.fig_height = fig_size[1] * 72
+        """Initialize PlotMerger with figure dimensions in points."""
+        self._initialize_dimensions(fig_size)
         self.objects: List = []
         self.positions: List[Tuple[int, int]] = []
         self.spans: List[Tuple[int, int]] = []
-        self.rows: int = None
-        self.cols: int = None
+        self.grid_dims: Tuple[int, int] = None
 
-    def add_object(
-        self, obj, position: Tuple[int, int], span: Tuple[int, int] = (1, 1)
-    ) -> None:
-        """
-        Add an object to a specific position in the grid.
+    def _initialize_dimensions(self, fig_size: Tuple[int, int]) -> None:
+        """Convert inches to points and store dimensions."""
+        POINTS_PER_INCH = 72
+        self.fig_width = fig_size[0] * POINTS_PER_INCH
+        self.fig_height = fig_size[1] * POINTS_PER_INCH
 
-        Parameters
-        ----------
-        obj : svg2rlg object
-            The SVG object to add.
-        position : tuple of int
-            Tuple (row, col) for the position in the grid.
-        span : tuple of int, optional
-            Tuple (row_span, col_span) to extend the subplot. Default is (1, 1).
-        """
+    def add_object(self, obj, position: Tuple[int, int], span: Tuple[int, int] = (1, 1)) -> None:
+        """Add an object to the grid with position and span."""
         self.objects.append(obj)
         self.positions.append(position)
         self.spans.append(span)
 
     def create_grid(self, rows: int, cols: int) -> "PlotMerger":
-        """
-        Create the grid structure.
-
-        Parameters
-        ----------
-        rows : int
-            Number of rows.
-        cols : int
-            Number of columns.
-
-        Returns
-        -------
-        self : PlotMerger
-            The instance itself.
-        """
-        self.rows = rows
-        self.cols = cols
+        """Set grid dimensions and return self for method chaining."""
+        self.grid_dims = (rows, cols)
         return self
 
     def build(self, color_border: str = "white", cell_spacing: float = 10.0) -> Drawing:
-        """
-        Build the final figure with all subplots.
-
-        Parameters
-        ----------
-        color_border : str, optional
-            Color of the cell borders. Default is 'white'.
-        cell_spacing : float, optional
-            Spacing between the cells in points. Default is 10.0.
-
-        Returns
-        -------
-        drawing : Drawing
-            A vectorized RLG object with the combined figure.
-        """
-        if self.rows is None or self.cols is None:
+        """Build and return the combined figure."""
+        if not self._is_grid_initialized():
             raise ValueError("Must call create_grid before build")
 
-        cell_width, cell_height = self._calculate_cell_dimensions(cell_spacing)
         drawing = Drawing(self.fig_width, self.fig_height)
-
-        for obj, (row, col), (row_span, col_span) in zip(
-            self.objects, self.positions, self.spans
-        ):
-            obj_width, obj_height = obj.width, obj.height
-            span_width, span_height = self._get_span_dimensions(
-                cell_width, cell_height, row_span, col_span
-            )
-            scale_factor = self._calculate_scale_factor(
-                span_width, span_height, obj_width, obj_height
-            )
-            scaled_width, scaled_height = (
-                obj_width * scale_factor,
-                obj_height * scale_factor,
-            )
-            x, y = self._calculate_position(
-                cell_width,
-                cell_height,
-                row,
-                col,
-                row_span,
-                span_width,
-                span_height,
-                scaled_width,
-                scaled_height,
-                cell_spacing,
-            )
-
-            group = self._create_transformed_group(
-                obj, scale_factor, x, y, scaled_width, scaled_height
-            )
-            drawing.add(group)
-
-            cell_border = self._create_cell_border(
-                cell_width,
-                cell_height,
-                row,
-                col,
-                row_span,
-                col_span,
-                color_border=color_border,
-                cell_spacing=cell_spacing,
-            )
-            drawing.add(cell_border)
+        cell_dimensions = self._get_cell_dimensions(cell_spacing)
+        
+        for obj_data in self._iter_objects():
+            self._add_object_to_drawing(drawing, obj_data, cell_dimensions, color_border, cell_spacing)
 
         return drawing
 
-    def _calculate_cell_dimensions(self, cell_spacing: float) -> Tuple[float, float]:
-        """
-        Calculate the dimensions of each cell in the grid.
+    def _is_grid_initialized(self) -> bool:
+        """Check if grid dimensions are set."""
+        return self.grid_dims is not None
 
-        Parameters
-        ----------
-        cell_spacing : float
-            Spacing between the cells in points.
+    def _get_cell_dimensions(self, spacing: float) -> Tuple[float, float]:
+        """Calculate cell width and height with spacing."""
+        rows, cols = self.grid_dims
+        width = (self.fig_width - (cols - 1) * spacing) / cols
+        height = (self.fig_height - (rows - 1) * spacing) / rows
+        return width, height
 
-        Returns
-        -------
-        cell_width : float
-            Width of each cell.
-        cell_height : float
-            Height of each cell.
-        """
-        cell_width = (self.fig_width - (self.cols - 1) * cell_spacing) / self.cols
-        cell_height = (self.fig_height - (self.rows - 1) * cell_spacing) / self.rows
-        return cell_width, cell_height
+    def _iter_objects(self) -> Tuple:
+        """Iterate over object data as tuples."""
+        return zip(self.objects, self.positions, self.spans)
 
-    def _get_span_dimensions(
-        self, cell_width: float, cell_height: float, row_span: int, col_span: int
+    def _add_object_to_drawing(
+        self, 
+        drawing: Drawing, 
+        obj_data: Tuple, 
+        cell_dims: Tuple[float, float],
+        color_border: str,
+        cell_spacing: float
+    ) -> None:
+        """Add a single object and its border to the drawing."""
+        obj, (row, col), (row_span, col_span) = obj_data
+        cell_width, cell_height = cell_dims
+
+        # Calculate object dimensions and transformations
+        span_dims = self._get_span_size(cell_dims, row_span, col_span)
+        scale = self._get_scale_factor(span_dims, (obj.width, obj.height))
+        scaled_size = (obj.width * scale, obj.height * scale)
+        position = self._get_object_position(
+            cell_dims, row, col, row_span, span_dims, 
+            scaled_size, cell_spacing
+        )
+
+        # Add transformed object
+        group = self._create_object_group(obj, scale, position, scaled_size)
+        drawing.add(group)
+
+        # Add cell border
+        border = self._create_border(
+            cell_dims, row, col, row_span, col_span,
+            color_border, cell_spacing
+        )
+        drawing.add(border)
+
+    def _get_span_size(
+        self, 
+        cell_dims: Tuple[float, float], 
+        row_span: int, 
+        col_span: int
     ) -> Tuple[float, float]:
-        """
-        Calculate the dimensions of a span.
-
-        Parameters
-        ----------
-        cell_width : float
-            Width of each cell.
-        cell_height : float
-            Height of each cell.
-        row_span : int
-            Number of rows to span.
-        col_span : int
-            Number of columns to span.
-
-        Returns
-        -------
-        span_width : float
-            Width of the span.
-        span_height : float
-            Height of the span.
-        """
+        """Calculate total span width and height."""
+        cell_width, cell_height = cell_dims
         return (cell_width * col_span, cell_height * row_span)
 
-    def _calculate_scale_factor(
-        self, span_width: float, span_height: float, obj_width: float, obj_height: float
+    def _get_scale_factor(
+        self, 
+        container: Tuple[float, float], 
+        content: Tuple[float, float]
     ) -> float:
-        """
-        Calculate the scale factor to maintain aspect ratio.
+        """Calculate scale factor preserving aspect ratio."""
+        return min(container[0] / content[0], container[1] / content[1])
 
-        Parameters
-        ----------
-        span_width : float
-            Width of the span.
-        span_height : float
-            Height of the span.
-        obj_width : float
-            Width of the object.
-        obj_height : float
-            Height of the object.
-
-        Returns
-        -------
-        scale_factor : float
-            Scale factor to maintain aspect ratio.
-        """
-        scale_x = span_width / obj_width
-        scale_y = span_height / obj_height
-        return min(scale_x, scale_y)
-
-    def _calculate_position(
+    def _get_object_position(
         self,
-        cell_width: float,
-        cell_height: float,
+        cell_dims: Tuple[float, float],
         row: int,
         col: int,
         row_span: int,
-        span_width: float,
-        span_height: float,
-        scaled_width: float,
-        scaled_height: float,
-        cell_spacing: float,
+        span_dims: Tuple[float, float],
+        scaled_size: Tuple[float, float],
+        spacing: float
     ) -> Tuple[float, float]:
-        """
-        Calculate the position to center the object in the cell.
-
-        Parameters
-        ----------
-        cell_width : float
-            Width of each cell.
-        cell_height : float
-            Height of each cell.
-        row : int
-            Row index.
-        col : int
-            Column index.
-        row_span : int
-            Number of rows to span.
-        span_width : float
-            Width of the span.
-        span_height : float
-            Height of the span.
-        scaled_width : float
-            Scaled width of the object.
-        scaled_height : float
-            Scaled height of the object.
-        cell_spacing : float
-            Spacing between the cells in points.
-
-        Returns
-        -------
-        x : float
-            X position.
-        y : float
-            Y position.
-        """
-        x = col * (cell_width + cell_spacing) + (span_width - scaled_width) / 2
-        y = (self.rows - row - row_span) * (cell_height + cell_spacing) + (
+        """Calculate centered position for the object."""
+        cell_width, cell_height = cell_dims
+        span_width, span_height = span_dims
+        scaled_width, scaled_height = scaled_size
+        
+        x = col * (cell_width + spacing) + (span_width - scaled_width) / 2
+        y = (self.grid_dims[0] - row - row_span) * (cell_height + spacing) + (
             span_height - scaled_height
         ) / 2
         return x, y
 
-    def _create_transformed_group(
+    def _create_object_group(
         self,
         obj,
-        scale_factor: float,
-        x: float,
-        y: float,
-        scaled_width: float,
-        scaled_height: float,
+        scale: float,
+        position: Tuple[float, float],
+        scaled_size: Tuple[float, float]
     ) -> Group:
-        """
-        Create a transformed group with the scaled and positioned object.
-
-        Parameters
-        ----------
-        obj : svg2rlg object
-            The SVG object to transform.
-        scale_factor : float
-            Scale factor to apply.
-        x : float
-            X position.
-        y : float
-            Y position.
-        scaled_width : float
-            Scaled width of the object.
-        scaled_height : float
-            Scaled height of the object.
-
-        Returns
-        -------
-        group : Group
-            Transformed group with the object.
-        """
+        """Create a transformed group containing the object."""
         group = Group()
-        obj.scale(scale_factor, scale_factor)
+        obj.scale(scale, scale)
         obj.translate(-obj.width / 2, -obj.height / 2)
         group.add(obj)
+        x, y = position
+        scaled_width, scaled_height = scaled_size
         group.translate(x + scaled_width / 2, y + scaled_height / 2)
         return group
 
-    def _create_cell_border(
+    def _create_border(
         self,
-        cell_width: float,
-        cell_height: float,
+        cell_dims: Tuple[float, float],
         row: int,
         col: int,
         row_span: int,
         col_span: int,
-        color_border: str,
-        cell_spacing: float,
+        color: str,
+        spacing: float
     ) -> Rect:
-        """
-        Create a border for the cell.
-
-        Parameters
-        ----------
-        cell_width : float
-            Width of each cell.
-        cell_height : float
-            Height of each cell.
-        row : int
-            Row index.
-        col : int
-            Column index.
-        row_span : int
-            Number of rows to span.
-        col_span : int
-            Number of columns to span.
-        color_border : str
-            Color of the border.
-        cell_spacing : float
-            Spacing between the cells in points.
-
-        Returns
-        -------
-        cell_border : Rect
-            Rectangle representing the cell border.
-        """
-        border_x = col * (cell_width + cell_spacing)
-        border_y = (self.rows - row - row_span) * (cell_height + cell_spacing)
-        span_width = cell_width * col_span + cell_spacing * (col_span - 1)
-        span_height = cell_height * row_span + cell_spacing * (row_span - 1)
-        return Rect(
-            border_x,
-            border_y,
-            span_width,
-            span_height,
-            strokeColor=color_border,
-            fillColor=None,
-        )
+        """Create a border rectangle for the cell."""
+        cell_width, cell_height = cell_dims
+        x = col * (cell_width + spacing)
+        y = (self.grid_dims[0] - row - row_span) * (cell_height + spacing)
+        width = cell_width * col_span + spacing * (col_span - 1)
+        height = cell_height * row_span + spacing * (row_span - 1)
+        return Rect(x, y, width, height, strokeColor=color, fillColor=None)

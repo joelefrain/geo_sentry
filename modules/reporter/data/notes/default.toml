@@ -22,7 +22,7 @@ fontSize = 10
 leftIndent = 6
 rightIndent = 0
 spaceBefore = 0
-spaceAfter = 6
+spaceAfter = 0
 bulletOffsetY = 0
 bulletDedent = 4
 
@@ -35,7 +35,7 @@ fontSize = 10
 leftIndent = 8
 rightIndent = 0
 spaceBefore = 0
-spaceAfter = 6
+spaceAfter = 0
 bulletOffsetY = 0
 bulletDedent = 6
 
@@ -48,7 +48,7 @@ fontSize = 10
 leftIndent = 8
 rightIndent = 0
 spaceBefore = 0
-spaceAfter = 6
+spaceAfter = 0
 bulletOffsetY = 0
 bulletDedent = 6
 
@@ -60,4 +60,4 @@ fontSize = 10
 leftIndent = 0
 rightIndent = 0
 spaceBefore = 0
-spaceAfter = 6
+spaceAfter = 0

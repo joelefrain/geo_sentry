@@ -90,7 +90,7 @@ def check_seed_paths(sensor_data_paths):
                 logger.info(f"{os.path.abspath(path)} -> No existe")
 
 
-def process_sensors(
+def preprocess_sensors(
     sensor_data_paths,
     config_sensor_path,
     cut_off,
@@ -124,14 +124,15 @@ def process_sensors(
             input_folder = sensor_data_paths[sensor_type][structure]
             if os.path.exists(input_folder):
                 output_folder_base = os.path.join(work_path, cut_off)
-                processor.process_directory(
+                custom_functions_for_sensor = custom_functions.copy()
+                processor.process_excel_directory(
                     input_folder=input_folder,
                     output_folder_base=output_folder_base,
                     sensor_type=sensor_type,
                     code=structure,
                     exclude_sheets=exclude_sheets,
                     data_config=processor.config,
-                    custom_functions=custom_functions,
+                    custom_functions=custom_functions_for_sensor,
                     selected_attr=processor.config["process"].get("selected_attr"),
                 )
 
@@ -176,7 +177,7 @@ def exec_preprocess(
     )
 
     check_seed_paths(sensor_data_paths)
-    process_sensors(
+    preprocess_sensors(
         sensor_data_paths,
         config_sensor_path,
         cut_off,

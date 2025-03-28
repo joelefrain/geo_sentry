@@ -20,6 +20,7 @@ __pycache__/
 *.pyc
 test_*/
 tests/
+seed/
 
 # Virtual environments
 .venv/
@@ -56,4 +57,5 @@ __pycache__/
 *.dxf
 *.txt
 *.pdf
+*.xlsx
 !requirements.txt

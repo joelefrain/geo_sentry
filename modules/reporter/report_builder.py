@@ -9,6 +9,15 @@ import itertools
 import reportlab.lib.pagesizes
 
 def load_svg(svg_path, scale):
+    """Carga un archivo SVG y ajusta su escala.
+
+    Args:
+        svg_path (str): Ruta del archivo SVG.
+        scale (float): Factor de escala.
+
+    Returns:
+        Drawing: Objeto de dibujo ajustado.
+    """
     drawing = svg2rlg(svg_path)
     drawing.width *= scale
     drawing.height *= scale
@@ -16,7 +25,29 @@ def load_svg(svg_path, scale):
     return drawing
 
 class ReportBuilder:
+    """Construye reportes PDF personalizados con tablas y estilos configurables.
+    
+    Esta clase maneja la generación de reportes PDF basados en configuraciones TOML,
+    permitiendo personalizar estilos, dimensiones y contenido de las tablas.
+    
+    Attributes:
+        sample (dict): Configuración cargada del archivo TOML.
+        theme_color: Color principal del tema del reporte.
+        theme_color_font: Color de fuente del tema.
+        width_font_scale (float): Factor de escala para el ancho de la fuente.
+        rows (int): Número de filas en la tabla.
+        cols (int): Número de columnas en la tabla.
+    """
+
     def __init__(self, sample, theme_color, theme_color_font, **kwargs):
+        """Inicializa el constructor de reportes.
+
+        Args:
+            sample (str): Nombre del archivo de configuración TOML.
+            theme_color: Color principal del tema.
+            theme_color_font: Color de fuente del tema.
+            **kwargs: Atributos adicionales para el reporte.
+        """
         config_path = Path(__file__).parent / "data" / "reports" / f"{sample}.toml"
         self.sample = self.load_config(config_path)
         self.theme_color = theme_color
@@ -33,10 +64,24 @@ class ReportBuilder:
 
     @staticmethod
     def load_config(config_path):
+        """Carga la configuración desde un archivo TOML.
+
+        Args:
+            config_path (Path): Ruta del archivo TOML.
+
+        Returns:
+            dict: Configuración cargada.
+        """
         with config_path.open("rb") as fp:
             return tomli.load(fp)
 
     def update_theme_colors(self, attributes, values):
+        """Actualiza los colores del tema en la configuración de la tabla.
+
+        Args:
+            attributes (list): Lista de atributos a actualizar.
+            values (list): Lista de valores correspondientes.
+        """
         def update_theme_color(attribute, value):
             attribute_value = getattr(self, value)
             if self.sample["table"][attribute][row][col] == value:
@@ -48,10 +93,25 @@ class ReportBuilder:
                     update_theme_color(attribute, value)
 
     def set_attributes(self, attributes):
+        """Establece atributos adicionales para el reporte.
+
+        Args:
+            attributes (dict): Diccionario de atributos y valores.
+        """
         for key, value in attributes.items():
             setattr(self, key, value)
 
     def create_paragraph(self, text, row, col):
+        """Crea un párrafo con estilo personalizado.
+
+        Args:
+            text (str): Texto del párrafo.
+            row (int): Índice de la fila.
+            col (int): Índice de la columna.
+
+        Returns:
+            Paragraph: Párrafo con estilo aplicado.
+        """
         style = ParagraphStyle(
             name="Normal",
             alignment=self.get_alignment(row, col),
@@ -67,15 +127,39 @@ class ReportBuilder:
         return Paragraph(text, style)
 
     def wrap_text(self, text, row, col):
+        """Envuelve el texto en un párrafo si es una cadena.
+
+        Args:
+            text (str): Texto a envolver.
+            row (int): Índice de la fila.
+            col (int): Índice de la columna.
+
+        Returns:
+            Paragraph or str: Párrafo envuelto o texto original.
+        """
         if isinstance(text, str):
             return self.create_paragraph(text, row, col)
         return text
 
     def get_alignment(self, row, col):
+        """Obtiene la alineación de texto para una celda.
+
+        Args:
+            row (int): Índice de la fila.
+            col (int): Índice de la columna.
+
+        Returns:
+            int: Código de alineación.
+        """
         align_map = {"LEFT": 0, "CENTER": 1, "RIGHT": 2, "JUSTIFY": 4}
         return align_map.get(self.sample["table"]["align"][row][col], 0)
 
     def create_cell_styles(self):
+        """Crea estilos para las celdas de la tabla.
+
+        Returns:
+            list: Lista de estilos de celdas.
+        """
         table_styles = self.sample["table"]
         styles = []
 
@@ -107,10 +191,24 @@ class ReportBuilder:
         return styles
 
     def apply_cell_styles(self, table):
+        """Aplica estilos a las celdas de la tabla.
+
+        Args:
+            table (Table): Tabla a la que se aplicarán los estilos.
+        """
         styles = self.create_cell_styles()
         table.setStyle(TableStyle(styles))
 
     def create_table_style(self, outer_border_style, outer_border_size):
+        """Crea estilos para la tabla principal.
+
+        Args:
+            outer_border_style: Estilo del borde exterior.
+            outer_border_size (float): Grosor del borde exterior.
+
+        Returns:
+            TableStyle: Estilos de la tabla.
+        """
         spans = self.sample["spans"]["values"]
         styles = [
             (
@@ -126,22 +224,47 @@ class ReportBuilder:
         return TableStyle(styles)
 
     def create_table_data(self):
+        """Crea los datos para la tabla.
+
+        Returns:
+            list: Datos de la tabla.
+        """
         data = [["***" for _ in range(self.cols)] for _ in range(self.rows)]
         self.populate_cell_positions(data)
         self.populate_texts_positions(data)
         return data
 
     def populate_cell_positions(self, data):
+        """Llena las posiciones de las celdas con datos.
+
+        Args:
+            data (list): Datos de la tabla.
+        """
         cell_positions = self.sample["cell_positions"]
         for key, value in cell_positions.items():
             data[value[0]][value[1]] = getattr(self, key)
 
     def populate_texts_positions(self, data):
+        """Llena las posiciones de texto en la tabla.
+
+        Args:
+            data (list): Datos de la tabla.
+        """
         texts_positions = self.sample["texts_positions"]
         for key, value in texts_positions.items():
             data[value[0]][value[1]] = self.sample["texts"][key]
 
     def create_table(self, margins, outer_border_style, outer_border_size):
+        """Crea la tabla principal del reporte con los estilos y dimensiones especificados.
+        
+        Args:
+            margins (float): Márgenes de la página en puntos.
+            outer_border_style: Estilo del borde exterior.
+            outer_border_size (float): Grosor del borde exterior.
+
+        Returns:
+            tuple: (Table, float, list) Tabla generada, altura del contenido y alturas de filas.
+        """
         page_width, page_height = self.get_page_dimensions()
         content_width, content_height = self.get_content_dimensions(
             page_width, page_height, margins
@@ -160,6 +283,11 @@ class ReportBuilder:
         return table, content_height, adjusted_row_heights
 
     def get_page_dimensions(self):
+        """Obtiene las dimensiones de la página según la orientación y tamaño.
+
+        Returns:
+            tuple: Ancho y alto de la página en puntos.
+        """
         page_orientation = self.sample["page"]["orientation"]
         paper_size = getattr(
             reportlab.lib.pagesizes, self.sample["page"]["size"].upper(), A4
@@ -171,11 +299,30 @@ class ReportBuilder:
             return portrait(paper_size)
 
     def get_content_dimensions(self, page_width, page_height, margins):
+        """Calcula las dimensiones del contenido dentro de los márgenes.
+
+        Args:
+            page_width (float): Ancho de la página.
+            page_height (float): Alto de la página.
+            margins (float): Márgenes de la página.
+
+        Returns:
+            tuple: Ancho y alto del contenido en puntos.
+        """
         content_width = page_width - 2 * margins
         content_height = page_height - 2 * margins
         return content_width, content_height
 
     def get_adjusted_dimensions(self, content_width, content_height):
+        """Ajusta las dimensiones de columnas y filas según el contenido disponible.
+
+        Args:
+            content_width (float): Ancho del contenido.
+            content_height (float): Alto del contenido.
+
+        Returns:
+            tuple: Listas de anchos de columnas y alturas de filas ajustadas.
+        """
         column_widths = self.sample["column_widths"]["values"]
         row_heights = self.sample["row_heights"]["values"]
 
@@ -190,6 +337,11 @@ class ReportBuilder:
         return adjusted_column_widths, adjusted_row_heights
 
     def generate_pdf(self, pdf_path="output.pdf"):
+        """Genera el archivo PDF final con el reporte.
+        
+        Args:
+            pdf_path (str): Ruta donde se guardará el PDF. Por defecto 'output.pdf'.
+        """
         margins = self.sample["page"]["margins"]
         outer_border_style = colors.black
         outer_border_size = self.sample["border"]["size"]
@@ -206,10 +358,28 @@ class ReportBuilder:
         doc.build(elements)
 
     def calculate_vertical_padding(self, content_height, adjusted_row_heights):
+        """Calcula el espacio vertical disponible para el contenido.
+
+        Args:
+            content_height (float): Altura del contenido.
+            adjusted_row_heights (list): Alturas ajustadas de las filas.
+
+        Returns:
+            float: Espacio vertical disponible en puntos.
+        """
         available_space = content_height - sum(adjusted_row_heights)
         return available_space / 2
 
     def create_report(self, pdf_path, margins):
+        """Crea el documento PDF con los márgenes especificados.
+
+        Args:
+            pdf_path (str): Ruta del archivo PDF.
+            margins (float): Márgenes de la página.
+
+        Returns:
+            SimpleDocTemplate: Documento PDF configurado.
+        """
         page_orientation = self.sample["page"]["orientation"]
         paper_size = getattr(
             reportlab.lib.pagesizes, self.sample["page"]["size"].upper(), A4
@@ -229,11 +399,24 @@ class ReportBuilder:
         )
 
     def wrap_text_attributes(self, attributes):
+        """Envuelve los atributos de texto en párrafos.
+
+        Args:
+            attributes (list): Lista de atributos a envolver.
+        """
         for attribute in attributes:
             row, col = self.sample["cell_positions"][attribute]
             setattr(self, attribute, self.wrap_text(getattr(self, attribute), row, col))
 
     def adjust_font_size(self, attributes):
+        """Ajusta el tamaño de la fuente para que el texto quepa en la celda.
+        
+        Reduce iterativamente el tamaño de la fuente hasta que el texto quepa
+        en el ancho máximo disponible de la celda.
+        
+        Args:
+            attributes (list): Lista de atributos cuyos tamaños de fuente se ajustarán.
+        """
         for attribute in attributes:
 
             row, col = self.sample["cell_positions"][attribute]
@@ -247,6 +430,15 @@ class ReportBuilder:
             self.sample["table"]["font_size"][row][col] = font_size
 
     def get_max_width(self, row, col):
+        """Calcula el ancho máximo disponible para una celda.
+        
+        Args:
+            row (int): Índice de la fila.
+            col (int): Índice de la columna.
+            
+        Returns:
+            float: Ancho máximo disponible en puntos.
+        """
         max_width = self.sample["column_widths"]["values"][col]
         for span in self.sample["spans"]["values"]:
             if span["start"] == [row, col] and span["start"][0] == span["end"][0]:
@@ -258,6 +450,15 @@ class ReportBuilder:
         return max_width
 
     def get_text_width(self, text, font_size):
+        """Estima el ancho de un texto con un tamaño de fuente específico.
+        
+        Args:
+            text (str): Texto a medir.
+            font_size (float): Tamaño de la fuente.
+            
+        Returns:
+            float: Ancho estimado del texto.
+        """
         # This is a simplified estimation of text width.
         # For more accurate results, use a library like PIL.
         return len(text) * font_size * self.width_font_scale

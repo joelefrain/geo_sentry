@@ -12,10 +12,6 @@ temperature_factor = "C13"
 
 [process.selected_attr]
 cell = ["D4", "E4"]
-custom_functions = [
-    "lambda row, idx=None: row['time'] == df['time'].min()",
-    "lambda row, idx=None: row['time'] == df['time'].min()"
-]
 column = ["digits", "temperature"]
 
 [location.attributes]

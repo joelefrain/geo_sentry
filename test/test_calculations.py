@@ -21,7 +21,7 @@ class TestExcelProcessor:
 
     def test_process_directory(self):
         processor = ExcelProcessor(self.toml_path)
-        processor.process_directory(
+        processor.preprocess_excel_directory(
             input_folder=self.input_folder,
             output_folder_base=self.output_folder_base,
             sensor_type="CPCV",

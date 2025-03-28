@@ -1,3 +1,6 @@
+import numpy as np
+from typing import Tuple
+
 from .config_variables import DECIMAL_CHAR
 
 
@@ -22,3 +25,24 @@ def round_decimal(value: float, decimals: int, decimal_char: str = DECIMAL_CHAR)
     rounded_value = round(value, decimals)
     formatted_value = f"{rounded_value:.{decimals}f}"
     return formatted_value.replace(".", decimal_char)
+
+def get_iqr_limits(data: list, margin_factor: float = 1.5) -> Tuple[float, float]:
+    """
+    Calculate plot limits using the Interquartile Range (IQR) method.
+
+    Parameters
+    ----------
+    data : list
+        List of numeric values.
+    margin_factor : float, optional
+        Factor to multiply IQR for margin calculation, by default 1.5.
+
+    Returns
+    -------
+    Tuple[float, float]
+        Lower and upper limits (y_min, y_max).
+    """
+    data_arr = np.asarray(data)
+    q1, q3 = np.nanquantile(data_arr, [0.25, 0.75])
+    margin = (q3 - q1) * margin_factor
+    return q1 - margin, q3 + margin

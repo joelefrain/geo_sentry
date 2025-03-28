@@ -26,7 +26,7 @@ class ExcelProcessor:
         self.config = ConfigHandler.load_config(config_name)
         self.data_transformer = DataTransformer()
 
-    def process_directory(
+    def process_excel_directory(
         self,
         input_folder: str,
         output_folder_base: str,

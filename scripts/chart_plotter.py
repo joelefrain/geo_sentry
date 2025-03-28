@@ -62,10 +62,10 @@ if __name__ == "__main__":
     theme_color_font = "white"
     logo_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\logo\logo_main.svg"
 
-    sensor_type_name = sensor_names["PCV"]
-    sensor_code = "PCV-SH23-101"
+    sensor_type_name = sensor_names["PTA"]
+    sensor_code = "PTA-SH23-101"
     
-    config = DataProcessor("pcv").config
+    config = DataProcessor("pta").config
     start_query = "2024-01-01 00:00:00"
     end_query = "2025-03-23 00:00:00"
 
@@ -79,18 +79,34 @@ if __name__ == "__main__":
     end_formatted = datetime.strptime(end_query, "%Y-%m-%d %H:%M:%S")
     end_formatted = end_formatted.strftime("%B %Y")
 
-    column = config["target"]["column"]
+    target = config["target"]["column"]
+    unit = config["target"]["unit"]
+    target_phrase = config["inline"]["es"]["target_phrase"]
+    # format_type = config["plot"]["format_type"]["format_type"]
+    # levels = config["plot"]["format_type"]["levels"]
 
-    color = config["plot"]["color"]
-    linetype = config["plot"]["linetype"]
-    lineweight = config["plot"]["lineweight"]
-    marker = config["plot"]["marker"]
+    # Upper cell configuration
+    upper_series = config["plot"]["upper_cell"]["series"]
+    upper_colors = config["plot"]["upper_cell"]["colors"]
+    upper_linetypes = config["plot"]["upper_cell"]["linetype"]
+    upper_lineweights = config["plot"]["upper_cell"]["lineweight"]
+    upper_markers = config["plot"]["upper_cell"]["marker"]
+    upper_labels = [config["names"]["es"][s] for s in upper_series]
+    upper_title_x = config["names"]["es"][config["plot"]["upper_cell"]["title_x"]]
+    upper_title_y = config["names"]["es"][config["plot"]["upper_cell"]["title_y"]]
 
-    label = config["names"]["es"][column]
-    title_x = config["names"]["es"]["time"]
+    # Lower cell configuration
+    lower_series = config["plot"]["lower_cell"]["series"]
+    lower_colors = config["plot"]["lower_cell"]["colors"]
+    lower_linetypes = config["plot"]["lower_cell"]["linetype"]
+    lower_lineweights = config["plot"]["lower_cell"]["lineweight"]
+    lower_markers = config["plot"]["lower_cell"]["marker"]
+    lower_labels = [config["names"]["es"][s] for s in lower_series]
+    lower_title_x = config["names"]["es"][config["plot"]["lower_cell"]["title_x"]]
+    lower_title_y = config["names"]["es"][config["plot"]["lower_cell"]["title_y"]]
 
     df = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PCV\DME_CHO.PCV-SH23-101.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PTA\DME_CHO.PH-SH23-101.csv"
     )
 
     # Filtrar datos según el rango de tiempo
@@ -102,19 +118,19 @@ if __name__ == "__main__":
     total_records = len(df_filtered)
     avg_diff_time_rel = df_filtered["diff_time_rel"].mean()
     avg_diff_time_rel = round_decimal(avg_diff_time_rel, 2)
-    last_value, last_time = df_filtered.iloc[-1][[column, "time"]]
-    max_value, max_time = df_filtered.loc[df_filtered[column].idxmax(), [column, "time"]]
+    last_value, last_time = df_filtered.iloc[-1][[target, "time"]]
+    max_value, max_time = df_filtered.loc[df_filtered[target].idxmax(), [target, "time"]]
 
     note_number_records = f"Se registraron {total_records} lecturas durante el periodo entre {start_formatted} y {end_formatted}."
     note_freq_monit = f"La frecuencia de registro promedio es de {avg_diff_time_rel} días durante el periodo entre {start_formatted} y {end_formatted}."
-    note_max_record = f"El valor máximo registrado fue {round_decimal(max_value, 2)} en el día {max_time.strftime('%d-%m-%Y')}."
-    note_last_record = f"El último valor registrado fue {round_decimal(last_value, 2)} en el día {last_time.strftime('%d-%m-%Y')}."
+    note_max_record = f"El valor máximo registrado de {target_phrase} fue {round_decimal(max_value, 2)} {unit} el {max_time.strftime('%d-%m-%Y')}."
+    note_last_record = f"El último valor registrado de {target_phrase} fue {round_decimal(last_value, 2)} {unit} el {last_time.strftime('%d-%m-%Y')}."
     
     notes = [note_number_records, note_freq_monit, note_max_record, note_last_record]
     sections = [
         {'title': 'Ubicación:', 'content': ['Talud izquierdo'], 'format_type': 'paragraph'},
         {'title': 'Material:', 'content': ['Desmonte de mina'], 'format_type': 'paragraph'},
-        {'title': 'Notas:', 'content': notes, 'format_type': 'alphabet'},
+        {'title': 'Notas:', 'content': notes, 'format_type': 'numbered'},
         
     ]
 
@@ -130,27 +146,43 @@ if __name__ == "__main__":
     upper_data = [
         {
             "x": df["time"].tolist(),
-            "y": df[column].tolist(),
-            "color": color,
-            "linetype": linetype,
-            "lineweight": lineweight,
-            "marker": marker,
+            "y": df[s].tolist(),
+            "color": c,
+            "linetype": lt,
+            "lineweight": lw,
+            "marker": m,
             "secondary_y": False,
-            "label": label,
-        },
+            "label": l,
+        }
+        for s, c, lt, lw, m, l in zip(
+            upper_series,
+            upper_colors,
+            upper_linetypes,
+            upper_lineweights,
+            upper_markers,
+            upper_labels,
+        )
     ]
 
     lower_data = [
         {
             "x": df_filtered["time"].tolist(),
-            "y": df_filtered[column].tolist(),
-            "color": color,
-            "linetype": linetype,
-            "lineweight": lineweight,
-            "marker": marker,
+            "y": df_filtered[s].tolist(),
+            "color": c,
+            "linetype": lt,
+            "lineweight": lw,
+            "marker": m,
             "secondary_y": False,
-            "label": label,
-        },
+            "label": l,
+        }
+        for s, c, lt, lw, m, l in zip(
+            lower_series,
+            lower_colors,
+            lower_linetypes,
+            lower_lineweights,
+            lower_markers,
+            lower_labels,
+        )
     ]
 
     map_plotter_args = {
@@ -190,21 +222,24 @@ if __name__ == "__main__":
     upper_plotter_args = {
         "data": upper_data,
         "size": (7.5, 2.8),
-        "title_x": "",
-        "title_y": label,
+        "title_x": upper_title_x,
+        "title_y": upper_title_y,
         "title_chart": upper_title,
         "show_legend": True,
+        # "ylim": [0, 1],
     }
 
     lower_plotter_args = {
         "data": lower_data,
         "size": (7.5, 2.8),
-        "title_x": title_x,
-        "title_y": label,
+        "title_x": lower_title_x,
+        "title_y": lower_title_y,
         "title_chart": lower_title,
+        "show_legend": True,
+        # "ylim": [0, 1],
     }
 
-    map_plotter = PlotBuilder()
+    map_plotter = PlotBuilder(style_file="default")
     map_plotter.plot_series(**map_plotter_args)
     map_plotter.add_arrow(
         data=map_plotter_args["data"],
@@ -242,7 +277,7 @@ if __name__ == "__main__":
     map_draw = grid.build(color_border="white")
 
     sample = "chart_landscape_a4_type_01"
-    logo_cell = load_svg(logo_path, 0.10)
+    logo_cell = load_svg(logo_path, 0.08)
 
     num_item = f"{appendix_num}.200"
     pdf_generator = ReportBuilder(
@@ -264,4 +299,4 @@ if __name__ == "__main__":
         approved_by=approved_by,
         doc_title=doc_title,
     )
-    pdf_generator.generate_pdf(pdf_path="PCV_PRUEBA.pdf")
+    pdf_generator.generate_pdf(pdf_path="PTA.pdf")
