@@ -465,7 +465,7 @@ class PlotBuilder:
             linewidth=series.get("linewidth", 1),
             marker=series.get("marker", "o"),
             label=series.get("label", None),
-            **kwargs,
+            markersize=series.get("markersize", 5),
         )
 
     def _finalize_plot(

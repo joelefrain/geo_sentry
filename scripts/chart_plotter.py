@@ -21,6 +21,13 @@ from libs.utils.df_helpers import read_df_on_time_from_csv
 logger = get_logger("scripts.chart_plotter")
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
+# Define rounding functions
+def round_lower(value):
+    return int(value // 1)
+
+def round_upper(value):
+    return int(-(-value // 1))
+
 if __name__ == "__main__":
     client_keys = {
         "names": ["Shahuindo SAC", "Shahuindo"],
@@ -194,8 +201,11 @@ if __name__ == "__main__":
     ]
 
     # Calculate ylim for upper and lower plots using get_iqr_limits
-    upper_ylim = get_iqr_limits(df[upper_series[0]])
-    lower_ylim = get_iqr_limits(df_filtered[lower_series[0]])
+    margin_factor = 1
+    upper_ylim = get_iqr_limits(pd.concat([df[s] for s in upper_series]), margin_factor=0.15)
+    upper_ylim = (round_lower(upper_ylim[0]), round_upper(upper_ylim[1]))
+    lower_ylim = get_iqr_limits(pd.concat([df_filtered[s] for s in lower_series]), margin_factor=1)
+    lower_ylim = (round_lower(lower_ylim[0]), round_upper(lower_ylim[1]))
 
     map_plotter_args = {
         "data": [
@@ -238,7 +248,7 @@ if __name__ == "__main__":
         "title_y": upper_title_y,
         "title_chart": upper_title,
         "show_legend": True,
-        "ylim": upper_ylim,  # Set ylim for upper plot
+        "ylim": upper_ylim,
     }
 
     lower_plotter_args = {
@@ -248,7 +258,7 @@ if __name__ == "__main__":
         "title_y": lower_title_y,
         "title_chart": lower_title,
         "show_legend": True,
-        "ylim": lower_ylim,  # Set ylim for lower plot
+        "ylim": lower_ylim,
     }
 
     map_plotter = PlotBuilder(style_file="default")

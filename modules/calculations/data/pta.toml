@@ -52,5 +52,5 @@ title_y = "water_height"
 color = ["skyblue"]
 linestyle = ["-"]
 linewidth = [1.5]
-marker = ["o"]
+marker = ["s"]
 markersize = [2.5]
