@@ -25,7 +25,7 @@ class PlotConfig:
 
         # Enable locale settings for number formatting
         plt.rcParams["axes.formatter.use_locale"] = True
-        locale.setlocale(locale.LC_ALL, "es_ES.UTF-8")
+        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
         # Configure figure appearance
         plt.rcParams["figure.constrained_layout.use"] = True
@@ -44,7 +44,7 @@ class PlotConfig:
         plt.rcParams["axes.edgecolor"] = "black"
         plt.rcParams["axes.grid"] = True
         plt.rcParams["axes.xmargin"] = 0
-        plt.rcParams["axes.ymargin"] = 0
+        plt.rcParams["axes.ymargin"] = 0.20
         plt.rcParams["axes.spines.bottom"] = True
         plt.rcParams["axes.spines.left"] = True
         plt.rcParams["axes.spines.right"] = True
@@ -71,7 +71,7 @@ class PlotConfig:
         plt.rcParams["legend.fontsize"] = 8
         plt.rcParams["legend.facecolor"] = "white"
         plt.rcParams["legend.framealpha"] = 0.15
-        plt.rcParams["legend.edgecolor"] = "None"
+        plt.rcParams["legend.edgecolor"] = "black"
         plt.rcParams["legend.fancybox"] = False
 
         # Configure grid

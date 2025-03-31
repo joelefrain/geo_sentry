@@ -1,6 +1,9 @@
 import os
 import sys
 import locale
+import random
+import numpy as np
+from matplotlib import pyplot as plt
 
 # Add 'libs' path to sys.path
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
@@ -10,23 +13,263 @@ import pandas as pd
 from datetime import datetime
 from reportlab.lib.styles import getSampleStyleSheet
 
-from modules.calculations.data_processor import DataProcessor
+from libs.utils.config_loader import load_toml
 from libs.utils.logger_config import get_logger, log_execution_time
 from modules.reporter.plot_builder import PlotBuilder, PlotMerger
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.note_handler import NotesHandler
-from libs.utils.calculations import round_decimal, get_iqr_limits
+from libs.utils.calculations import round_decimal, get_iqr_limits, round_lower, round_upper
 from libs.utils.df_helpers import read_df_on_time_from_csv
 
 logger = get_logger("scripts.chart_plotter")
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
-# Define rounding functions
-def round_lower(value):
-    return int(value // 1)
+def generate_random_color():
+    """Generate a random hex color."""
+    return '#{:06x}'.format(random.randint(0, 0xFFFFFF))
 
-def round_upper(value):
-    return int(-(-value // 1))
+def get_palette_colors(n_colors, palette_name='viridis'):
+    """Generate n colors from a matplotlib colormap."""
+    cmap = plt.colormaps[palette_name]
+    colors = [f'#{int(x[0]*255):02x}{int(x[1]*255):02x}{int(x[2]*255):02x}' 
+              for x in cmap(np.linspace(0, 1, n_colors))]
+    return colors
+
+# Define rounding functions
+
+def create_plot_data(df, df_name, cell_config, plot_series, plot_colors, plot_linestyles, 
+                    plot_linewidths, plot_markers, plot_markersizes, to_combine, config, df_colors):
+    """Create plot data dictionary for a single dataframe.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing the data to plot
+    df_name : str
+        Name of the dataframe
+    cell_config : dict
+        Configuration for the cell
+    plot_series : list
+        List of series to plot
+    plot_colors : list
+        List of colors for each series
+    plot_linestyles : list
+        List of line styles for each series
+    plot_linewidths : list
+        List of line widths for each series
+    plot_markers : list
+        List of markers for each series
+    plot_markersizes : list
+        List of marker sizes for each series
+    to_combine : bool
+        Whether plots are being combined
+    config : dict
+        Main configuration dictionary
+    df_colors : dict
+        Dictionary mapping df_names to colors
+        
+    Returns
+    -------
+    list
+        List of dictionaries containing plot data
+    """
+    return [
+        {
+            "x": df[cell_config["title_x"]].tolist(),
+            "y": df[s].tolist(),
+            "color": df_colors[df_name] if (to_combine and s == cell_config.get("common_title")) else c,
+            "linestyle": lt,
+            "linewidth": lw,
+            "marker": m,
+            "markersize": ms,
+            "secondary_y": False,
+            "label": df_name if (to_combine and s == cell_config.get("common_title")) 
+                    else config["names"]["es"][s],
+        }
+        for s, c, lt, lw, m, ms in zip(
+            plot_series, plot_colors, plot_linestyles, plot_linewidths,
+            plot_markers, plot_markersizes
+        )
+    ]
+
+def process_dataframes(dfs, df_names, config, start_query, end_query):
+    """Process dataframes and generate charts and legends.
+    
+    Parameters
+    ----------
+    dfs : list
+        List of dataframes to process
+    df_names : list
+        List of dataframe names
+    config : dict
+        Configuration dictionary from TOML file
+    start_query : str
+        Start date for filtering
+    end_query : str
+        End date for filtering
+        
+    Returns
+    -------
+    dict
+        Dictionary containing 'charts' and 'legends' lists
+    """
+    # Generate colors from palette for each DataFrame
+    palette_colors = get_palette_colors(len(df_names), 'viridis')
+    df_colors = dict(zip(df_names, palette_colors))
+    
+    results = {
+        'charts': [],
+        'legends': []
+    }
+
+    # Filter dataframes based on plot query type
+    for plot_key, plot_config in config["plots"].items():
+        if plot_config["to_combine"]:
+            cells_draw = {}
+            for cell_key, cell_config in plot_config["cells"].items():
+                plot_data = []
+                for df_idx, (df_data, df_name) in enumerate(zip(dfs, df_names)):
+                    # Apply query filter per cell
+                    if cell_config.get("query_type") == "all":
+                        df_filtered = df_data.copy()
+                    else:  # query_type == "query"
+                        mask = (df_data["time"] >= pd.to_datetime(start_query)) & (
+                            df_data["time"] <= pd.to_datetime(end_query)
+                        )
+                        df_filtered = df_data[mask]
+                    
+                    plot_data.extend(create_plot_data(
+                        df_filtered, df_name, cell_config,
+                        cell_config["serie"], cell_config["color"],
+                        cell_config["linestyle"], cell_config["linewidth"],
+                        cell_config["marker"], cell_config["markersize"],
+                        plot_config["to_combine"], config, df_colors
+                    ))
+
+                plotter = PlotBuilder()
+                plotter_args = {
+                    "data": plot_data,
+                    "size": tuple(cell_config["size"]),
+                    "title_x": config["names"]["es"][cell_config["title_x"]],
+                    "title_y": config["names"]["es"][cell_config["title_y"]],
+                    "title_chart": plot_config["title_chart"],
+                    "show_legend": cell_config["show_legend"],
+                }
+                plotter.plot_series(**plotter_args)
+                cells_draw[tuple(cell_config["position"])] = plotter.get_drawing()
+                
+                if cell_config["show_legend"]:
+                    results['legends'].append(plotter.get_legend(4, 2))
+                    
+                plotter.close()
+
+            grid = PlotMerger(fig_size=tuple(plot_config["fig_size"]))
+            grid.create_grid(*plot_config["grid_size"])
+
+            for position, draw in cells_draw.items():
+                grid.add_object(draw, position)
+
+            results['charts'].append({
+                'key': plot_key,
+                'draw': grid.build(color_border="white"),
+                'title': plot_config["title_chart"],
+                'combined': True
+            })
+
+        else:
+            for df_idx, (df_data, df_name) in enumerate(zip(dfs, df_names)):
+                cells_draw = {}
+                for cell_key, cell_config in plot_config["cells"].items():
+                    # Apply query filter per cell
+                    if cell_config.get("query_type") == "all":
+                        df_filtered = df_data.copy()
+                    else:  # query_type == "query"
+                        mask = (df_data["time"] >= pd.to_datetime(start_query)) & (
+                            df_data["time"] <= pd.to_datetime(end_query)
+                        )
+                        df_filtered = df_data[mask]
+                    
+                    plot_data = create_plot_data(
+                        df_filtered, df_name, cell_config,
+                        cell_config["serie"], cell_config["color"],
+                        cell_config["linestyle"], cell_config["linewidth"],
+                        cell_config["marker"], cell_config["markersize"],
+                        plot_config["to_combine"], config, df_colors
+                    )
+                    
+                    plotter = PlotBuilder()
+                    plotter_args = {
+                        "data": plot_data,
+                        "size": tuple(cell_config["size"]),
+                        "title_x": config["names"]["es"][cell_config["title_x"]],
+                        "title_y": config["names"]["es"][cell_config["title_y"]],
+                        "title_chart": f"{plot_config['title_chart']} - {df_name}",
+                        "show_legend": cell_config["show_legend"],
+                    }
+                    plotter.plot_series(**plotter_args)
+                    cells_draw[tuple(cell_config["position"])] = plotter.get_drawing()
+                    
+                    if cell_config["show_legend"]:
+                        results['legends'].append(plotter.get_legend(4, 2))
+                        
+                    plotter.close()
+
+                if cells_draw:
+                    grid = PlotMerger(fig_size=tuple(plot_config["fig_size"]))
+                    grid.create_grid(*plot_config["grid_size"])
+
+                    for position, draw in cells_draw.items():
+                        grid.add_object(draw, position)
+
+                    results['charts'].append({
+                        'key': plot_key,
+                        'draw': grid.build(color_border="white"),
+                        'title': f"{plot_config['title_chart']} - {df_name}",
+                        'combined': False,
+                        'df_name': df_name
+                    })
+
+    return results
+
+def generate_pdfs(charts_and_legends, report_params):
+    """Generate PDFs for each chart with its corresponding legend.
+    
+    Parameters
+    ----------
+    charts_and_legends : dict
+        Dictionary containing 'charts' and 'legends' lists
+    report_params : dict
+        Dictionary containing parameters for the report
+    """
+    item = 200
+    
+    for chart in charts_and_legends['charts']:
+        appendix_item = f"{report_params['appendix_num']}.{item}"
+        
+        pdf_generator = ReportBuilder(
+            sample=report_params['sample'],
+            theme_color=report_params['theme_color'],
+            theme_color_font=report_params['theme_color_font'],
+            logo_cell=report_params['logo_cell'],
+            upper_cell=report_params['note_paragraph'],
+            lower_cell=report_params['map_draw'],
+            chart_cell=chart['draw'],
+            chart_title=chart['title'],
+            num_item=appendix_item,
+            project_code=report_params['engineer_code'],
+            company_name=report_params['company_name'],
+            project_name=report_params['engineer_name'],
+            date=report_params['date_chart'],
+            revision=report_params['revision'],
+            elaborated_by=report_params['elaborated_by'],
+            approved_by=report_params['approved_by'],
+            doc_title=report_params['doc_title'],
+        )
+        
+        filename = (f"{report_params['appendix_num']}.{item}_{chart['key']}"
+                   f"{'_' + chart['df_name'] if not chart['combined'] else ''}.pdf")
+        pdf_generator.generate_pdf(pdf_path=filename)
+        item += 1
 
 if __name__ == "__main__":
     client_keys = {
@@ -72,7 +315,10 @@ if __name__ == "__main__":
     sensor_type_name = sensor_names["PTA"]
     sensor_code = "PTA-SH23-101"
     
-    config = DataProcessor("pta").config
+    config = load_toml(
+        data_dir=r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\config\Shahuindo_SAC\Shahuindo\charts",
+        toml_name="pta",
+    )
     start_query = "2024-01-01 00:00:00"
     end_query = "2025-03-23 00:00:00"
 
@@ -89,42 +335,26 @@ if __name__ == "__main__":
     target = config["target"]["column"]
     unit = config["target"]["unit"]
     target_phrase = config["inline"]["es"]["target_phrase"]
-    # format_type = config["plot"]["format_type"]["format_type"]
-    # levels = config["plot"]["format_type"]["levels"]
-
-    # Upper cell configuration
-    upper_series = config["plot"]["upper_cell"]["serie"]
-    upper_colors = config["plot"]["upper_cell"]["color"]
-    upper_linestyles = config["plot"]["upper_cell"]["linestyle"]
-    upper_linewidths = config["plot"]["upper_cell"]["linewidth"]
-    upper_markers = config["plot"]["upper_cell"]["marker"]
-    upper_markersizes = config["plot"]["upper_cell"]["markersize"]
-    upper_labels = [config["names"]["es"][s] for s in upper_series]
-    upper_serie_x = config["plot"]["upper_cell"]["title_x"]
-    upper_title_x = config["names"]["es"][config["plot"]["upper_cell"]["title_x"]]
-    upper_title_y = config["names"]["es"][config["plot"]["upper_cell"]["title_y"]]
-
-    # Lower cell configuration
-    lower_series = config["plot"]["lower_cell"]["serie"]
-    lower_colors = config["plot"]["lower_cell"]["color"]
-    lower_linestyles = config["plot"]["lower_cell"]["linestyle"]
-    lower_linewidths = config["plot"]["lower_cell"]["linewidth"]
-    lower_markers = config["plot"]["lower_cell"]["marker"]
-    lower_markersizes = config["plot"]["lower_cell"]["markersize"]
-    lower_labels = [config["names"]["es"][s] for s in lower_series]
-    lower_serie_x = config["plot"]["lower_cell"]["title_x"]
-    lower_title_x = config["names"]["es"][config["plot"]["lower_cell"]["title_x"]]
-    lower_title_y = config["names"]["es"][config["plot"]["lower_cell"]["title_y"]]
 
     df = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PTA\DME_CHO.PH-SH23-101.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PTA\DME_CHO.PH-SH23-103A.csv"
     )
-
+    df_name = "PH-SH23-103A"
+    df_2 = read_df_on_time_from_csv(
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PTA\DME_CHO.PH-SH23-103B.csv"
+    )
+    df2_name = "PH-SH23-103B"
+    
     # Filtrar datos según el rango de tiempo
     mask = (df["time"] >= pd.to_datetime(start_query)) & (
         df["time"] <= pd.to_datetime(end_query)
     )
     df_filtered = df[mask]
+
+    mask_2 = (df_2["time"] >= pd.to_datetime(start_query)) & (
+        df_2["time"] <= pd.to_datetime(end_query)
+    )
+    df2_filtered = df_2[mask_2]
 
     total_records = len(df_filtered)
     avg_diff_time_rel = df_filtered["diff_time_rel"].mean()
@@ -150,62 +380,6 @@ if __name__ == "__main__":
 
     # Donde antes se usaba create_notes directamente, ahora usar:
     note_paragraph = notes_handler.create_notes(sections)
-
-    upper_title = f"Registro de {sensor_type_name.lower()} {sensor_code}"
-    lower_title = f"{upper_title} desde {start_formatted} hasta {end_formatted}"
-
-    upper_data = [
-        {
-            "x": df[upper_serie_x].tolist(),
-            "y": df[s].tolist(),
-            "color": c,
-            "linestyle": lt,
-            "linewidth": lw,
-            "marker": m,
-            "markersize": ms,
-            "secondary_y": False,
-            "label": l,
-        }
-        for s, c, lt, lw, m, ms, l in zip(
-            upper_series,
-            upper_colors,
-            upper_linestyles,
-            upper_linewidths,
-            upper_markers,
-            upper_markersizes,
-            upper_labels,
-        )
-    ]
-
-    lower_data = [
-        {
-            "x": df_filtered[lower_serie_x].tolist(),
-            "y": df_filtered[s].tolist(),
-            "color": c,
-            "linestyle": lt,
-            "linewidth": lw,
-            "marker": m,
-            "markersize": ms,
-            "secondary_y": False,
-            "label": l,
-        }
-        for s, c, lt, lw, m, ms, l in zip(
-            lower_series,
-            lower_colors,
-            lower_linestyles,
-            lower_linewidths,
-            lower_markers,
-            lower_markersizes,
-            lower_labels,
-        )
-    ]
-
-    # Calculate ylim for upper and lower plots using get_iqr_limits
-    margin_factor = 1
-    upper_ylim = get_iqr_limits(pd.concat([df[s] for s in upper_series]), margin_factor=0.15)
-    upper_ylim = (round_lower(upper_ylim[0]), round_upper(upper_ylim[1]))
-    lower_ylim = get_iqr_limits(pd.concat([df_filtered[s] for s in lower_series]), margin_factor=1)
-    lower_ylim = (round_lower(lower_ylim[0]), round_upper(lower_ylim[1]))
 
     map_plotter_args = {
         "data": [
@@ -241,26 +415,6 @@ if __name__ == "__main__":
         },
     }
 
-    upper_plotter_args = {
-        "data": upper_data,
-        "size": (7.5, 2.8),
-        "title_x": upper_title_x,
-        "title_y": upper_title_y,
-        "title_chart": upper_title,
-        "show_legend": True,
-        "ylim": upper_ylim,
-    }
-
-    lower_plotter_args = {
-        "data": lower_data,
-        "size": (7.5, 2.8),
-        "title_x": lower_title_x,
-        "title_y": lower_title_y,
-        "title_chart": lower_title,
-        "show_legend": True,
-        "ylim": lower_ylim,
-    }
-
     map_plotter = PlotBuilder(style_file="default")
     map_plotter.plot_series(**map_plotter_args)
     map_plotter.add_arrow(
@@ -272,53 +426,39 @@ if __name__ == "__main__":
     )
     map_draw = map_plotter.get_drawing()
     map_plotter.close()
-
-    upper_plotter = PlotBuilder()
-    upper_plotter.plot_series(**upper_plotter_args)
-    upper_draw = upper_plotter.get_drawing()
-    upper_plotter.close()
-
-    lower_plotter = PlotBuilder()
-    lower_plotter.plot_series(**lower_plotter_args)
-    lower_draw = lower_plotter.get_drawing()
-    lower_plotter.close()
-
-    grid = PlotMerger(fig_size=(7.5, 6))
-    grid.create_grid(2, 1)
-
-    # Añadir objetos con sus posiciones
-    grid.add_object(upper_draw, (0, 0))
-    grid.add_object(lower_draw, (1, 0))
-
-    # Construir y obtener el objeto svg2rlg final
-    chart_draw = grid.build(color_border="white")
-
-    grid = PlotMerger(fig_size=(2, 2))
-    grid.create_grid(1, 1)
-    grid.add_object(map_draw, (0, 0))
-    map_draw = grid.build(color_border="white")
+    
+    map_draw = PlotMerger.scale_figure(map_draw, size=(1.5, 1.5))
 
     sample = "chart_landscape_a4_type_01"
     logo_cell = load_svg(logo_path, 0.08)
 
-    num_item = f"{appendix_num}.200"
-    pdf_generator = ReportBuilder(
-        sample=sample,
-        theme_color=theme_color,
-        theme_color_font=theme_color_font,
-        logo_cell=logo_cell,
-        upper_cell=note_paragraph,
-        lower_cell=map_draw,
-        chart_cell=chart_draw,
-        chart_title="PIEZOMETRO DE PRUEBA",
-        num_item=num_item,
-        project_code=engineer_code,
-        company_name=company_name,
-        project_name=engineer_name,
-        date=date_chart,
-        revision=revision,
-        elaborated_by=elaborated_by,
-        approved_by=approved_by,
-        doc_title=doc_title,
+    # Create report parameters dictionary
+    report_params = {
+        'sample': sample,
+        'theme_color': theme_color,
+        'theme_color_font': theme_color_font,
+        'logo_cell': logo_cell,
+        'note_paragraph': note_paragraph,
+        'map_draw': map_draw,
+        'engineer_code': engineer_code,
+        'company_name': company_name,
+        'engineer_name': engineer_name,
+        'date_chart': date_chart,
+        'revision': revision,
+        'elaborated_by': elaborated_by,
+        'approved_by': approved_by,
+        'doc_title': doc_title,
+        'appendix_num': appendix_num
+    }
+    
+    # Process dataframes and generate charts and legends
+    charts_and_legends = process_dataframes(
+        dfs=[df, df_2],
+        df_names=[df_name, df2_name],
+        config=config,
+        start_query=start_query,
+        end_query=end_query
     )
-    pdf_generator.generate_pdf(pdf_path="PTA.pdf")
+    
+    # Generate PDFs with charts and legends
+    generate_pdfs(charts_and_legends, report_params)

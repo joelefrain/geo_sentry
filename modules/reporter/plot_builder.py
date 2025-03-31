@@ -530,13 +530,57 @@ class PlotBuilder:
             self.ax1.invert_yaxis()
 
     def _handle_legend(self) -> None:
-        """Handle legend visibility based on conditions."""
+        """Handle legend visibility based on conditions and remove duplicates."""
         if not self.show_legend:
             return
 
+        # Get handles and labels from both axes if they exist
         handles, labels = self.ax1.get_legend_handles_labels()
+        if self.ax2 is not None:
+            handles2, labels2 = self.ax2.get_legend_handles_labels()
+            handles.extend(handles2)
+            labels.extend(labels2)
+
         if handles and labels:
-            self.ax1.legend()
+            # Remove duplicates while preserving order
+            unique_pairs = self._get_unique_legend_pairs(handles, labels)
+            if unique_pairs:
+                unique_handles, unique_labels = zip(*unique_pairs)
+                if self.ax2 is not None:
+                    # If we have two axes, place legend between them
+                    self.ax1.legend(
+                        unique_handles,
+                        unique_labels,
+                        loc='center right',
+                        bbox_to_anchor=(1.15, 0.5)
+                    )
+                else:
+                    self.ax1.legend(unique_handles, unique_labels)
+
+    def _get_unique_legend_pairs(self, handles, labels):
+        """Get unique handle-label pairs while preserving order of appearance.
+        
+        Parameters
+        ----------
+        handles : list
+            List of legend handles
+        labels : list
+            List of legend labels
+            
+        Returns
+        -------
+        list
+            List of unique (handle, label) pairs
+        """
+        seen = set()
+        unique_pairs = []
+        
+        for handle, label in zip(handles, labels):
+            if label not in seen:
+                seen.add(label)
+                unique_pairs.append((handle, label))
+                
+        return unique_pairs
 
     def _add_single_color_band(
         self, range_band: list, color_band: list, name_band: list, index: int, **kwargs
@@ -968,3 +1012,32 @@ class PlotMerger:
         width = cell_width * col_span + spacing * (col_span - 1)
         height = cell_height * row_span + spacing * (row_span - 1)
         return Rect(x, y, width, height, strokeColor=color, fillColor=None)
+
+    @staticmethod
+    def scale_figure(figure: Drawing, size: Tuple[int, int] = (2, 2)) -> Drawing:
+        """Scale a figure to the specified size using PlotMerger.
+
+        A convenience method that creates a single-cell grid and places the figure in it,
+        effectively scaling the figure to the desired size.
+
+        Parameters
+        ----------
+        figure : Drawing
+            The figure to scale
+        size : tuple[int, int], optional
+            Target size in inches (width, height), default (2, 2)
+
+        Returns
+        -------
+        Drawing
+            The scaled figure
+
+        Examples
+        --------
+        >>> original_fig = some_drawing_object
+        >>> scaled_fig = PlotMerger.scale_figure(original_fig, size=(2, 2))
+        """
+        grid = PlotMerger(fig_size=size)
+        grid.create_grid(1, 1)
+        grid.add_object(figure, (0, 0))
+        return grid.build(color_border="white")

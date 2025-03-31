@@ -12,6 +12,6 @@ depth = "E12"
 measure = "lambda row: -row['measure']"
 
 [location.attributes]
-north = "F16"
 east = "E16"
+north = "F16"
 elevation = "H16"

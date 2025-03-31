@@ -11,7 +11,6 @@ piezometric_level = "lambda df, base: np.where(df['water_height'] < 0, base['bot
 [rel]
 diff_time_rel = "lambda df: df['time'].diff().dt.total_seconds() / (24 * 3600)"
 
-
 [names.es]
 diff_time_abs = "Duración de monitoreo (días)"
 diff_time_rel = "Frecuencia de monitoreo (días)"
@@ -23,34 +22,3 @@ depth = "Profundidad del pozo (m)"
 stick_up = "Stick-up (m)"
 bottom_well_elevation = "Cota de fondo del pozo (m s. n. m.)"
 terrain_level = "Nivel del terreno (m s. n. m.)"
-title_elevation = "Elevación (m s. n. m.)"
-
-[target]
-column = "water_height"
-unit = "m"
-
-[inline.es]
-target_phrase = "columna de agua"
-
-[plot.format_type]
-levels = 2
-
-[plot.upper_cell]
-serie = ["terrain_level", "piezometric_level", "bottom_well_elevation"]
-title_x = "time"
-title_y = "title_elevation"
-color = ["brown", "skyblue", "green"]
-linestyle = ["-", "-", "-"]
-linewidth = [1.5, 1.5, 1.5]
-marker = ["", "s", ""]
-markersize = [0, 2.5, 0]
-
-[plot.lower_cell]
-serie = ["water_height"]
-title_x = "time"
-title_y = "water_height"
-color = ["skyblue"]
-linestyle = ["-"]
-linewidth = [1.5]
-marker = ["s"]
-markersize = [2.5]

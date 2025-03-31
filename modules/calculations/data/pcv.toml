@@ -32,10 +32,3 @@ unit = "kPa"
 
 [inline.es]
 target_phrase = "carga hidráulica"
-
-[plot]
-serie = "hydraulic_load_kpa"
-color = "skyblue"
-linetype = "-"
-lineweight = 1.5
-marker = "s"

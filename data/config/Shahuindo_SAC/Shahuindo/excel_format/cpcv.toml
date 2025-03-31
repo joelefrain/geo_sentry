@@ -16,6 +16,6 @@ column = ["digits", "temperature"]
 [process.custom_functions]
 
 [location.attributes]
-north = "F14"
 east = "F15"
+north = "F14"
 elevation = "F18"

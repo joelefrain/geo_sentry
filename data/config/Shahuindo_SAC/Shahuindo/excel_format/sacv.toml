@@ -15,6 +15,6 @@ cell = ["D4", "E4"]
 column = ["digits", "temperature"]
 
 [location.attributes]
-north = "F6"
 east = "F7"
+north = "F6"
 elevation = "F9"

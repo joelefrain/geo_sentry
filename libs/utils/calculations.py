@@ -46,3 +46,9 @@ def get_iqr_limits(data: list, margin_factor: float = 1.5) -> Tuple[float, float
     q1, q3 = np.nanquantile(data_arr, [0.25, 0.75])
     margin = (q3 - q1) * margin_factor
     return q1 - margin, q3 + margin
+
+def round_lower(value):
+    return int(value // 1)
+
+def round_upper(value):
+    return int(-(-value // 1))
