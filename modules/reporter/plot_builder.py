@@ -841,11 +841,15 @@ class PlotMerger:
         Cell spans for each object
     grid_dims : tuple[int, int], optional
         Grid dimensions (rows, cols)
+    row_ratios : list[float], optional
+        Relative heights of rows
+    col_ratios : list[float], optional
+        Relative widths of columns
 
     Examples
     --------
     >>> merger = PlotMerger(fig_size=(10, 8))
-    >>> merger.create_grid(2, 2)
+    >>> merger.create_grid(2, 2, row_ratios=[0.6, 0.4], col_ratios=[0.5, 0.5])
     >>> merger.add_object(plot1, (0, 0))
     >>> merger.add_object(plot2, (0, 1))
     >>> drawing = merger.build()
@@ -864,6 +868,8 @@ class PlotMerger:
         self.positions: List[Tuple[int, int]] = []
         self.spans: List[Tuple[int, int]] = []
         self.grid_dims: Tuple[int, int] = None
+        self.col_ratios: List[float] = None
+        self.row_ratios: List[float] = None
 
     def _initialize_dimensions(self, fig_size: Tuple[int, int]) -> None:
         """Convert inches to points and store dimensions."""
@@ -879,9 +885,47 @@ class PlotMerger:
         self.positions.append(position)
         self.spans.append(span)
 
-    def create_grid(self, rows: int, cols: int) -> "PlotMerger":
-        """Set grid dimensions and return self for method chaining."""
+    def create_grid(self, rows: int, cols: int, row_ratios: List[float] = None, col_ratios: List[float] = None) -> "PlotMerger":
+        """Set grid dimensions and optional row/column ratios.
+        
+        Parameters
+        ----------
+        rows : int
+            Number of rows in the grid
+        cols : int
+            Number of columns in the grid
+        row_ratios : List[float], optional
+            Relative heights of each row. Must sum to 1 if provided.
+        col_ratios : List[float], optional
+            Relative widths of each column. Must sum to 1 if provided.
+        
+        Returns
+        -------
+        PlotMerger
+            Self for method chaining
+        """
         self.grid_dims = (rows, cols)
+        
+        # Validate and set row ratios
+        if row_ratios is not None:
+            if len(row_ratios) != rows:
+                raise ValueError(f"row_ratios must have length {rows}")
+            if abs(sum(row_ratios) - 1.0) > 1e-6:
+                raise ValueError("row_ratios must sum to 1")
+            self.row_ratios = row_ratios
+        else:
+            self.row_ratios = [1/rows] * rows
+
+        # Validate and set column ratios
+        if col_ratios is not None:
+            if len(col_ratios) != cols:
+                raise ValueError(f"col_ratios must have length {cols}")
+            if abs(sum(col_ratios) - 1.0) > 1e-6:
+                raise ValueError("col_ratios must sum to 1")
+            self.col_ratios = col_ratios
+        else:
+            self.col_ratios = [1/cols] * cols
+
         return self
 
     def build(self, color_border: str = "white", cell_spacing: float = 10.0) -> Drawing:
@@ -903,12 +947,19 @@ class PlotMerger:
         """Check if grid dimensions are set."""
         return self.grid_dims is not None
 
-    def _get_cell_dimensions(self, spacing: float) -> Tuple[float, float]:
-        """Calculate cell width and height with spacing."""
+    def _get_cell_dimensions(self, spacing: float) -> Tuple[List[float], List[float]]:
+        """Calculate cell width and height with spacing and ratios."""
         rows, cols = self.grid_dims
-        width = (self.fig_width - (cols - 1) * spacing) / cols
-        height = (self.fig_height - (rows - 1) * spacing) / rows
-        return width, height
+        
+        # Calculate total available space after spacing
+        available_width = self.fig_width - (cols - 1) * spacing
+        available_height = self.fig_height - (rows - 1) * spacing
+        
+        # Calculate cell dimensions based on ratios
+        cell_widths = [ratio * available_width for ratio in self.col_ratios]
+        cell_heights = [ratio * available_height for ratio in self.row_ratios]
+        
+        return cell_widths, cell_heights
 
     def _iter_objects(self) -> Tuple:
         """Iterate over object data as tuples."""
@@ -918,16 +969,16 @@ class PlotMerger:
         self,
         drawing: Drawing,
         obj_data: Tuple,
-        cell_dims: Tuple[float, float],
+        cell_dims: Tuple[List[float], List[float]],
         color_border: str,
         cell_spacing: float,
     ) -> None:
         """Add a single object and its border to the drawing."""
         obj, (row, col), (row_span, col_span) = obj_data
-        cell_width, cell_height = cell_dims
+        cell_widths, cell_heights = cell_dims
 
         # Calculate object dimensions and transformations
-        span_dims = self._get_span_size(cell_dims, row_span, col_span)
+        span_dims = self._get_span_size(cell_dims, row, col, row_span, col_span)
         scale = self._get_scale_factor(span_dims, (obj.width, obj.height))
         scaled_size = (obj.width * scale, obj.height * scale)
         position = self._get_object_position(
@@ -945,11 +996,16 @@ class PlotMerger:
         drawing.add(border)
 
     def _get_span_size(
-        self, cell_dims: Tuple[float, float], row_span: int, col_span: int
+        self, cell_dims: Tuple[List[float], List[float]], row: int, col: int, row_span: int, col_span: int
     ) -> Tuple[float, float]:
         """Calculate total span width and height."""
-        cell_width, cell_height = cell_dims
-        return (cell_width * col_span, cell_height * row_span)
+        cell_widths, cell_heights = cell_dims
+        
+        # Sum the widths and heights of spanned cells
+        span_width = sum(cell_widths[col:col+col_span])
+        span_height = sum(cell_heights[self.grid_dims[0]-row-row_span:self.grid_dims[0]-row])
+        
+        return span_width, span_height
 
     def _get_scale_factor(
         self, container: Tuple[float, float], content: Tuple[float, float]
@@ -959,7 +1015,7 @@ class PlotMerger:
 
     def _get_object_position(
         self,
-        cell_dims: Tuple[float, float],
+        cell_dims: Tuple[List[float], List[float]],
         row: int,
         col: int,
         row_span: int,
@@ -968,14 +1024,18 @@ class PlotMerger:
         spacing: float,
     ) -> Tuple[float, float]:
         """Calculate centered position for the object."""
-        cell_width, cell_height = cell_dims
+        cell_widths, cell_heights = cell_dims
         span_width, span_height = span_dims
         scaled_width, scaled_height = scaled_size
 
-        x = col * (cell_width + spacing) + (span_width - scaled_width) / 2
-        y = (self.grid_dims[0] - row - row_span) * (cell_height + spacing) + (
-            span_height - scaled_height
-        ) / 2
+        # Calculate x position based on column ratios
+        x = sum(cell_widths[:col]) + col * spacing
+        x += (span_width - scaled_width) / 2
+
+        # Calculate y position based on row ratios
+        y = sum(cell_heights[:self.grid_dims[0]-row-row_span]) + (self.grid_dims[0]-row-row_span) * spacing
+        y += (span_height - scaled_height) / 2
+
         return x, y
 
     def _create_object_group(
@@ -997,7 +1057,7 @@ class PlotMerger:
 
     def _create_border(
         self,
-        cell_dims: Tuple[float, float],
+        cell_dims: Tuple[List[float], List[float]],
         row: int,
         col: int,
         row_span: int,
@@ -1006,11 +1066,11 @@ class PlotMerger:
         spacing: float,
     ) -> Rect:
         """Create a border rectangle for the cell."""
-        cell_width, cell_height = cell_dims
-        x = col * (cell_width + spacing)
-        y = (self.grid_dims[0] - row - row_span) * (cell_height + spacing)
-        width = cell_width * col_span + spacing * (col_span - 1)
-        height = cell_height * row_span + spacing * (row_span - 1)
+        cell_widths, cell_heights = cell_dims
+        x = sum(cell_widths[:col]) + col * spacing
+        y = sum(cell_heights[:self.grid_dims[0]-row-row_span]) + (self.grid_dims[0]-row-row_span) * spacing
+        width = sum(cell_widths[col:col+col_span]) + spacing * (col_span - 1)
+        height = sum(cell_heights[self.grid_dims[0]-row-row_span:self.grid_dims[0]-row]) + spacing * (row_span - 1)
         return Rect(x, y, width, height, strokeColor=color, fillColor=None)
 
     @staticmethod

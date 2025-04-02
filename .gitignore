@@ -60,4 +60,5 @@ __pycache__/
 *.txt
 *.pdf
 *.xlsx
+*.svg
 !requirements.txt
