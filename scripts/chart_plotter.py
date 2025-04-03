@@ -293,20 +293,20 @@ if __name__ == "__main__":
         "CPCV": "Celda de presión de cuerda vibrante",
     }
 
+    config = load_toml(data_dir=r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\config\Shahuindo_SAC\Shahuindo\charts", toml_name="pta")
+
+    # Remove hardcoded configurations and use those from the TOML file
     company_code = client_keys["codes"][0]
     project_code = client_keys["codes"][1]
     company_name = client_keys["names"][0]
     project_name = client_keys["names"][1]
-
     engineer_code = "1408.10.0050-0000"
     engineer_name = "Ingeniería de registro, monitoreo y análisis del pad 1, pad 2A, pad 2B-2C, DME Sur y DME Choloque"
     date_chart = "23-03-25"
     revision = "B"
     appendix_num = "4"
-
     elaborated_by = "J.A."
     approved_by = "R.L."
-
     doc_title = "@joelefrain"
     theme_color = "#006D77"
     theme_color_font = "white"
@@ -314,11 +314,7 @@ if __name__ == "__main__":
 
     sensor_type_name = sensor_names["PTA"]
     sensor_code = "PTA-SH23-101"
-    
-    config = load_toml(
-        data_dir=r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\config\Shahuindo_SAC\Shahuindo\charts",
-        toml_name="pta",
-    )
+
     start_query = "2024-01-01 00:00:00"
     end_query = "2025-03-23 00:00:00"
 
