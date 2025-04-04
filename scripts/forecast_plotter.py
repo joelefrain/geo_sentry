@@ -93,9 +93,8 @@ if __name__ == "__main__":
     base_dir = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var"
     
     # Define structures in order
-    structures = ["dd_abra", "dd_hidro", "dd_brunilda", "dd_gayco_630", "dd_gayco_580", "dd_gerencia"]
-    names = ["Depósito de desmonte Abra", "Depósito de desmonte Hidro", "Depósito de desmonte Brunilda", 
-             "Depósito de desmonte Gayco 630", "Depósito de desmonte Gayco 580", "Depósito de desmonte Gerencia"]
+    structures = ["tc_cashaucro", "dd_brunilda", "dd_gerencia"]
+    names = ["Talud carretera Cashaucro", "Depósito de desmonte Brunilda", "Depósito de desmonte Gerencia"]
     structure_dict = dict(zip(structures, names))
     
     current_item = 1  # Initialize counter for consecutive numbering

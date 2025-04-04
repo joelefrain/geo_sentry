@@ -37,63 +37,13 @@ def get_palette_colors(n_colors, palette_name='viridis'):
 
 # Define rounding functions
 
-def create_plot_data(df, df_name, cell_config, plot_series, plot_colors, plot_linestyles, 
-                    plot_linewidths, plot_markers, plot_markersizes, to_combine, config, df_colors):
-    """Create plot data dictionary for a single dataframe.
-    
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame containing the data to plot
-    df_name : str
-        Name of the dataframe
-    cell_config : dict
-        Configuration for the cell
-    plot_series : list
-        List of series to plot
-    plot_colors : list
-        List of colors for each series
-    plot_linestyles : list
-        List of line styles for each series
-    plot_linewidths : list
-        List of line widths for each series
-    plot_markers : list
-        List of markers for each series
-    plot_markersizes : list
-        List of marker sizes for each series
-    to_combine : bool
-        Whether plots are being combined
-    config : dict
-        Main configuration dictionary
-    df_colors : dict
-        Dictionary mapping df_names to colors
-        
-    Returns
-    -------
-    list
-        List of dictionaries containing plot data
-    """
-    return [
-        {
-            "x": df[cell_config["title_x"]].tolist(),
-            "y": df[s].tolist(),
-            "color": df_colors[df_name] if (to_combine and s == cell_config.get("common_title")) else c,
-            "linestyle": lt,
-            "linewidth": lw,
-            "marker": m,
-            "markersize": ms,
-            "secondary_y": False,
-            "label": df_name if (to_combine and s == cell_config.get("common_title")) 
-                    else config["names"]["es"][s],
-        }
-        for s, c, lt, lw, m, ms in zip(
-            plot_series, plot_colors, plot_linestyles, plot_linewidths,
-            plot_markers, plot_markersizes
-        )
-    ]
+# La función create_plot_data ha sido eliminada ya que su funcionalidad
+# ha sido incorporada en la clase ChartProcessor en el método _create_plot_data
 
 def process_dataframes(dfs, df_names, config, start_query, end_query):
     """Process dataframes and generate charts and legends.
+    
+    This function is now a wrapper around the ChartProcessor class.
     
     Parameters
     ----------
@@ -113,126 +63,16 @@ def process_dataframes(dfs, df_names, config, start_query, end_query):
     dict
         Dictionary containing 'charts' and 'legends' lists
     """
-    # Generate colors from palette for each DataFrame
-    palette_colors = get_palette_colors(len(df_names), 'viridis')
-    df_colors = dict(zip(df_names, palette_colors))
+    # Use the new ChartProcessor class to handle the chart generation
+    from modules.reporter.chart_processor import ChartProcessor
     
-    results = {
-        'charts': [],
-        'legends': []
-    }
-
-    # Filter dataframes based on plot query type
-    for plot_key, plot_config in config["plots"].items():
-        if plot_config["to_combine"]:
-            cells_draw = {}
-            for cell_key, cell_config in plot_config["cells"].items():
-                plot_data = []
-                for df_idx, (df_data, df_name) in enumerate(zip(dfs, df_names)):
-                    # Apply query filter per cell
-                    if cell_config.get("query_type") == "all":
-                        df_filtered = df_data.copy()
-                    else:  # query_type == "query"
-                        mask = (df_data["time"] >= pd.to_datetime(start_query)) & (
-                            df_data["time"] <= pd.to_datetime(end_query)
-                        )
-                        df_filtered = df_data[mask]
-                    
-                    plot_data.extend(create_plot_data(
-                        df_filtered, df_name, cell_config,
-                        cell_config["serie"], cell_config["color"],
-                        cell_config["linestyle"], cell_config["linewidth"],
-                        cell_config["marker"], cell_config["markersize"],
-                        plot_config["to_combine"], config, df_colors
-                    ))
-
-                plotter = PlotBuilder()
-                plotter_args = {
-                    "data": plot_data,
-                    "size": tuple(cell_config["size"]),
-                    "title_x": config["names"]["es"][cell_config["title_x"]],
-                    "title_y": config["names"]["es"][cell_config["title_y"]],
-                    "title_chart": plot_config["title_chart"],
-                    "show_legend": cell_config["show_legend"],
-                }
-                plotter.plot_series(**plotter_args)
-                cells_draw[tuple(cell_config["position"])] = plotter.get_drawing()
-                
-                if cell_config["show_legend"]:
-                    results['legends'].append(plotter.get_legend(4, 2))
-                    
-                plotter.close()
-
-            grid = PlotMerger(fig_size=tuple(plot_config["fig_size"]))
-            grid.create_grid(*plot_config["grid_size"])
-
-            for position, draw in cells_draw.items():
-                grid.add_object(draw, position)
-
-            results['charts'].append({
-                'key': plot_key,
-                'draw': grid.build(color_border="white"),
-                'title': plot_config["title_chart"],
-                'combined': True
-            })
-
-        else:
-            for df_idx, (df_data, df_name) in enumerate(zip(dfs, df_names)):
-                cells_draw = {}
-                for cell_key, cell_config in plot_config["cells"].items():
-                    # Apply query filter per cell
-                    if cell_config.get("query_type") == "all":
-                        df_filtered = df_data.copy()
-                    else:  # query_type == "query"
-                        mask = (df_data["time"] >= pd.to_datetime(start_query)) & (
-                            df_data["time"] <= pd.to_datetime(end_query)
-                        )
-                        df_filtered = df_data[mask]
-                    
-                    plot_data = create_plot_data(
-                        df_filtered, df_name, cell_config,
-                        cell_config["serie"], cell_config["color"],
-                        cell_config["linestyle"], cell_config["linewidth"],
-                        cell_config["marker"], cell_config["markersize"],
-                        plot_config["to_combine"], config, df_colors
-                    )
-                    
-                    plotter = PlotBuilder()
-                    plotter_args = {
-                        "data": plot_data,
-                        "size": tuple(cell_config["size"]),
-                        "title_x": config["names"]["es"][cell_config["title_x"]],
-                        "title_y": config["names"]["es"][cell_config["title_y"]],
-                        "title_chart": f"{plot_config['title_chart']} - {df_name}",
-                        "show_legend": cell_config["show_legend"],
-                    }
-                    plotter.plot_series(**plotter_args)
-                    cells_draw[tuple(cell_config["position"])] = plotter.get_drawing()
-                    
-                    if cell_config["show_legend"]:
-                        results['legends'].append(plotter.get_legend(4, 2))
-                        
-                    plotter.close()
-
-                if cells_draw:
-                    grid = PlotMerger(fig_size=tuple(plot_config["fig_size"]))
-                    grid.create_grid(*plot_config["grid_size"])
-
-                    for position, draw in cells_draw.items():
-                        grid.add_object(draw, position)
-
-                    results['charts'].append({
-                        'key': plot_key,
-                        'draw': grid.build(color_border="white"),
-                        'title': f"{plot_config['title_chart']} - {df_name}",
-                        'combined': False,
-                        'df_name': df_name
-                    })
-
-    return results
+    processor = ChartProcessor(config, start_query, end_query)
+    return processor.generate_charts(dfs, df_names)
 
 def generate_pdfs(charts_and_legends, report_params):
     """Generate PDFs for each chart with its corresponding legend.
+    
+    This function is now a wrapper around the PDFGenerator class.
     
     Parameters
     ----------
@@ -241,35 +81,11 @@ def generate_pdfs(charts_and_legends, report_params):
     report_params : dict
         Dictionary containing parameters for the report
     """
-    item = 200
+    # Use the new PDFGenerator class to handle PDF generation
+    from modules.reporter.chart_processor import PDFGenerator
     
-    for chart in charts_and_legends['charts']:
-        appendix_item = f"{report_params['appendix_num']}.{item}"
-        
-        pdf_generator = ReportBuilder(
-            sample=report_params['sample'],
-            theme_color=report_params['theme_color'],
-            theme_color_font=report_params['theme_color_font'],
-            logo_cell=report_params['logo_cell'],
-            upper_cell=report_params['note_paragraph'],
-            lower_cell=report_params['map_draw'],
-            chart_cell=chart['draw'],
-            chart_title=chart['title'],
-            num_item=appendix_item,
-            project_code=report_params['engineer_code'],
-            company_name=report_params['company_name'],
-            project_name=report_params['engineer_name'],
-            date=report_params['date_chart'],
-            revision=report_params['revision'],
-            elaborated_by=report_params['elaborated_by'],
-            approved_by=report_params['approved_by'],
-            doc_title=report_params['doc_title'],
-        )
-        
-        filename = (f"{report_params['appendix_num']}.{item}_{chart['key']}"
-                   f"{'_' + chart['df_name'] if not chart['combined'] else ''}.pdf")
-        pdf_generator.generate_pdf(pdf_path=filename)
-        item += 1
+    pdf_generator = PDFGenerator(report_params)
+    pdf_generator.generate_pdfs(charts_and_legends)
 
 if __name__ == "__main__":
     client_keys = {
