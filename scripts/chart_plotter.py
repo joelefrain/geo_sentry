@@ -174,6 +174,12 @@ if __name__ == "__main__":
     )
     df2_filtered = df_2[mask_2]
 
+    # Variables externas que se pasan como kwargs
+    external_vars = {
+        "location": "Talud izquierdo",
+        "material": "Desmonte de mina"
+    }
+    
     # Usar la configuración de notas desde el archivo TOML
     notes_handler = NotesHandler(config["notes"].get("style", "default"))
 
@@ -192,29 +198,76 @@ if __name__ == "__main__":
             if isinstance(item["content"], dict) and "data" in item["content"]:
                 # Contenido referenciado desde otra parte de la configuración
                 if item["content"]["data"] == "config" and "name" in item["content"]:
-                    section["content"] = [
-                        config["data_config"][item["content"]["name"]]
-                    ]
+                    # Usar las variables externas pasadas como kwargs
+                    if item["content"]["name"] in external_vars:
+                        section["content"] = [external_vars[item["content"]["name"]]]
+                    else:
+                        section["content"] = [
+                            config["data_config"][item["content"]["name"]]
+                        ]
             elif isinstance(item["content"], list):
                 # Lista de contenidos con posibles variables a reemplazar
                 content_list = []
                 for content_item in item["content"]:
-                    # Reemplazar variables en el texto
-                    formatted_content = content_item.format(
-                        total_records=len(df_filtered),
-                        start_formatted=start_formatted,
-                        end_formatted=end_formatted,
-                        avg_diff_time_rel=round_decimal(
-                            df_filtered["diff_time_rel"].mean(), 2
-                        ),
-                        target_phrase=target_phrase,
-                        max_value=df_filtered[target].max(),
-                        max_time=df_filtered.loc[df_filtered[target].idxmax(), "time"],
-                        last_value=df_filtered.iloc[-1][target],
-                        last_time=df_filtered.iloc[-1]["time"],
-                        unit=unit,
-                    )
-                    content_list.append(formatted_content)
+                    # Verificar si es un diccionario con template y vars
+                    if isinstance(content_item, dict) and "template" in content_item and "vars" in content_item:
+                        # Evaluar las variables definidas en el TOML
+                        template_vars = {}
+                        for var_name, var_config in content_item["vars"].items():
+                            if "data" in var_config and "func" in var_config:
+                                # Determinar qué dataframe usar
+                                if var_config["data"] == "query":
+                                    data = df_filtered
+                                elif var_config["data"] == "all":
+                                    data = df
+                                else:
+                                    continue
+                                
+                                # Evaluar la función lambda definida en el TOML
+                                try:
+                                    func = eval(var_config["func"])
+                                    template_vars[var_name] = func(data)
+                                except Exception as e:
+                                    logger.error(f"Error evaluating function for {var_name}: {e}")
+                                    template_vars[var_name] = "Error"
+                            else:
+                                # Variable estática
+                                template_vars[var_name] = var_config
+                        
+                        # Añadir variables de contexto
+                        context_vars = {
+                            "target": target,
+                            "unit": unit,
+                            "target_phrase": target_phrase
+                        }
+                        template_vars.update(context_vars)
+                        
+                        # Formatear el template con las variables evaluadas
+                        try:
+                            formatted_content = content_item["template"].format(**template_vars)
+                            content_list.append(formatted_content)
+                        except Exception as e:
+                            logger.error(f"Error formatting template: {e}")
+                            content_list.append(f"Error: {str(e)}")
+                    else:
+                        # Crear un diccionario con las variables calculadas (enfoque anterior)
+                        calculated_vars = {
+                            "total_records": len(df_filtered),
+                            "start_formatted": start_formatted,
+                            "end_formatted": end_formatted,
+                            "avg_diff_time_rel": round_decimal(
+                                df_filtered["diff_time_rel"].mean(), 2
+                            ),
+                            "target_phrase": target_phrase,
+                            "max_value": df_filtered[target].max(),
+                            "max_time": df_filtered.loc[df_filtered[target].idxmax(), "time"],
+                            "last_value": df_filtered.iloc[-1][target],
+                            "last_time": df_filtered.iloc[-1]["time"],
+                            "unit": unit,
+                        }
+                        # Reemplazar variables en el texto
+                        formatted_content = content_item.format(**calculated_vars)
+                        content_list.append(formatted_content)
                 section["content"] = content_list
 
             sections.append(section)
@@ -223,12 +276,12 @@ if __name__ == "__main__":
         sections = [
             {
                 "title": "Ubicación:",
-                "content": ["Talud izquierdo"],
+                "content": [external_vars["location"]],
                 "format_type": "paragraph",
             },
             {
                 "title": "Material:",
-                "content": ["Desmonte de mina"],
+                "content": [external_vars["material"]],
                 "format_type": "paragraph",
             },
         ]
