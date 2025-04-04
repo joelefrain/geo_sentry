@@ -230,12 +230,18 @@ class ChartProcessor:
         for position, draw in cells_draw.items():
             grid.add_object(draw, position)
         
+        # Verificar si las notas están habilitadas para este plot
+        show_notes = plot_config.get("notes", True) != False
+        if "show_note" in plot_config:
+            show_notes = plot_config["show_note"]
+        
         return {
             'chart': {
                 'key': plot_key,
                 'draw': grid.build(color_border="white"),
                 'title': plot_config["title_chart"],
-                'combined': True
+                'combined': True,
+                'show_notes': show_notes
             },
             'legends': legends
         }
@@ -297,13 +303,19 @@ class ChartProcessor:
                 for position, draw in cells_draw.items():
                     grid.add_object(draw, position)
                 
+                # Verificar si las notas están habilitadas para este plot
+                show_notes = plot_config.get("notes", True) != False
+                if "show_note" in plot_config:
+                    show_notes = plot_config["show_note"]
+                
                 results.append({
                     'chart': {
                         'key': plot_key,
                         'draw': grid.build(color_border="white"),
                         'title': f"{plot_config['title_chart']} - {df_name}",
                         'combined': False,
-                        'df_name': df_name
+                        'df_name': df_name,
+                        'show_notes': show_notes
                     },
                     'legends': legends
                 })
@@ -387,12 +399,16 @@ class PDFGenerator:
         for chart in charts_and_legends['charts']:
             appendix_item = f"{self.report_params['appendix_num']}.{item}"
             
+            # Verificar si las notas deben mostrarse para este gráfico
+            show_notes = chart.get('show_notes', True)
+            upper_cell = self.report_params['note_paragraph'] if show_notes else None
+            
             pdf_generator = ReportBuilder(
                 sample=self.report_params['sample'],
                 theme_color=self.report_params['theme_color'],
                 theme_color_font=self.report_params['theme_color_font'],
                 logo_cell=self.report_params['logo_cell'],
-                upper_cell=self.report_params['note_paragraph'],
+                upper_cell=upper_cell,
                 lower_cell=self.report_params['map_draw'],
                 chart_cell=chart['draw'],
                 chart_title=chart['title'],

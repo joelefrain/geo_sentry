@@ -96,10 +96,21 @@ class NotesHandler:
         if isinstance(notes, str):
             notes = [notes]
         
+        # Ensure all items in notes are strings
+        notes_str = []
+        for note in notes:
+            if isinstance(note, dict):
+                # If it's a dictionary, convert it to a string representation
+                # This handles cases where a dictionary is passed instead of a string
+                note_str = str(note)
+                notes_str.append(note_str)
+            else:
+                notes_str.append(str(note))
+        
         # Unified logic for handling different formats
         if format_type == 'paragraph':
-            return Paragraph('<br/>'.join(notes), text_style)
+            return Paragraph('<br/>'.join(notes_str), text_style)
         elif format_type in ['bullet', 'numbered', 'alphabet']:
-            return self._create_list_items(notes, text_style, format_config)
+            return self._create_list_items(notes_str, text_style, format_config)
         else:
             raise ValueError(f"Unsupported format_type: {format_type}")

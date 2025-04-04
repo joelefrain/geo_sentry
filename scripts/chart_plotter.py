@@ -168,29 +168,53 @@ if __name__ == "__main__":
     )
     df2_filtered = df_2[mask_2]
 
-    total_records = len(df_filtered)
-    avg_diff_time_rel = df_filtered["diff_time_rel"].mean()
-    avg_diff_time_rel = round_decimal(avg_diff_time_rel, 2)
-    last_value, last_time = df_filtered.iloc[-1][[target, "time"]]
-    max_value, max_time = df_filtered.loc[df_filtered[target].idxmax(), [target, "time"]]
-
-    note_number_records = f"Se registraron {total_records} lecturas durante el periodo entre {start_formatted} y {end_formatted}."
-    note_freq_monit = f"La frecuencia de registro promedio es de {avg_diff_time_rel} días durante el periodo entre {start_formatted} y {end_formatted}."
-    note_max_record = f"El valor máximo registrado de {target_phrase} fue {round_decimal(max_value, 2)} {unit} el {max_time.strftime('%d-%m-%Y')}."
-    note_last_record = f"El último valor registrado de {target_phrase} fue {round_decimal(last_value, 2)} {unit} el {last_time.strftime('%d-%m-%Y')}."
+    # Usar la configuración de notas desde el archivo TOML
+    notes_handler = NotesHandler(config["notes"].get("style", "default"))
     
-    notes = [note_number_records, note_freq_monit, note_max_record, note_last_record]
-    sections = [
-        {'title': 'Ubicación:', 'content': ['Talud izquierdo'], 'format_type': 'paragraph'},
-        {'title': 'Material:', 'content': ['Desmonte de mina'], 'format_type': 'paragraph'},
-        {'title': 'Notas:', 'content': notes, 'format_type': 'numbered'},
+    # Obtener las secciones de notas desde la configuración TOML
+    if "notes" in config and "sections" in config["notes"] and "items" in config["notes"]["sections"]:
+        sections = []
         
-    ]
+        for item in config["notes"]["sections"]["items"]:
+            section = {
+                "title": item["title"],
+                "format_type": item["format_type"]
+            }
+            
+            # Procesar el contenido según su tipo
+            if isinstance(item["content"], dict) and "data" in item["content"]:
+                # Contenido referenciado desde otra parte de la configuración
+                if item["content"]["data"] == "config" and "name" in item["content"]:
+                    section["content"] = [config["data_config"][item["content"]["name"]]]
+            elif isinstance(item["content"], list):
+                # Lista de contenidos con posibles variables a reemplazar
+                content_list = []
+                for content_item in item["content"]:
+                    # Reemplazar variables en el texto
+                    formatted_content = content_item.format(
+                        total_records=len(df_filtered),
+                        start_formatted=start_formatted,
+                        end_formatted=end_formatted,
+                        avg_diff_time_rel=round_decimal(df_filtered["diff_time_rel"].mean(), 2),
+                        target_phrase=target_phrase,
+                        max_value=df_filtered[target].max(),
+                        max_time=df_filtered.loc[df_filtered[target].idxmax(), "time"],
+                        last_value=df_filtered.iloc[-1][target],
+                        last_time=df_filtered.iloc[-1]["time"],
+                        unit=unit
+                    )
+                    content_list.append(formatted_content)
+                section["content"] = content_list
+            
+            sections.append(section)
+    else:
+        # Configuración de notas por defecto si no está en el TOML
+        sections = [
+            {"title": "Ubicación:", "content": ["Talud izquierdo"], "format_type": "paragraph"},
+            {"title": "Material:", "content": ["Desmonte de mina"], "format_type": "paragraph"},
+        ]
 
-    # Crear instancia del manejador de notas con estilo de bullets
-    notes_handler = NotesHandler("default")  # Usar el nuevo estilo
-
-    # Donde antes se usaba create_notes directamente, ahora usar:
+    # Crear las notas usando el manejador
     note_paragraph = notes_handler.create_notes(sections)
 
     map_plotter_args = {
