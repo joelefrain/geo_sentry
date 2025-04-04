@@ -175,11 +175,8 @@ if __name__ == "__main__":
     df2_filtered = df_2[mask_2]
 
     # Variables externas que se pasan como kwargs
-    external_vars = {
-        "location": "Talud izquierdo",
-        "material": "Desmonte de mina"
-    }
-    
+    external_vars = {"location": "Talud izquierdo", "material": "Desmonte de mina"}
+
     # Usar la configuración de notas desde el archivo TOML
     notes_handler = NotesHandler(config["notes"].get("style", "default"))
 
@@ -210,7 +207,11 @@ if __name__ == "__main__":
                 content_list = []
                 for content_item in item["content"]:
                     # Verificar si es un diccionario con template y vars
-                    if isinstance(content_item, dict) and "template" in content_item and "vars" in content_item:
+                    if (
+                        isinstance(content_item, dict)
+                        and "template" in content_item
+                        and "vars" in content_item
+                    ):
                         # Evaluar las variables definidas en el TOML
                         template_vars = {}
                         for var_name, var_config in content_item["vars"].items():
@@ -222,29 +223,33 @@ if __name__ == "__main__":
                                     data = df
                                 else:
                                     continue
-                                
+
                                 # Evaluar la función lambda definida en el TOML
                                 try:
                                     func = eval(var_config["func"])
                                     template_vars[var_name] = func(data)
                                 except Exception as e:
-                                    logger.error(f"Error evaluating function for {var_name}: {e}")
+                                    logger.error(
+                                        f"Error evaluating function for {var_name}: {e}"
+                                    )
                                     template_vars[var_name] = "Error"
                             else:
                                 # Variable estática
                                 template_vars[var_name] = var_config
-                        
+
                         # Añadir variables de contexto
                         context_vars = {
                             "target": target,
                             "unit": unit,
-                            "target_phrase": target_phrase
+                            "target_phrase": target_phrase,
                         }
                         template_vars.update(context_vars)
-                        
+
                         # Formatear el template con las variables evaluadas
                         try:
-                            formatted_content = content_item["template"].format(**template_vars)
+                            formatted_content = content_item["template"].format(
+                                **template_vars
+                            )
                             content_list.append(formatted_content)
                         except Exception as e:
                             logger.error(f"Error formatting template: {e}")
@@ -260,7 +265,9 @@ if __name__ == "__main__":
                             ),
                             "target_phrase": target_phrase,
                             "max_value": df_filtered[target].max(),
-                            "max_time": df_filtered.loc[df_filtered[target].idxmax(), "time"],
+                            "max_time": df_filtered.loc[
+                                df_filtered[target].idxmax(), "time"
+                            ],
                             "last_value": df_filtered.iloc[-1][target],
                             "last_time": df_filtered.iloc[-1]["time"],
                             "unit": unit,
