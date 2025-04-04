@@ -78,36 +78,21 @@ class NotesHandler:
 
     def _create_notes_items(self, notes, format_type, format_config, **kwargs):
         """Crea los elementos de contenido con el estilo configurado"""
+        # Create and configure text style in one step
         text_style = self.styles["Normal"].clone(name="NoteText")
-        content_config = self.style_config['content']
         
-        # Apply content configuration from TOML
-        for key, value in content_config.items():
-            setattr(text_style, key, value)
+        # Apply all style configurations in a single loop
+        for config_dict in [self.style_config['content'], format_config, kwargs]:
+            for key, value in config_dict.items():
+                setattr(text_style, key, value)
         
-        # Apply format-specific configuration
-        for key, value in format_config.items():
-            setattr(text_style, key, value)
-        
-        # Apply additional overrides
-        for key, value in kwargs.items():
-            setattr(text_style, key, value)
-        
+        # Convert notes to list of strings in a more concise way
         if isinstance(notes, str):
-            notes = [notes]
+            notes_str = [notes]
+        else:
+            notes_str = [str(note) for note in notes]
         
-        # Ensure all items in notes are strings
-        notes_str = []
-        for note in notes:
-            if isinstance(note, dict):
-                # If it's a dictionary, convert it to a string representation
-                # This handles cases where a dictionary is passed instead of a string
-                note_str = str(note)
-                notes_str.append(note_str)
-            else:
-                notes_str.append(str(note))
-        
-        # Unified logic for handling different formats
+        # Handle format types
         if format_type == 'paragraph':
             return Paragraph('<br/>'.join(notes_str), text_style)
         elif format_type in ['bullet', 'numbered', 'alphabet']:

@@ -1,50 +1,49 @@
 import os
 import sys
+
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 import locale
 import random
 import numpy as np
+import pandas as pd
+
+from datetime import datetime
 from matplotlib import pyplot as plt
 
-# Add 'libs' path to sys.path
-BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
-sys.path.append(BASE_PATH)
-
-import pandas as pd
-from datetime import datetime
-from reportlab.lib.styles import getSampleStyleSheet
-
 from libs.utils.config_loader import load_toml
-from libs.utils.logger_config import get_logger, log_execution_time
+from libs.utils.logger_config import get_logger
 from modules.reporter.plot_builder import PlotBuilder, PlotMerger
-from modules.reporter.report_builder import ReportBuilder, load_svg
+from modules.reporter.report_builder import load_svg
 from modules.reporter.note_handler import NotesHandler
-from libs.utils.calculations import round_decimal, get_iqr_limits, round_lower, round_upper
+from libs.utils.calculations import round_decimal
 from libs.utils.df_helpers import read_df_on_time_from_csv
 
 logger = get_logger("scripts.chart_plotter")
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
+
 def generate_random_color():
     """Generate a random hex color."""
-    return '#{:06x}'.format(random.randint(0, 0xFFFFFF))
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-def get_palette_colors(n_colors, palette_name='viridis'):
+
+def get_palette_colors(n_colors, palette_name="viridis"):
     """Generate n colors from a matplotlib colormap."""
     cmap = plt.colormaps[palette_name]
-    colors = [f'#{int(x[0]*255):02x}{int(x[1]*255):02x}{int(x[2]*255):02x}' 
-              for x in cmap(np.linspace(0, 1, n_colors))]
+    colors = [
+        f"#{int(x[0]*255):02x}{int(x[1]*255):02x}{int(x[2]*255):02x}"
+        for x in cmap(np.linspace(0, 1, n_colors))
+    ]
     return colors
 
-# Define rounding functions
-
-# La función create_plot_data ha sido eliminada ya que su funcionalidad
-# ha sido incorporada en la clase ChartProcessor en el método _create_plot_data
 
 def process_dataframes(dfs, df_names, config, start_query, end_query):
     """Process dataframes and generate charts and legends.
-    
+
     This function is now a wrapper around the ChartProcessor class.
-    
+
     Parameters
     ----------
     dfs : list
@@ -57,7 +56,7 @@ def process_dataframes(dfs, df_names, config, start_query, end_query):
         Start date for filtering
     end_query : str
         End date for filtering
-        
+
     Returns
     -------
     dict
@@ -65,15 +64,16 @@ def process_dataframes(dfs, df_names, config, start_query, end_query):
     """
     # Use the new ChartProcessor class to handle the chart generation
     from modules.reporter.chart_processor import ChartProcessor
-    
+
     processor = ChartProcessor(config, start_query, end_query)
     return processor.generate_charts(dfs, df_names)
 
+
 def generate_pdfs(charts_and_legends, report_params):
     """Generate PDFs for each chart with its corresponding legend.
-    
+
     This function is now a wrapper around the PDFGenerator class.
-    
+
     Parameters
     ----------
     charts_and_legends : dict
@@ -83,9 +83,10 @@ def generate_pdfs(charts_and_legends, report_params):
     """
     # Use the new PDFGenerator class to handle PDF generation
     from modules.reporter.chart_processor import PDFGenerator
-    
+
     pdf_generator = PDFGenerator(report_params)
     pdf_generator.generate_pdfs(charts_and_legends)
+
 
 if __name__ == "__main__":
     client_keys = {
@@ -109,7 +110,10 @@ if __name__ == "__main__":
         "CPCV": "Celda de presión de cuerda vibrante",
     }
 
-    config = load_toml(data_dir=r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\config\Shahuindo_SAC\Shahuindo\charts", toml_name="pta")
+    config = load_toml(
+        data_dir=r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\config\Shahuindo_SAC\Shahuindo\charts",
+        toml_name="pta",
+    )
 
     # Remove hardcoded configurations and use those from the TOML file
     company_code = client_keys["codes"][0]
@@ -126,7 +130,9 @@ if __name__ == "__main__":
     doc_title = "@joelefrain"
     theme_color = "#006D77"
     theme_color_font = "white"
-    logo_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\logo\logo_main.svg"
+    logo_path = (
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\logo\logo_main.svg"
+    )
 
     sensor_type_name = sensor_names["PTA"]
     sensor_code = "PTA-SH23-101"
@@ -156,7 +162,7 @@ if __name__ == "__main__":
         r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PTA\DME_CHO.PH-SH23-103B.csv"
     )
     df2_name = "PH-SH23-103B"
-    
+
     # Filtrar datos según el rango de tiempo
     mask = (df["time"] >= pd.to_datetime(start_query)) & (
         df["time"] <= pd.to_datetime(end_query)
@@ -170,22 +176,25 @@ if __name__ == "__main__":
 
     # Usar la configuración de notas desde el archivo TOML
     notes_handler = NotesHandler(config["notes"].get("style", "default"))
-    
+
     # Obtener las secciones de notas desde la configuración TOML
-    if "notes" in config and "sections" in config["notes"] and "items" in config["notes"]["sections"]:
+    if (
+        "notes" in config
+        and "sections" in config["notes"]
+        and "items" in config["notes"]["sections"]
+    ):
         sections = []
-        
+
         for item in config["notes"]["sections"]["items"]:
-            section = {
-                "title": item["title"],
-                "format_type": item["format_type"]
-            }
-            
+            section = {"title": item["title"], "format_type": item["format_type"]}
+
             # Procesar el contenido según su tipo
             if isinstance(item["content"], dict) and "data" in item["content"]:
                 # Contenido referenciado desde otra parte de la configuración
                 if item["content"]["data"] == "config" and "name" in item["content"]:
-                    section["content"] = [config["data_config"][item["content"]["name"]]]
+                    section["content"] = [
+                        config["data_config"][item["content"]["name"]]
+                    ]
             elif isinstance(item["content"], list):
                 # Lista de contenidos con posibles variables a reemplazar
                 content_list = []
@@ -195,23 +204,33 @@ if __name__ == "__main__":
                         total_records=len(df_filtered),
                         start_formatted=start_formatted,
                         end_formatted=end_formatted,
-                        avg_diff_time_rel=round_decimal(df_filtered["diff_time_rel"].mean(), 2),
+                        avg_diff_time_rel=round_decimal(
+                            df_filtered["diff_time_rel"].mean(), 2
+                        ),
                         target_phrase=target_phrase,
                         max_value=df_filtered[target].max(),
                         max_time=df_filtered.loc[df_filtered[target].idxmax(), "time"],
                         last_value=df_filtered.iloc[-1][target],
                         last_time=df_filtered.iloc[-1]["time"],
-                        unit=unit
+                        unit=unit,
                     )
                     content_list.append(formatted_content)
                 section["content"] = content_list
-            
+
             sections.append(section)
     else:
         # Configuración de notas por defecto si no está en el TOML
         sections = [
-            {"title": "Ubicación:", "content": ["Talud izquierdo"], "format_type": "paragraph"},
-            {"title": "Material:", "content": ["Desmonte de mina"], "format_type": "paragraph"},
+            {
+                "title": "Ubicación:",
+                "content": ["Talud izquierdo"],
+                "format_type": "paragraph",
+            },
+            {
+                "title": "Material:",
+                "content": ["Desmonte de mina"],
+                "format_type": "paragraph",
+            },
         ]
 
     # Crear las notas usando el manejador
@@ -262,7 +281,7 @@ if __name__ == "__main__":
     )
     map_draw = map_plotter.get_drawing()
     map_plotter.close()
-    
+
     map_draw = PlotMerger.scale_figure(map_draw, size=(1.5, 1.5))
 
     sample = "chart_landscape_a4_type_01"
@@ -270,31 +289,31 @@ if __name__ == "__main__":
 
     # Create report parameters dictionary
     report_params = {
-        'sample': sample,
-        'theme_color': theme_color,
-        'theme_color_font': theme_color_font,
-        'logo_cell': logo_cell,
-        'note_paragraph': note_paragraph,
-        'map_draw': map_draw,
-        'engineer_code': engineer_code,
-        'company_name': company_name,
-        'engineer_name': engineer_name,
-        'date_chart': date_chart,
-        'revision': revision,
-        'elaborated_by': elaborated_by,
-        'approved_by': approved_by,
-        'doc_title': doc_title,
-        'appendix_num': appendix_num
+        "sample": sample,
+        "theme_color": theme_color,
+        "theme_color_font": theme_color_font,
+        "logo_cell": logo_cell,
+        "note_paragraph": note_paragraph,
+        "map_draw": map_draw,
+        "engineer_code": engineer_code,
+        "company_name": company_name,
+        "engineer_name": engineer_name,
+        "date_chart": date_chart,
+        "revision": revision,
+        "elaborated_by": elaborated_by,
+        "approved_by": approved_by,
+        "doc_title": doc_title,
+        "appendix_num": appendix_num,
     }
-    
+
     # Process dataframes and generate charts and legends
     charts_and_legends = process_dataframes(
         dfs=[df, df_2],
         df_names=[df_name, df2_name],
         config=config,
         start_query=start_query,
-        end_query=end_query
+        end_query=end_query,
     )
-    
+
     # Generate PDFs with charts and legends
     generate_pdfs(charts_and_legends, report_params)
