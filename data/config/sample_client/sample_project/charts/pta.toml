@@ -1,0 +1,74 @@
+[names.es]
+title_elevation = "Elevación (m s. n. m.)"
+diff_time_abs = "Duración de monitoreo (días)"
+diff_time_rel = "Frecuencia de monitoreo (días)"
+water_height = "Altura de columna de agua (m)"
+pore_pressure = "Presión de poros (kPa)"
+piezometric_level = "Nivel piezométrico (m s. n. m.)"
+time = "Fecha de registro"
+depth = "Profundidad del pozo (m)"
+stick_up = "Stick-up (m)"
+bottom_well_elevation = "Cota de fondo del pozo (m s. n. m.)"
+terrain_level = "Nivel del terreno (m s. n. m.)"
+
+[report]
+logo_scale = 0.08
+map_size = [1.5, 1.5]
+
+[plots.plot1]
+title_chart="Registro de piezómetro de tubo abierto"
+grid_size=[2, 1]
+fig_size=[7.5, 6]
+to_combine=true
+template="chart_landscape_a4_type_01"
+
+[plots.plot1.cells.cell1]
+position=[0, 0]
+size=[7.5, 2.8]
+show_legend=true
+serie=["terrain_level", "bottom_well_elevation", "piezometric_level"]
+common_title="piezometric_level"
+title_x="time"
+title_y="title_elevation"
+color=["brown", "green", "skyblue"]
+linestyle=["-", "-", "-"]
+linewidth=[1.5, 1.5, 1.5]
+marker=["", "", "s"]
+markersize=[0, 0, 2.5]
+query_type="all"
+
+[plots.plot1.cells.cell2]
+position=[1, 0]
+size=[7.5, 2.8]
+show_legend=true
+serie=["water_height"]
+common_title = "water_height"
+title_x="time"
+title_y="water_height"
+color=["skyblue"]
+linestyle=["-"]
+linewidth=[1.5]
+marker=["s"]
+markersize=[2.5]
+query_type="query"
+
+[plots.plot2]
+title_chart = "Registro de piezómetro de tubo abierto"
+grid_size = [1, 1]
+fig_size = [7.5, 6]
+to_combine = false
+template = "chart_landscape_a4_type_01"
+
+[plots.plot2.cells.cell1]
+position=[0, 0]
+size=[7.5, 5.6]
+show_legend=true
+serie=["water_height"]
+title_x="time"
+title_y="water_height"
+color=["skyblue"]
+linestyle=["-"]
+linewidth=[1.5]
+marker=["s"]
+markersize=[2.5]
+query_type="query"

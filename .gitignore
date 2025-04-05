@@ -27,7 +27,6 @@ seed/
 venv/
 
 # Data
-data/
 .qodo
 
 # Logs

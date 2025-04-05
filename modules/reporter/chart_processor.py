@@ -1,12 +1,12 @@
 import os
 import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Tuple, Any, Optional
-
-# Add 'libs' path to sys.path
-BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.append(BASE_PATH)
 
 from modules.reporter.plot_builder import PlotBuilder, PlotMerger
 from libs.utils.logger_config import get_logger
@@ -326,7 +326,7 @@ class ChartProcessor:
                 results.append(chart_result)
 
         return results
-        
+
     def _process_single_dataframe_plot(
         self,
         plot_key: str,
@@ -363,7 +363,7 @@ class ChartProcessor:
             cell_result = self._process_cell_for_dataframe(
                 df_data, df_name, cell_config, plot_config, df_colors
             )
-            
+
             if cell_result:
                 cells_draw[tuple(cell_config["position"])] = cell_result["drawing"]
                 if cell_result["legend"]:
@@ -374,7 +374,7 @@ class ChartProcessor:
 
         # Create grid with all cell drawings
         grid_result = self._create_grid_from_cells(plot_config, cells_draw)
-        
+
         # Determine if notes should be shown
         show_notes = self._determine_show_notes(plot_config)
 
@@ -389,7 +389,7 @@ class ChartProcessor:
             },
             "legends": legends,
         }
-        
+
     def _process_cell_for_dataframe(
         self,
         df_data: pd.DataFrame,
@@ -438,14 +438,14 @@ class ChartProcessor:
         )
         plotter.plot_series(**plotter_args)
         drawing = plotter.get_drawing()
-        
+
         # Get legend if needed
         legend = plotter.get_legend(4, 2) if cell_config["show_legend"] else None
-        
+
         plotter.close()
-        
+
         return {"drawing": drawing, "legend": legend}
-        
+
     def _create_grid_from_cells(
         self,
         plot_config: Dict[str, Any],
@@ -472,7 +472,7 @@ class ChartProcessor:
             grid.add_object(draw, position)
 
         return grid.build(color_border="white")
-        
+
     def _determine_show_notes(
         self,
         plot_config: Dict[str, Any],

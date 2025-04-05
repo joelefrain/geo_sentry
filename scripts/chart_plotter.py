@@ -16,7 +16,6 @@ from libs.utils.config_loader import load_toml
 from libs.utils.logger_config import get_logger
 from modules.reporter.plot_builder import PlotBuilder, PlotMerger
 from modules.reporter.report_builder import load_svg
-from modules.reporter.note_handler import NotesHandler
 from libs.utils.calculations import round_decimal
 from libs.utils.df_helpers import read_df_on_time_from_csv
 
@@ -88,6 +87,9 @@ def generate_pdfs(charts_and_legends, report_params):
     pdf_generator.generate_pdfs(charts_and_legends)
 
 
+
+
+
 if __name__ == "__main__":
     client_keys = {
         "names": ["Shahuindo SAC", "Shahuindo"],
@@ -150,10 +152,6 @@ if __name__ == "__main__":
     end_formatted = datetime.strptime(end_query, "%Y-%m-%d %H:%M:%S")
     end_formatted = end_formatted.strftime("%B %Y")
 
-    target = config["target"]["column"]
-    unit = config["target"]["unit"]
-    target_phrase = config["inline"]["es"]["target_phrase"]
-
     df = read_df_on_time_from_csv(
         r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\Shahuindo_SAC\Shahuindo\processed_data\PTA\DME_CHO.PH-SH23-103A.csv"
     )
@@ -177,124 +175,7 @@ if __name__ == "__main__":
     # Variables externas que se pasan como kwargs
     external_vars = {"location": "Talud izquierdo", "material": "Desmonte de mina"}
 
-    # Usar la configuración de notas desde el archivo TOML
-    notes_handler = NotesHandler(config["notes"].get("style", "default"))
-
-    # Obtener las secciones de notas desde la configuración TOML
-    if (
-        "notes" in config
-        and "sections" in config["notes"]
-        and "items" in config["notes"]["sections"]
-    ):
-        sections = []
-
-        for item in config["notes"]["sections"]["items"]:
-            section = {"title": item["title"], "format_type": item["format_type"]}
-
-            # Procesar el contenido según su tipo
-            if isinstance(item["content"], dict) and "data" in item["content"]:
-                # Contenido referenciado desde otra parte de la configuración
-                if item["content"]["data"] == "config" and "name" in item["content"]:
-                    # Usar las variables externas pasadas como kwargs
-                    if item["content"]["name"] in external_vars:
-                        section["content"] = [external_vars[item["content"]["name"]]]
-                    else:
-                        section["content"] = [
-                            config["data_config"][item["content"]["name"]]
-                        ]
-            elif isinstance(item["content"], list):
-                # Lista de contenidos con posibles variables a reemplazar
-                content_list = []
-                for content_item in item["content"]:
-                    # Verificar si es un diccionario con template y vars
-                    if (
-                        isinstance(content_item, dict)
-                        and "template" in content_item
-                        and "vars" in content_item
-                    ):
-                        # Evaluar las variables definidas en el TOML
-                        template_vars = {}
-                        for var_name, var_config in content_item["vars"].items():
-                            if "data" in var_config and "func" in var_config:
-                                # Determinar qué dataframe usar
-                                if var_config["data"] == "query":
-                                    data = df_filtered
-                                elif var_config["data"] == "all":
-                                    data = df
-                                else:
-                                    continue
-
-                                # Evaluar la función lambda definida en el TOML
-                                try:
-                                    func = eval(var_config["func"])
-                                    template_vars[var_name] = func(data)
-                                except Exception as e:
-                                    logger.error(
-                                        f"Error evaluating function for {var_name}: {e}"
-                                    )
-                                    template_vars[var_name] = "Error"
-                            else:
-                                # Variable estática
-                                template_vars[var_name] = var_config
-
-                        # Añadir variables de contexto
-                        context_vars = {
-                            "target": target,
-                            "unit": unit,
-                            "target_phrase": target_phrase,
-                        }
-                        template_vars.update(context_vars)
-
-                        # Formatear el template con las variables evaluadas
-                        try:
-                            formatted_content = content_item["template"].format(
-                                **template_vars
-                            )
-                            content_list.append(formatted_content)
-                        except Exception as e:
-                            logger.error(f"Error formatting template: {e}")
-                            content_list.append(f"Error: {str(e)}")
-                    else:
-                        # Crear un diccionario con las variables calculadas (enfoque anterior)
-                        calculated_vars = {
-                            "total_records": len(df_filtered),
-                            "start_formatted": start_formatted,
-                            "end_formatted": end_formatted,
-                            "avg_diff_time_rel": round_decimal(
-                                df_filtered["diff_time_rel"].mean(), 2
-                            ),
-                            "target_phrase": target_phrase,
-                            "max_value": df_filtered[target].max(),
-                            "max_time": df_filtered.loc[
-                                df_filtered[target].idxmax(), "time"
-                            ],
-                            "last_value": df_filtered.iloc[-1][target],
-                            "last_time": df_filtered.iloc[-1]["time"],
-                            "unit": unit,
-                        }
-                        # Reemplazar variables en el texto
-                        formatted_content = content_item.format(**calculated_vars)
-                        content_list.append(formatted_content)
-                section["content"] = content_list
-
-            sections.append(section)
-    else:
-        # Configuración de notas por defecto si no está en el TOML
-        sections = [
-            {
-                "title": "Ubicación:",
-                "content": [external_vars["location"]],
-                "format_type": "paragraph",
-            },
-            {
-                "title": "Material:",
-                "content": [external_vars["material"]],
-                "format_type": "paragraph",
-            },
-        ]
-
-    # Crear las notas usando el manejador
-    note_paragraph = notes_handler.create_notes(sections)
+    note_paragraph = None
 
     map_plotter_args = {
         "data": [
