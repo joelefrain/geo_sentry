@@ -1,0 +1,140 @@
+-- Definición de nombres en español
+DEFINE NAMES (
+    title_elevation AS "Elevación (m s. n. m.)",
+    water_height AS "Altura de columna de agua (m)",
+    piezometric_level AS "Nivel piezométrico (m s. n. m.)",
+    time AS "Fecha de registro",
+    terrain_level AS "Nivel del terreno (m s. n. m.)"
+);
+
+-- se deben definir todas las variables usadas
+
+DEFINE OUTTER_VAR (
+    -- Define variables externas para el calculo del reporte
+    -- por ejemplo: location, material, start_query, end_query, df_names
+);
+
+DEFINE INNER_VAR (
+    -- Define variables internas para el calculo del reporte
+    -- debes definir los mask (complete y filtered segun los datos de entrada start_query y end_query. se puede omitir filtered si no se entrega start_query)
+    
+)
+
+
+-- Plot 1 con merge de celdas
+CREATE PLOT 1 (
+    combine = TRUE
+    logo_scale = 0.08,
+    template = "chart_landscape_a4_type_01",
+    title = "Registro de piezómetro de tubo abierto - [${df_name in df_names}.join(" - ")}] / ${geo_structure}",
+    grid_size = (2, 1),
+    fig_size = (7.5, 6),
+);
+
+-- Celda superior con múltiples series
+CREATE CHART_CELL 1.1 (
+    position = (0, 0),
+    size = (7.5, 2.8),
+    legend = (cols: 4, rows: 2),
+    series = (
+        CREATE SERIES (
+            data = "terrain_level",
+            style = (color: "brown", line: "-", width: 1.5)
+        ),
+        CREATE SERIES (
+            data = "piezometric_level",
+            use_df_name = TRUE,
+            style = (
+                palette = "Set3",
+                line = "-", 
+                width = 1.5, 
+                markers = ["o", "s", "^", "v", "D", "h", "*"],
+                markersize = 2.5
+            )
+        )
+    ),
+    axis = (
+        x_title = "time",
+        y_title = "title_elevation"
+    ),
+    mask = "complete"  -- uses all available data points
+);
+
+-- Celda inferior con una serie
+CREATE CHART_CELL 1.2 (
+    position = (1, 0),
+    size = (7.5, 2.8),
+    legend = (cols: 4, rows: 2),
+    series = (
+        CREATE SERIES (
+            data = "water_height",
+            style = (color: "skyblue", line: "-", width: 1.5, marker: "s", markersize: 2.5)
+        )
+    ),
+    axis = (
+        x_title = "time",
+        y_title = "water_height"
+    ),
+    mask = "filtered"  -- uses only data points within query dates
+);
+
+-- Celda superior (notas)
+CREATE UPPER_CELL 1.3 (
+    type = "note",
+    content = (
+        CREATE SECTION (
+            title = "Ubicación",
+            items = ["${location}"],
+            format = "bullet"
+        ),
+        CREATE SECTION (
+            title = "Material",
+            items = ["${material}"],
+            format = "bullet"
+        ),
+        CREATE SECTION (
+            title = "Notas",
+            items = [
+                -- Estas variables deben ser definidas y calculadas en inner_var
+                "Total de registros: ${total_records}",
+                "Valor máximo registrado: ${max_value:.2f}",
+                "Último valor registrado: ${last_value:.2f}",
+                "Período de registro: ${first_date} - ${last_date}"
+            ],
+            format = "numbered"
+        )
+    )
+);
+
+-- Celda inferior (mapa)
+CREATE LOWER_CELL 1.4 (
+    type = "map",
+    size = (1.5, 1.5)
+);
+
+-- Plot 2 sin merge
+CREATE PLOT 2 (
+    combine = FALSE
+    logo_scale = 0.08,
+    template = "chart_landscape_a4_type_03",
+    title = "Registro de agua de tubo abierto - ${df_name} / ${geo_structure}", -- Recuerda que si combine =FALSE, entonces hay un plot por serie y por lo tanto un solo df_name (ordenado segun df_names) por plot
+    grid_size = (2, 1),
+    fig_size = (7.5, 6),
+);
+
+CREATE CHART_CELL 2.1 (
+    position = (0, 0),
+    size = (7.5, 5.6),
+    legend = (cols: 4, rows: 2),
+    series = (
+        CREATE SERIES (
+            data = "water_height",
+            style = (color: "skyblue", line: "-", width: 1.5, marker: "s", markersize: 2.5)
+        )
+    ),
+    axis = (
+        x_title = "time",
+        y_title = "water_height"
+    ),
+    mask = "filtered"  -- uses only data points within query dates
+);

@@ -13,7 +13,7 @@ terrain_level = "Nivel del terreno (m s. n. m.)"
 
 [report]
 logo_scale = 0.08
-map_size = [1.5, 1.5]
+
 
 [plots.plot1]
 title_chart="Registro de piezómetro de tubo abierto"
@@ -21,11 +21,38 @@ grid_size=[2, 1]
 fig_size=[7.5, 6]
 to_combine=true
 template="chart_landscape_a4_type_01"
+show_notes = true
+map_size = [1.5, 1.5]
+
+[plot.plot1.extra]
+type=note
+content = {
+            'title': 'Ubicación',
+            'content': [context_var['location']],
+            'format_type': 'bullet'
+        },
+        {
+            'title': 'Material',
+            'content': [context_var['material']],
+            'format_type': 'bullet'
+        },
+        {
+            'title': 'Notas',
+            'content': [
+                f"Total de registros: {total_records}",
+                f"Valor máximo registrado: {max_value:.2f}",
+                f"Último valor registrado: {last_value:.2f}",
+                f"Período de registro: {first_date} - {last_date}"
+            ],
+            'format_type': 'numbered'
+        }
 
 [plots.plot1.cells.cell1]
 position=[0, 0]
 size=[7.5, 2.8]
 show_legend=true
+legend_cols=4
+legend_rows=2
 serie=["terrain_level", "bottom_well_elevation", "piezometric_level"]
 common_title="piezometric_level"
 title_x="time"
@@ -41,6 +68,8 @@ query_type="all"
 position=[1, 0]
 size=[7.5, 2.8]
 show_legend=true
+legend_cols=4
+legend_rows=2
 serie=["water_height"]
 common_title = "water_height"
 title_x="time"
@@ -54,15 +83,23 @@ query_type="query"
 
 [plots.plot2]
 title_chart = "Registro de piezómetro de tubo abierto"
-grid_size = [1, 1]
-fig_size = [7.5, 6]
+grid_size=[2, 1]
+fig_size=[7.5, 6]
 to_combine = false
 template = "chart_landscape_a4_type_01"
+map_size = [1.5, 1.5]
+
+[plot.plot1.extra]
+type=legend
+content=merge(cell1.legend, cell2.legend, grid_size = [1, 1]
+fig_size = [7.5, 6])
 
 [plots.plot2.cells.cell1]
 position=[0, 0]
 size=[7.5, 5.6]
 show_legend=true
+legend_cols=4
+legend_rows=2
 serie=["water_height"]
 title_x="time"
 title_y="water_height"
@@ -72,3 +109,19 @@ linewidth=[1.5]
 marker=["s"]
 markersize=[2.5]
 query_type="query"
+
+[plots.plot2.cells.cell1]
+position=[0, 0]
+size=[7.5, 5.6]
+show_legend=true
+legend_cols=4
+legend_rows=2
+serie=["water_height"]
+title_x="time"
+title_y="water_height"
+color=["skyblue"]
+linestyle=["-"]
+linewidth=[1.5]
+marker=["s"]
+markersize=[2.5]
+query_type="all"

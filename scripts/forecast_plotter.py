@@ -4,15 +4,10 @@ from glob import glob
 from pathlib import Path
 
 # Add 'libs' path to sys.path
-BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
-sys.path.append(BASE_PATH)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from modules.reporter.plot_builder import PlotMerger
 from modules.reporter.report_builder import ReportBuilder, load_svg
-from reportlab.platypus import Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from svglib.svglib import svg2rlg
-from io import BytesIO
 
 def get_base_filename(filepath):
     return Path(filepath).stem.split('_', 1)[1]
