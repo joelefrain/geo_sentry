@@ -7,7 +7,7 @@ import matplotlib.patheffects as path_effects
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from libs.utils.plot_config import PlotConfig
+from libs.utils.config_plot import PlotConfig
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -396,7 +396,7 @@ class PlotBuilder:
         if show_legend:
             self.ax1.legend()
 
-    def get_legend(self, box_width: int = 4, box_height: int = 2) -> "Drawing":
+    def get_legend(self, box_width: int = 4, box_height: int = 2, ncol: int = 1) -> "Drawing":
         """
         Get only the legend as a separate drawing.
 
@@ -406,6 +406,8 @@ class PlotBuilder:
             Width of the legend box, by default 4.
         box_height : int, optional
             Height of the legend box, by default 2.
+        ncol : int, optional
+            Number of columns in the legend, by default 1.
 
         Returns
         -------
@@ -417,7 +419,7 @@ class PlotBuilder:
                 "Primary plot must be created before getting the legend."
             )
 
-        return self._create_legend_drawing(box_width, box_height)
+        return self._create_legend_drawing(box_width, box_height, ncol)
 
     def get_drawing(self) -> "Drawing":
         """
@@ -434,6 +436,36 @@ class PlotBuilder:
         buffer.seek(0)
 
         return svg2rlg(buffer)
+
+    def get_num_labels(self) -> int:
+        """
+        Get the number of unique labels in the legend.
+
+        Returns
+        -------
+        int
+            Number of unique legend labels.
+        
+        Raises
+        ------
+        RuntimeError
+            If called before creating primary plot.
+        """
+        if self.fig is None:
+            raise RuntimeError(
+                "Primary plot must be created before getting number of labels."
+            )
+
+        # Get handles and labels from both axes if they exist
+        handles, labels = self.ax1.get_legend_handles_labels()
+        if self.ax2 is not None:
+            handles2, labels2 = self.ax2.get_legend_handles_labels()
+            handles.extend(handles2)
+            labels.extend(labels2)
+
+        # Get unique labels using the same logic as _handle_legend
+        unique_pairs = self._get_unique_legend_pairs(handles, labels)
+        return len(unique_pairs)
 
     def _initialize_plot(self, size: tuple) -> None:
         """
@@ -757,42 +789,39 @@ class PlotBuilder:
         # Handle notes if provided using the auxiliary method
         self._add_notes(x_point, y_point, dx, dy, series)
 
-    def _create_legend_drawing(self, box_width: int, box_height: int) -> "Drawing":
-        """
-        Create a drawing of the legend.
-
-        Parameters
-        ----------
-        box_width : int
-            Width of the legend box.
-        box_height : int
-            Height of the legend box.
-
-        Returns
-        -------
-        Drawing
-            RLG Drawing object containing the legend.
-        """
+    def _create_legend_drawing(self, box_width: int, box_height: int, ncol: int = 1) -> "Drawing":
+        """Create a drawing of the legend with unique labels."""
         fig_legend = plt.figure(figsize=(box_width, box_height))
         ax_legend = fig_legend.add_subplot(111)
         ax_legend.axis("off")
+        
+        # Get handles and labels from both axes if they exist
         handles, labels = self.ax1.get_legend_handles_labels()
+        if self.ax2 is not None:
+            handles2, labels2 = self.ax2.get_legend_handles_labels()
+            handles.extend(handles2)
+            labels.extend(labels2)
 
-        wrapped_labels = [self._wrap_label(label, box_width * 10) for label in labels]
-        legend = fig_legend.legend(handles, wrapped_labels, loc="center")
+        # Get unique labels while preserving order
+        unique_pairs = self._get_unique_legend_pairs(handles, labels)
+        if unique_pairs:
+            handles, labels = zip(*unique_pairs)
+            wrapped_labels = [self._wrap_label(label, box_width * 5) for label in labels]
+            legend = fig_legend.legend(handles, wrapped_labels, loc="center", ncol=ncol)
+            
+            fig_legend.canvas.draw()
+            bbox = legend.get_window_extent().transformed(
+                fig_legend.dpi_scale_trans.inverted()
+            )
+            fig_legend.set_size_inches(bbox.width, bbox.height)
 
-        fig_legend.canvas.draw()
-        bbox = legend.get_window_extent().transformed(
-            fig_legend.dpi_scale_trans.inverted()
-        )
-        fig_legend.set_size_inches(bbox.width, bbox.height)
-
-        buffer = BytesIO()
-        fig_legend.savefig(buffer, format="svg", bbox_inches="tight", pad_inches=0)
-        plt.close(fig_legend)
-        buffer.seek(0)
-
-        return svg2rlg(buffer)
+            buffer = BytesIO()
+            fig_legend.savefig(buffer, format="svg", bbox_inches="tight", pad_inches=0)
+            plt.close(fig_legend)
+            buffer.seek(0)
+            return svg2rlg(buffer)
+        
+        return None
 
     def _wrap_label(self, text: str, max_width: int) -> str:
         """

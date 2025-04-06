@@ -1,5 +1,7 @@
 import numpy as np
 from typing import Tuple
+from datetime import datetime
+import locale
 
 from .config_variables import DECIMAL_CHAR
 
@@ -52,3 +54,12 @@ def round_lower(value):
 
 def round_upper(value):
     return int(-(-value // 1))
+
+def format_date_long(date):
+    """Convert date to 'mmmm yyyy' format in Spanish using locale."""
+    locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")  # Set locale to Spanish
+    return date.strftime("%B %Y").lower()
+
+def format_date_short(date):
+    """Convert date to 'dd-mm-yy' format."""
+    return date.strftime("%d-%m-%y")

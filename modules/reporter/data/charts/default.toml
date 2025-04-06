@@ -16,6 +16,6 @@ save_steps = false
 
 [adjust_text_params.arrow_props]
 color = "black"
-lw = 1.0
-width = 3
+lw = 0.5
+width = 0.2
 arrowprops = { arrowstyle = "->", alpha = 0.8, connection_style = "arc3,rad=0.5" }

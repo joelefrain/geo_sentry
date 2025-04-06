@@ -71,7 +71,7 @@ class PlotConfig:
         plt.rcParams["legend.fontsize"] = 8
         plt.rcParams["legend.facecolor"] = "white"
         plt.rcParams["legend.framealpha"] = 0.15
-        plt.rcParams["legend.edgecolor"] = "black"
+        plt.rcParams["legend.edgecolor"] = "None"
         plt.rcParams["legend.fancybox"] = False
 
         # Configure grid
