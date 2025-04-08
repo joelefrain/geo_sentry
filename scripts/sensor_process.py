@@ -9,7 +9,7 @@ import pandas as pd
 
 from modules.calculations.excel_processor import ExcelProcessor
 from modules.calculations.data_processor import DataProcessor
-from libs.utils.logger_config import get_logger, log_execution_time
+from libs.utils.config_logger import get_logger, log_execution_time
 from libs.utils.df_helpers import (
     read_df_from_csv,
     read_df_on_time_from_csv,
@@ -356,8 +356,8 @@ def exec_process(cut_off, work_path, sensor_names):
 
 if __name__ == "__main__":
     client_keys = {
-        "names": ["Shahuindo SAC", "Shahuindo"],
-        "codes": ["Shahuindo_SAC", "Shahuindo"],
+        "names": ["sample_client", "sample_project"],
+        "codes": ["sample_client", "sample_project"],
     }
 
     company_code = client_keys["codes"][0]

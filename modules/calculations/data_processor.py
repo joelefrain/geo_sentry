@@ -7,7 +7,7 @@ sys.path.append(base_path)
 
 from libs.utils.config_variables import SEP_FORMAT
 from libs.utils.df_helpers import read_df_on_time_from_csv
-from libs.utils.logger_config import get_logger
+from libs.utils.config_logger import get_logger
 
 import pandas as pd
 import numpy as np

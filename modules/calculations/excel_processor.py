@@ -6,7 +6,7 @@ base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(base_path)
 
 from libs.utils.config_variables import SEP_FORMAT
-from libs.utils.logger_config import get_logger
+from libs.utils.config_logger import get_logger
 
 import pandas as pd
 from pathlib import Path

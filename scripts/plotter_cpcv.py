@@ -29,15 +29,15 @@ if __name__ == "__main__":
     }
 
     appendix = "A"
-    start_item = 200
+    start_item = 202
 
     dxf_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\test.dxf"
 
     df = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\PTA\DME_CHO.PH-SH23-103A.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\CPCV\PAD_2A.CPCV-SHP2A-01.csv"
     )
     df_2 = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\PTA\DME_CHO.PH-SH23-103B.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\CPCV\PAD_2A.CPCV-SHP2A-02.csv"
     )
 
     start_query = "2024-05-01 00:00:00"
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     geo_structure = "DME Choloque"
 
     data_sensors = {
-        "names": ["PH-SH23-103A", "PH-SH23-103B"],
+        "names": ["CPCV-SHP2A-01", "CPCV-SHP2A-02"],
         "east": [808779.55, 808779.55],
         "north": [9157518.99, 9157518.99],
         "df": [df, df_2],
@@ -61,26 +61,26 @@ if __name__ == "__main__":
     
     output_dir = "./outputs"
 
-    sensor_type = "pta"
+    sensor_type = "cpcv"
     plot_template = "ts_plot_type_01"
 
 
     column_config = {
-        "target_column": "piezometric_level",
-        "unit_target": "m s. n. m.",
-        "primary_column": "piezometric_level",
+        "target_column": "pressure_kpa",
+        "unit_target": "kPa",
+        "primary_column": "",
         "primary_title_y": "Elevación (m s. n. m.)",
-        "secondary_column": "water_height",
+        "secondary_column": "pressure_kpa",
         "top_reference_column": "terrain_level",
-        "bottom_reference_column": "bottom_well_elevation",
+        "bottom_reference_column": "sensor_level",
         "serie_x": "time",
-        "sensor_type_name": "piezómetro de tubo abierto",
-        "sensor_aka": "El piezómetro",
+        "sensor_type_name": "celda de presión",
+        "sensor_aka": "La celda de presión",
     }
-    
+
     plotter_module = importlib.import_module(f"modules.reporter.data.plotters.{plot_template}")
     generate_report = plotter_module.generate_report
-
+    
     generated_pdf = generate_report(
         data_sensors=data_sensors,
         group_args=group_args,

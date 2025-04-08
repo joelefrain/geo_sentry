@@ -6,7 +6,7 @@ class PlotConfig:
     """Class to configure global matplotlib parameters."""
 
     @classmethod
-    def setup_matplotlib(cls):
+    def setup_matplotlib(cls, ts_serie=True):
         """Configure global matplotlib parameters.
 
         Parameters
@@ -43,7 +43,6 @@ class PlotConfig:
         plt.rcParams["axes.facecolor"] = "None"
         plt.rcParams["axes.edgecolor"] = "black"
         plt.rcParams["axes.grid"] = True
-        plt.rcParams["axes.xmargin"] = 0
         plt.rcParams["axes.ymargin"] = 0.20
         plt.rcParams["axes.spines.bottom"] = True
         plt.rcParams["axes.spines.left"] = True
@@ -62,7 +61,6 @@ class PlotConfig:
 
         # Configure ticks
         plt.rcParams["ytick.minor.visible"] = True
-        plt.rcParams["xtick.minor.visible"] = False
         plt.rcParams["ytick.labelsize"] = 8
         plt.rcParams["xtick.labelsize"] = 8
 
@@ -79,3 +77,10 @@ class PlotConfig:
         plt.rcParams["grid.color"] = "gray"
         plt.rcParams["grid.linestyle"] = "-"
         plt.rcParams["grid.linewidth"] = 0.05
+
+        if ts_serie:
+            plt.rcParams["axes.xmargin"] = 0
+            plt.rcParams["xtick.minor.visible"] = False
+        else:
+            plt.rcParams["axes.xmargin"] = 0.05
+            plt.rcParams["xtick.minor.visible"] = True

@@ -35,9 +35,9 @@ dip_rel_grad = "lambda df: np.degrees(df['dip_rel_rad'])"
 azimuth_rel_grad = "lambda df: df['horz_angle_rel_grad'] % 360"
 
 [names.es]
-diff_horz_abs = "Δ Horizontal absoluto (cm)"
-diff_vert_abs = "Δ Vertical absoluto (cm)"
-diff_disp_total_abs = "Δ Total absoluto (cm)"
+diff_horz_abs = "Desplazamiento horizontal absoluto (cm)"
+diff_vert_abs = "Desplazamiento vertical absoluto (cm)"
+diff_disp_total_abs = "Desplazamiento total absoluto (cm)"
 mean_vel_rel = "Velocidad media relativa (cm/día)"
 inv_mean_vel_rel = "Inversa de velocidad media relativa (día/cm)"
 dip_abs_grad = "Buzamiento absoluto (°)"

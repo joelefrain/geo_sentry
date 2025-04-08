@@ -33,14 +33,23 @@ class SectionPlotter:
         all_points = []
         lines_data = []
         
-        # Extraer todas las líneas y polylines
-        for entity in msp.query('LINE LWPOLYLINE'):
+        # Extraer todas las líneas, polylines, hatch y texto
+        for entity in msp.query('LINE LWPOLYLINE HATCH TEXT'):
             if entity.dxftype() == 'LINE':
                 points = [(entity.dxf.start.x, entity.dxf.start.y),
                          (entity.dxf.end.x, entity.dxf.end.y)]
                 color = entity.dxf.color
-            elif entity.dxftype() == 'LWPOLYLINE':
+            if entity.dxftype() == 'LWPOLYLINE':
                 points = [(vertex[0], vertex[1]) for vertex in entity.vertices()]
+                color = entity.dxf.color
+            if entity.dxftype() == 'HATCH':
+                # Para HATCH, no hay puntos directos, pero podemos usar el bounding box
+                bbox = entity.bounding_box()
+                points = [(bbox.extmin.x, bbox.extmin.y), (bbox.extmax.x, bbox.extmax.y)]
+                color = entity.dxf.color
+            if entity.dxftype() == 'TEXT':
+                # Para TEXT, usamos la posición como un punto
+                points = [(entity.dxf.insert.x, entity.dxf.insert.y)]
                 color = entity.dxf.color
             
             all_points.extend(points)
@@ -50,7 +59,7 @@ class SectionPlotter:
             })
         
         if not lines_data:
-            raise ValueError("No se encontraron líneas en el DXF")
+            raise ValueError("No se encontraron entidades válidas en el DXF")
         
         # Guardar todas las líneas para dibujarlas después
         self.lines_data = lines_data

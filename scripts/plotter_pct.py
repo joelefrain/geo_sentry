@@ -29,15 +29,15 @@ if __name__ == "__main__":
     }
 
     appendix = "A"
-    start_item = 200
+    start_item = 205
 
     dxf_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\test.dxf"
 
     df = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\PTA\DME_CHO.PH-SH23-103A.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\PCT\PAD_2B_2C.2B-6.csv"
     )
     df_2 = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\PTA\DME_CHO.PH-SH23-103B.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\PCT\PAD_2B_2C.2B-9.csv"
     )
 
     start_query = "2024-05-01 00:00:00"
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     geo_structure = "DME Choloque"
 
     data_sensors = {
-        "names": ["PH-SH23-103A", "PH-SH23-103B"],
+        "names": ["2B-6", "2B-9"],
         "east": [808779.55, 808779.55],
         "north": [9157518.99, 9157518.99],
         "df": [df, df_2],
@@ -56,29 +56,57 @@ if __name__ == "__main__":
     group_args = {
         "name": "Talud izquierdo",
         "location": "Dique sur",
-        "material": "Desmonte",
     }
-    
+
     output_dir = "./outputs"
 
-    sensor_type = "pta"
-    plot_template = "ts_plot_type_01"
-
+    sensor_type = "pct"
+    plot_template = "merged_plot_type_01"
 
     column_config = {
-        "target_column": "piezometric_level",
-        "unit_target": "m s. n. m.",
-        "primary_column": "piezometric_level",
-        "primary_title_y": "Elevación (m s. n. m.)",
-        "secondary_column": "water_height",
-        "top_reference_column": "terrain_level",
-        "bottom_reference_column": "bottom_well_elevation",
-        "serie_x": "time",
-        "sensor_type_name": "piezómetro de tubo abierto",
-        "sensor_aka": "El piezómetro",
+        "plots": [
+            # {
+            #     "target_column": "diff_disp_total_abs",
+            #     "unit_target": "cm",
+            #     "ts_serie_flag": True,
+            #     "series_x": "time",
+            # },
+            # {
+            #     "target_column": "diff_vert_abs",
+            #     "unit_target": "cm",
+            #     "ts_serie_flag": True,
+            #     "series_x": "time",
+            # },
+            # {
+            #     "target_column": "diff_disp_total_abs",
+            #     "unit_target": "cm",
+            #     "ts_serie_flag": True,
+            #     "series_x": "time",
+            # },
+            # {
+            #     "target_column": "mean_vel_rel",
+            #     "unit_target": "cm/día",
+            #     "ts_serie_flag": True,
+            #     "series_x": "time",
+            # },
+            # {
+            #     "target_column": "inv_mean_vel_rel",
+            #     "unit_target": "día/cm",
+            #     "ts_serie_flag": True,
+            #     "series_x": "time",
+            # },
+            {
+                "target_column": "north",
+                "ts_serie_flag": False,
+                "series_x": "east",
+                "serie_aka": "Trayectoria",
+            },
+        ],
+        "sensor_type_name": "punto de control topográfico",
     }
-    
-    plotter_module = importlib.import_module(f"modules.reporter.data.plotters.{plot_template}")
+    plotter_module = importlib.import_module(
+        f"modules.reporter.data.plotters.{plot_template}"
+    )
     generate_report = plotter_module.generate_report
 
     generated_pdf = generate_report(

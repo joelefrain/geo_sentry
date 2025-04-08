@@ -64,7 +64,9 @@ def create_note(
     # Initialize NotesHandler
     note_handler = NotesHandler()
 
-    target_column_name = series_names[target_column].lower().split("(")[0]
+    target_column_name = (
+        series_names.get(target_column, target_column).lower().split("(")[0]
+    )
 
     # Calculate variables for all sensors
     calc_vars = calculate_note_variables(
@@ -388,6 +390,7 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
+        invert_y=True,
     )
 
     return plotter.get_drawing(), plotter.get_legend(

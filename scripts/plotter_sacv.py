@@ -29,7 +29,7 @@ if __name__ == "__main__":
     }
 
     appendix = "A"
-    start_item = 201
+    start_item = 202
 
     dxf_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\test.dxf"
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\SACV\PAD_2B_2C.SA-SH17-101.csv"
     )
     df_2 = read_df_on_time_from_csv(
-        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\SACV\PAD_2B_2C.SA-SH17-101.csv"
+        r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\var\sample_client\sample_project\processed_data\SACV\PAD_2B_2C.SA-SH17-103.csv"
     )
 
     start_query = "2024-05-01 00:00:00"
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     geo_structure = "DME Choloque"
 
     data_sensors = {
-        "names": ["PCV-SH23-110-A", "PCV-SH23-110-B"],
+        "names": ["SA-SH17-101", "SA-SH17-103"],
         "east": [808779.55, 808779.55],
         "north": [9157518.99, 9157518.99],
         "df": [df, df_2],
@@ -61,17 +61,21 @@ if __name__ == "__main__":
     
     output_dir = "./outputs"
 
-    sensor_type = "pcv"
-    plot_template = "ts_plot_type_01"
+    sensor_type = "sacv"
+    plot_template = "ts_plot_type_02"
 
 
     column_config = {
-        "target_column": "hydraulic_load_kpa",
-        "unit_target": "kPa",
-        "primary_column": "piezometric_level",
-        "secondary_column": "hydraulic_load_kpa",
-        "reference_column": "sensor_level",
+        "target_column": "settlement_m",
+        "unit_target": "m",
+        "primary_column": "settlement_level",
+        "primary_title_y": "Elevación (m s. n. m.)",
+        "secondary_column": "settlement_m",
+        "top_reference_column": "terrain_level",
+        "bottom_reference_column": "sensor_level",
         "serie_x": "time",
+        "sensor_type_name": "celda de asentamiento",
+        "sensor_aka": "La celda de asentamiento",
     }
 
     plotter_module = importlib.import_module(f"modules.reporter.data.plotters.{plot_template}")

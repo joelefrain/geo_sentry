@@ -19,8 +19,6 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics.shapes import Drawing, Group, Rect
 from typing import Tuple, List
 
-PlotConfig.setup_matplotlib()
-
 
 class PlotBuilder:
     """A versatile class for creating and managing publication-quality plots.
@@ -75,7 +73,7 @@ class PlotBuilder:
     - Memory-efficient resource management
     """
 
-    def __init__(self, style_file: str = "default"):
+    def __init__(self, style_file: str = "default", ts_serie: bool = True):
         """
         Initialize the Plotter class.
 
@@ -90,6 +88,8 @@ class PlotBuilder:
         self.ax2: plt.Axes = None
         self.show_legend: bool = False
         self._is_closed: bool = False
+        
+        PlotConfig.setup_matplotlib(ts_serie)
 
         # Load default styles from TOML
         style_path = os.path.join(
