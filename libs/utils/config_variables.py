@@ -10,15 +10,15 @@ DECIMAL_CHAR = ","
 
 # Defaults for the report
 # ---------------------------------------------------------------
-DOC_TITLE = "@joelefrain"
-THEME_COLOR = "#006D77"
+DOC_TITLE = "SIG-AND"
+THEME_COLOR = "#0069AA"
 THEME_COLOR_FONT = "white"
-COLOR_PALETTE = "cool"
+COLOR_PALETTE = "rainbow"
 
 # Paths to data files
 # ---------------------------------------------------------------
-LOGO_SVG = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main.svg"
-LOGO_PDF = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main.pdf"
+LOGO_SVG = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main_anddes.svg"
+LOGO_PDF = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main_anddes.pdf"
 
 # Paths to configuration directories
 # ---------------------------------------------------------------

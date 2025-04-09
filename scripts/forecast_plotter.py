@@ -56,14 +56,14 @@ def process_charts(base_paths, output_dir, structure_name, start_item=1):
         # PDF generation parameters
         params = {
             "sample": "chart_portrait_a4_type_02",
-            "project_code": "1421.10.0083-0000",
-            "company_name": "Compañía Minera Raura SA",
-            "project_name": "Ingeniería de Registro para componentes geotécnicos 2025",
-            "date": "04-04-25",
+            "project_code": "1410.28.0054",
+            "company_name": "Shahuindo SAC",
+            "project_name": "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur",
+            "date": "09-04-25",
             "revision": "B",
-            "num_item": f"4.{idx}",
+            "num_item": f"B.{idx}",
             "elaborated_by": "J.A.",
-            "approved_by": "D.B.",
+            "approved_by": "R.L.",
             "doc_title": "SIG-AND",
             "chart_title": chart_title,
             "theme_color": "#0069AA",
@@ -71,7 +71,7 @@ def process_charts(base_paths, output_dir, structure_name, start_item=1):
         }
 
         # Load logo
-        logo_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\logo\logo_main_anddes.svg"
+        logo_path = r"C:\Users\joel.alarcon\Desktop\geo_sentry\geo_sentry\data\logo\logo_main_anddes.svg"
         logo_cell = load_svg(logo_path, 0.65)
 
         # Generate PDF
@@ -81,7 +81,7 @@ def process_charts(base_paths, output_dir, structure_name, start_item=1):
             **params
         )
         
-        output_filename = f"4.{idx:03d}_{base_name}.pdf"
+        output_filename = f"B.{idx:03d}_{base_name}.pdf"
         pdf_generator.generate_pdf(pdf_path=os.path.join(output_dir, output_filename))
 
 if __name__ == "__main__":

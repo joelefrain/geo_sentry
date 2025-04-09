@@ -1,0 +1,10 @@
+pandas
+tomli
+toml
+openpyxl
+seaborn
+matplotlib
+scikit-learn
+adjustText
+ezdxf
+svglib

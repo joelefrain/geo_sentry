@@ -75,7 +75,14 @@ def create_note(
     max_date = pd.to_datetime(
         combined_df.loc[combined_df[target_column].idxmax(), serie_x]
     )
-    last_value = max(df[target_column].iloc[-1] for df in dfs)
+
+    valid_dfs = [df for df in dfs if not df.empty and target_column in df.columns and len(df[target_column].dropna()) > 0]
+    if valid_dfs:
+        last_value = max(df[target_column].iloc[-1] for df in valid_dfs)
+    else:
+        last_value = None  # o cualquier valor por defecto
+
+    # last_value = max(df[target_column].iloc[-1] for df in dfs)
 
     # Define sections with separated notes
     sections = [
@@ -557,7 +564,7 @@ def generate_report(
                 mask,
             )
             lower_cell = create_map(dxf_path, data_sensors)
-            logo_cell = load_svg(LOGO_SVG, 0.08)
+            logo_cell = load_svg(LOGO_SVG, 0.95)
             chart_title_elements = [
                 f"Registro histórico de {target_column_name}",
                 group_args["name"],
@@ -621,7 +628,7 @@ def generate_report(
                 chart_title = " / ".join(filter(None, chart_title_elements))
 
                 # Create report components
-                logo_cell = load_svg(LOGO_SVG, 0.08)
+                logo_cell = load_svg(LOGO_SVG, 0.95)
 
                 # Set up PDF generator
                 pdf_generator = ReportBuilder(

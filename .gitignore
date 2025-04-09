@@ -55,7 +55,6 @@ __pycache__/
 *.geojson
 *.xml
 *.html
-*.dxf
 *.txt
 *.pdf
 *.xlsx
