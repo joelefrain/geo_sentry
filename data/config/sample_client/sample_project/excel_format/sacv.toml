@@ -1,5 +1,5 @@
 [process]
-start_row = 18
+start_row = 17
 columns = [1, 2, 3, 4, 12]
 column_names = ["time", "digits", "temperature", "diff_e_res", "terrain_level"]
 
@@ -8,11 +8,11 @@ sensor_level = "F9"
 lineal_factor = "C12"
 temperature_factor = "C13"
 
-[process.custom_functions]
-
 [process.selected_attr]
 cell = ["D4", "E4"]
 column = ["digits", "temperature"]
+
+[process.custom_functions]
 
 [location.attributes]
 east = "F7"

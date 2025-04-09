@@ -4,7 +4,7 @@ base_columns = ["time_0", "digits_0", "temperature_0", "diff_e_res_0", "sensor_l
 
 [abs]
 diff_time_abs = "lambda df, base: (df['time'] - base['time_0']).dt.total_seconds() / (24 * 3600)"
-settlement_m = "lambda df, base: (df['digits'] - base['digits_0']) * base['lineal_factor_0'] + (df['temperature'] - base['temperature_0']) * base['temperature_factor_0'] - (df['diff_e_res'] - base['diff_e_res_0'])"
+settlement_m = "lambda df, base: (df['digits'] - base['digits_0']) * base['lineal_factor_0'] + (df['temperature'] - base['temperature_0']) * base['temperature_factor_0'] - base['diff_e_res_0']"
 settlement_cm = "lambda df: df['settlement_m'] * 100"
 settlement_level = "lambda df, base: base['sensor_level_0'] - df['settlement_cm']"
 

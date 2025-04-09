@@ -65,36 +65,36 @@ if __name__ == "__main__":
 
     column_config = {
         "plots": [
-            # {
-            #     "target_column": "diff_disp_total_abs",
-            #     "unit_target": "cm",
-            #     "ts_serie_flag": True,
-            #     "series_x": "time",
-            # },
-            # {
-            #     "target_column": "diff_vert_abs",
-            #     "unit_target": "cm",
-            #     "ts_serie_flag": True,
-            #     "series_x": "time",
-            # },
-            # {
-            #     "target_column": "diff_disp_total_abs",
-            #     "unit_target": "cm",
-            #     "ts_serie_flag": True,
-            #     "series_x": "time",
-            # },
-            # {
-            #     "target_column": "mean_vel_rel",
-            #     "unit_target": "cm/día",
-            #     "ts_serie_flag": True,
-            #     "series_x": "time",
-            # },
-            # {
-            #     "target_column": "inv_mean_vel_rel",
-            #     "unit_target": "día/cm",
-            #     "ts_serie_flag": True,
-            #     "series_x": "time",
-            # },
+            {
+                "target_column": "diff_disp_total_abs",
+                "unit_target": "cm",
+                "ts_serie_flag": True,
+                "series_x": "time",
+            },
+            {
+                "target_column": "diff_vert_abs",
+                "unit_target": "cm",
+                "ts_serie_flag": True,
+                "series_x": "time",
+            },
+            {
+                "target_column": "diff_disp_total_abs",
+                "unit_target": "cm",
+                "ts_serie_flag": True,
+                "series_x": "time",
+            },
+            {
+                "target_column": "mean_vel_rel",
+                "unit_target": "cm/día",
+                "ts_serie_flag": True,
+                "series_x": "time",
+            },
+            {
+                "target_column": "inv_mean_vel_rel",
+                "unit_target": "día/cm",
+                "ts_serie_flag": True,
+                "series_x": "time",
+            },
             {
                 "target_column": "north",
                 "ts_serie_flag": False,

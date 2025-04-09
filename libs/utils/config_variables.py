@@ -23,3 +23,10 @@ LOGO_PDF = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main.pd
 # Paths to configuration directories
 # ---------------------------------------------------------------
 CALC_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "calculations" / "data"
+REPORT_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "reporter" / "data"
+
+OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
+PROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "process"
+PREPROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "preprocess"
+DASHBOARD_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "dashboard"
+ANALYSIS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "analysis"

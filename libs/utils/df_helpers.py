@@ -31,9 +31,14 @@ def config_time_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def save_df_to_csv(df: pd.DataFrame, path: Path, **kwargs) -> None:
-    # Guardar DataFrame a CSV
-    df.to_csv(path, sep=SEP_FORMAT, **kwargs)
+def save_df_to_csv(df: pd.DataFrame, file_path: str) -> None:
+    """Guarda un DataFrame en un archivo CSV.
+
+    Args:
+        df: DataFrame a guardar
+        file_path: Ruta donde guardar el archivo CSV
+    """
+    df.to_csv(file_path, index=False, sep=SEP_FORMAT)
 
 
 def merge_new_records(df1, df2, match_columns=["time"], match_type="all"):

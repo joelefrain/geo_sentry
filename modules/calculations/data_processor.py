@@ -63,6 +63,9 @@ class DataProcessor:
             pd.DataFrame with the cleaned data.
         """
         
+        # Sort by time
+        df.sort_values("time", ignore_index=True)
+        
         # Remove any rows where time parsing failed
         df = df.dropna(subset=['time'])
         
@@ -72,10 +75,7 @@ class DataProcessor:
         # Remove records with 'time' after the current date
         current_time = datetime.now()
         df = df[df['time'] <= current_time]
-        
-        # Sort by time
-        df.sort_values("time", ignore_index=True)
-        
+                
         # Aesgurar base line
         df.loc[df.index[0], "base_line"] = True
         

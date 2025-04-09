@@ -9,6 +9,8 @@ import pandas as pd
 
 from modules.calculations.excel_processor import ExcelProcessor
 from modules.calculations.data_processor import DataProcessor
+from libs.utils.config_variables import CALC_CONFIG_DIR
+from libs.utils.config_loader import load_toml
 from libs.utils.config_logger import get_logger, log_execution_time
 from libs.utils.df_helpers import (
     read_df_from_csv,
@@ -260,34 +262,59 @@ def get_operativity(cut_off, location_data_folder_base, work_path, sensor_names)
         location_csv_df["operativiy"] = True
         return location_csv_df
 
+    # Procesar nuevos datos de ubicación
     all_locations = []
     for sensor_type in sensor_names.keys():
         location_path = os.path.join(location_data_folder_base, sensor_type)
-        sensor_locations = process_sensor_files(
-            sensor_type, location_path, None, process_location_file
-        )
-        all_locations.extend(sensor_locations)
+        if os.path.exists(location_path):
+            sensor_locations = process_sensor_files(
+                sensor_type, location_path, None, process_location_file
+            )
+            all_locations.extend(sensor_locations)
 
-    location_df = (
+    new_location_df = (
         pd.concat(all_locations, ignore_index=True) if all_locations else pd.DataFrame()
     )
-    print(location_df)
+    
+    # Configurar ruta y asegurar directorio
     operativity_path = os.path.join(work_path, "processed_data", "operativity.csv")
     os.makedirs(os.path.dirname(operativity_path), exist_ok=True)
 
-    create_empty_file(operativity_path)
+    # Leer o crear archivo de operatividad
+    if not os.path.exists(operativity_path):
+        create_empty_file(operativity_path)
+        existing_df = pd.DataFrame(columns=["structure", "sensor_type", "code", "operativiy",
+                                          "first_record", "first_value", "last_record",
+                                          "last_value", "max_value"])
+    else:
+        existing_df = read_df_from_csv(operativity_path)
 
-    operativity_df = read_or_create_df(
-        operativity_path, default_columns=["structure", "sensor_type", "code"]
-    )
-    print(operativity_df)
-
-    updated_df = merge_new_records(
-        operativity_df, location_df, match_columns=["structure", "sensor_type", "code"], match_type='all'
-    )
-    updated_df.drop_duplicates(subset=["structure", "sensor_type", "code"])
-    print(updated_df)
-    save_df_to_csv(updated_df, operativity_path)
+    # Fusionar datos preservando información existente
+    if not new_location_df.empty:
+        # Identificar registros nuevos y existentes
+        updated_df = merge_new_records(
+            existing_df, new_location_df,
+            match_columns=["structure", "sensor_type", "code"],
+            match_type='all'
+        )
+        
+        # Preservar valores no nulos existentes
+        for col in existing_df.columns:
+            if col not in ["structure", "sensor_type", "code"]:
+                mask = updated_df["structure"].isin(existing_df["structure"]) & \
+                       updated_df["sensor_type"].isin(existing_df["sensor_type"]) & \
+                       updated_df["code"].isin(existing_df["code"])
+                updated_df.loc[mask, col] = existing_df.loc[mask, col]
+        
+        # Eliminar duplicados manteniendo la última actualización
+        updated_df = updated_df.drop_duplicates(
+            subset=["structure", "sensor_type", "code"],
+            keep="last"
+        )
+        
+        save_df_to_csv(updated_df, operativity_path)
+    else:
+        save_df_to_csv(existing_df, operativity_path)
 
 
 def get_processed_data(
@@ -354,6 +381,71 @@ def exec_process(cut_off, work_path, sensor_names):
     )
 
 
+def get_main_records(work_path, sensor_names):
+    """Actualiza los primeros, últimos y máximos registros de cada instrumento."""
+    logger.info("Actualizando registros en operativity.csv")
+    
+    processed_data_folder = os.path.join(work_path, "processed_data")
+    operativity_path = os.path.join(processed_data_folder, "operativity.csv")
+    
+    operativity_df = read_df_from_csv(operativity_path)
+    
+    for sensor_type in sensor_names.keys():
+        try:
+            config = load_toml(CALC_CONFIG_DIR, f"{sensor_type.lower()}")
+            target_column = config.get("target", {}).get("column")
+        except Exception as e:
+            logger.warning(f"Error leyendo TOML para {sensor_type}: {e}")
+            continue
+            
+        sensor_folder = os.path.join(processed_data_folder, sensor_type)
+        if not os.path.exists(sensor_folder):
+            continue
+            
+        for csv_file in os.listdir(sensor_folder):
+            if not csv_file.endswith('.csv'):
+                continue
+                
+            structure, code = csv_file.split(".")[:2]
+            csv_path = os.path.join(sensor_folder, csv_file)
+            
+            try:
+                df = read_df_from_csv(csv_path)
+                if 'time' in df.columns and not df.empty:
+                    last_record = df['time'].max()
+                    first_record = df['time'].min()
+                    first_value = last_value = max_value = None
+                    
+                    if target_column and target_column in df.columns:
+                        # Obtener primer valor
+                        first_row = df[df['time'] == first_record]
+                        if not first_row.empty:
+                            first_value = f"{first_row[target_column].iloc[0]}"
+                        
+                        # Obtener último valor
+                        last_row = df[df['time'] == last_record]
+                        if not last_row.empty:
+                            last_value = f"{last_row[target_column].iloc[0]}"
+                        
+                        # Obtener valor máximo
+                        max_value = f"{df[target_column].max()}"
+                    
+                    mask = (operativity_df['structure'] == structure) & \
+                           (operativity_df['sensor_type'] == sensor_type) & \
+                           (operativity_df['code'] == code)
+                    
+                    operativity_df.loc[mask, 'first_record'] = first_record
+                    operativity_df.loc[mask, 'first_value'] = first_value
+                    operativity_df.loc[mask, 'last_record'] = last_record
+                    operativity_df.loc[mask, 'last_value'] = last_value
+                    operativity_df.loc[mask, 'max_value'] = max_value
+                    
+            except Exception as e:
+                logger.warning(f"Error procesando {csv_file}: {str(e)}")
+    
+    save_df_to_csv(operativity_df, operativity_path)
+    logger.info("Actualización de registros completada")
+
 if __name__ == "__main__":
     client_keys = {
         "names": ["sample_client", "sample_project"],
@@ -367,8 +459,8 @@ if __name__ == "__main__":
         "PAD_1A": "Pad 1A",
         "PAD_2A": "Pad 2A",
         "PAD_2B_2C": "Pad 2B-2C",
-        "DME_SUR": "DME Sur",
-        "DME_CHO": "DME Choloque",
+        "DME_SUR": "DME-Sur",
+        "DME_CHO": "DME-Choloque",
     }
 
     sensor_names = {
@@ -382,7 +474,7 @@ if __name__ == "__main__":
     order_structure = structure_names.keys()
     order_sensors = sensor_names.keys()
 
-    cut_off = "250228_Febrero"
+    cut_off = "250331_Marzo"
 
     sensor_raw_name = {
         "PCV": "PZ CUERDA VIBRANTE",
@@ -392,7 +484,7 @@ if __name__ == "__main__":
         "CPCV": "CELDAS DE PRESIÓN",
     }
 
-    exclude_sheets = ["Hoja", "Kangatang", "X"]
+    exclude_sheets = ["Hoja", "Kangatang", "X", "Planta", "Hoja 1", "Hoja 2"]
     custom_functions = {"base_line": lambda row: False}
 
     work_path = get_work_path(company_code, project_code)
@@ -412,3 +504,5 @@ if __name__ == "__main__":
     )
 
     exec_process(cut_off, work_path, sensor_names)
+    
+    get_main_records(work_path, sensor_names)

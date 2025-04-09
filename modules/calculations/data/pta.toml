@@ -22,3 +22,10 @@ depth = "Profundidad del pozo (m)"
 stick_up = "Stick-up (m)"
 bottom_well_elevation = "Cota de fondo del pozo (m s. n. m.)"
 terrain_level = "Nivel del terreno (m s. n. m.)"
+
+[target]
+column = "piezometric_level"
+unit = "m s. n. m."
+
+[inline.es]
+target_phrase = "nivel piezométrico"
