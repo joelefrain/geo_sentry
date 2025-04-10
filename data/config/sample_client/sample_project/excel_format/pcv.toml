@@ -13,8 +13,8 @@ temperature_factor = "E18"
 barometric_load = "lambda row: 0"
 
 [process.selected_attr]
-cell = ["D10", "F10"]
-column = ["digits", "temperature"]
+cell = ["C10", "D10", "F10"]
+column = ["time", "digits", "temperature"]
 
 [location.attributes]
 east = "G12"

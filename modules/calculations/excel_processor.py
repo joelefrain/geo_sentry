@@ -195,43 +195,46 @@ class ExcelProcessor:
         sheet_name: str,
         selected_attr: Dict[str, Any],
     ) -> pd.DataFrame:
-        """Aplica atributos seleccionados al DataFrame."""
+        """Aplica atributos seleccionados al DataFrame y genera registros basados en celdas seleccionadas."""
         reader = ExcelReader(str(excel_file))
         cells = selected_attr.get("cell", [])
-        funcs = selected_attr.get("custom_functions", [])
         cols = selected_attr.get("column", [])
 
-        if len(cells) == len(funcs) == len(cols):
-            for cell_ref, func_str, col in zip(cells, funcs, cols):
-                if col not in df.columns:
-                    logger.info(f"⚠️ Columna '{col}' no encontrada")
-                    continue
+        if len(cells) == len(cols):
+            # Crear un nuevo registro con los valores seleccionados
+            new_record = {}
+            valid_values = True
 
+            for cell_ref, col in zip(cells, cols):
                 value = reader.read_cell_value(sheet_name, cell_ref)
                 if value is None:
                     logger.info(f"⚠️ No se pudo obtener el valor de la celda {cell_ref}")
-                    continue
+                    valid_values = False
+                    break
+                new_record[col] = value
 
-                try:
-                    condition = (
-                        func_str.split(":", 1)[1].strip()
-                        if ":" in func_str
-                        else func_str
-                    )
-                    mask = df.apply(
-                        lambda row: eval(condition, {"row": row, "df": df}), axis=1
-                    )
-                    if mask.any():
-                        df.loc[mask, col] = value
-                        logger.info(
-                            f"✅ Valor {value} aplicado a {mask.sum()} registros en columna {col}"
-                        )
-                    else:
-                        logger.warning(
-                            f"⚠️ No se encontraron registros que cumplan la condición para {col}"
-                        )
-                except Exception as e:
-                    logger.warning(f"⚠️ Error aplicando función: {e}")
+            if valid_values and new_record:
+                # Crear un DataFrame con el nuevo registro
+                new_df = pd.DataFrame([new_record])
+                
+                # Asegurar que las columnas coincidan
+                for col in df.columns:
+                    if col not in new_df.columns:
+                        new_df[col] = None
+
+                # Asegurar que el nuevo registro tenga todas las columnas necesarias
+                for col in new_df.columns:
+                    if col not in df.columns:
+                        df[col] = None
+
+                # Concatenar el nuevo registro con el DataFrame existente
+                df = pd.concat([df, new_df], ignore_index=True)
+                
+                # Ordenar por tiempo si existe la columna
+                if 'time' in df.columns:
+                    df = df.sort_values('time', ignore_index=True)
+                
+                logger.info(f"✅ Nuevo registro agregado con valores de celdas seleccionadas")
 
         return df
 

@@ -10,8 +10,8 @@ lineal_factor = "D19"
 temperature_factor = "D20"
 
 [process.selected_attr]
-cell = ["D12", "E12"]
-column = ["digits", "temperature"]
+cell = ["C12", "D12", "E12"]
+column = ["time", "digits", "temperature"]
 
 [process.custom_functions]
 
