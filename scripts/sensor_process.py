@@ -489,19 +489,19 @@ if __name__ == "__main__":
 
     work_path = get_work_path(company_code, project_code)
 
-    # exec_preprocess(
-    #     cut_off,
-    #     sensor_raw_name,
-    #     exclude_sheets,
-    #     custom_functions,
-    #     company_code,
-    #     project_code,
-    #     structure_names,
-    #     sensor_names,
-    #     order_structure,
-    #     order_sensors,
-    #     work_path,
-    # )
+    exec_preprocess(
+        cut_off,
+        sensor_raw_name,
+        exclude_sheets,
+        custom_functions,
+        company_code,
+        project_code,
+        structure_names,
+        sensor_names,
+        order_structure,
+        order_sensors,
+        work_path,
+    )
 
     exec_process(cut_off, work_path, sensor_names)
     

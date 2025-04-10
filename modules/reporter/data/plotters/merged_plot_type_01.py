@@ -135,7 +135,7 @@ def create_map(dxf_path, data_sensors):
         "marker": "o",
         "label": "",
         "fontsize": 6,
-        "markersize": 5,
+        "markersize": 2,
     }
 
     plotter.plot_series(
@@ -144,7 +144,7 @@ def create_map(dxf_path, data_sensors):
                 "x": data_args["x"],
                 "y": data_args["y"],
                 "color": data_args["color"],
-                "linetype": data_args["linestyle"],
+                "linestyle": data_args["linestyle"],
                 "lineweight": data_args["linewidth"],
                 "marker": data_args["marker"],
                 "markersize": data_args["markersize"],
@@ -216,7 +216,7 @@ def create_ts_cell_1(
     series_styles = {
         target_column: {
             "color": "blue",
-            "linetype": "-",
+            "linestyle": "-",
             "lineweight": 1,
             "marker": "o",
             "markersize": 4,
@@ -248,7 +248,7 @@ def create_ts_cell_1(
                     "y": df[target_column].tolist(),
                     "label": label,
                     "color": color,
-                    "linetype": series_styles[target_column]["linetype"],
+                    "linestyle": series_styles[target_column]["linestyle"],
                     "lineweight": series_styles[target_column]["lineweight"],
                     "marker": marker,
                     "markersize": series_styles[target_column]["markersize"],
@@ -282,7 +282,7 @@ def create_ts_cell_2(
     series_styles = {
         target_column: {
             "color": "blue",
-            "linetype": "-",
+            "linestyle": "-",
             "lineweight": 1,
             "marker": "o",
             "markersize": 4,
@@ -332,7 +332,7 @@ def create_ts_cell_2(
                         "y": filtered_df[column].tolist(),
                         "label": label,
                         "color": color,
-                        "linetype": style["linetype"],
+                        "linestyle": style["linestyle"],
                         "lineweight": style["lineweight"],
                         "marker": marker,
                         "markersize": style["markersize"],
@@ -374,7 +374,7 @@ def create_non_ts_cell_1(
     series_styles = {
         target_column: {
             "color": "green",
-            "linetype": "-",
+            "linestyle": "-",
             "lineweight": 1,
             "marker": "s",
             "markersize": 4,
@@ -382,7 +382,7 @@ def create_non_ts_cell_1(
         },
         "initial_position": {
             "color": "orange",
-            "linetype": "",
+            "linestyle": "",
             "lineweight": 0,
             "marker": "^",
             "markersize": 6,
@@ -390,7 +390,7 @@ def create_non_ts_cell_1(
         },
         "final_position": {
             "color": "red",
-            "linetype": "",
+            "linestyle": "",
             "lineweight": 0,
             "marker": "s",
             "markersize": 6,
@@ -423,7 +423,7 @@ def create_non_ts_cell_1(
                     "y": df[target_column].tolist(),
                     "label": label,
                     "color": color,
-                    "linetype": series_styles[target_column]["linetype"],
+                    "linestyle": series_styles[target_column]["linestyle"],
                     "lineweight": series_styles[target_column]["lineweight"],
                     "marker": marker,
                     "markersize": series_styles[target_column]["markersize"],
@@ -439,7 +439,7 @@ def create_non_ts_cell_1(
                     "y": [initial_y],
                     "label": series_styles["initial_position"]["label"],
                     "color": series_styles["initial_position"]["color"],
-                    "linetype": series_styles["initial_position"]["linetype"],
+                    "linestyle": series_styles["initial_position"]["linestyle"],
                     "lineweight": series_styles["initial_position"]["lineweight"],
                     "marker": series_styles["initial_position"]["marker"],
                     "markersize": series_styles["initial_position"]["markersize"],
@@ -455,7 +455,7 @@ def create_non_ts_cell_1(
                     "y": [final_y],
                     "label": series_styles["final_position"]["label"],
                     "color": series_styles["final_position"]["color"],
-                    "linetype": series_styles["final_position"]["linetype"],
+                    "linestyle": series_styles["final_position"]["linestyle"],
                     "lineweight": series_styles["final_position"]["lineweight"],
                     "marker": series_styles["final_position"]["marker"],
                     "markersize": series_styles["final_position"]["markersize"],

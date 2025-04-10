@@ -705,7 +705,7 @@ class PlotBuilder:
             "bbox": default_note_style.get("bbox", {}),
             "path_effects": [
                 path_effects.withStroke(
-                    linewidth=default_note_style.get("linewidth", 8),
+                    linewidth=default_note_style.get("linewidth", 0.5),
                     foreground=default_note_style.get("foreground", "white"),
                 )
             ],
@@ -782,7 +782,7 @@ class PlotBuilder:
             (x_point + dx, y_point + dy),
             color=color,
             arrowstyle="->",
-            mutation_scale=10,
+            mutation_scale=5,
         )
         self.ax1.add_patch(arrow)
 

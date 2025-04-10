@@ -8,3 +8,5 @@ scikit-learn
 adjustText
 ezdxf
 svglib
+statsmodels
+prophet

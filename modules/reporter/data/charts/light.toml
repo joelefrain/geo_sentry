@@ -1,0 +1,21 @@
+[note_style]
+fontsize = 6
+bbox = { facecolor = "none", edgecolor = "none", alpha = 0.8 }
+path_effects = [
+    { linewidth = 0.5, foreground = "gray" }
+]
+
+[adjust_text_params]
+force_objects = 0.8
+max_move = [10.0, 10.0]
+only_move = { points = "xy", text = "xy" }
+autoalign = "xy"
+avoid_self = true
+clip_on = true
+save_steps = false
+
+[adjust_text_params.arrow_props]
+color = "red"
+lw = 0.5
+width = 0.5
+arrowprops = { arrowstyle = "<|-", alpha = 1, connection_style = "arc3,rad=0.05", head_length=0.4, head_width=0.2}

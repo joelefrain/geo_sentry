@@ -16,7 +16,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     static_report_params = {
-        "project_code": "1410.28.0054",
+        "project_code": "1410.28.0054-0000",
         "company_name": "Shahuindo SAC",
         "project_name": "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur",
         "date": "09-04-25",
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     )
     sensor_df = sensor_df[(sensor_df["sensor_type"] == "PCT") & (sensor_df["operativiy"] == True)]
 
-    start_item = 90
+    start_item = 1
     appendix = "A"
     output_dir = "./outputs"
     sensor_type = "pct"
@@ -91,10 +91,12 @@ if __name__ == "__main__":
 
     for structure in structures:
         df_structure = sensor_df.groupby("structure").get_group(structure)
+        df_structure.dropna(subset=["first_record", "last_record"], inplace=True)
         dxf_path = f"data\\config\\sample_client\\sample_project\\dxf\\{structure}.dxf"
         geo_structure = structure
 
         for group, df_group in df_structure.groupby("group"):
+            
             # Generar listas para data_sensors
             names = df_group["code"].tolist()
             east = df_group["east"].tolist()
