@@ -6,7 +6,7 @@ class PlotConfig:
     """Class to configure global matplotlib parameters."""
 
     @classmethod
-    def setup_matplotlib(cls, ts_serie=True):
+    def setup_matplotlib(cls, ts_serie=True, ymargin=0.20):
         """Configure global matplotlib parameters.
 
         Parameters
@@ -43,7 +43,7 @@ class PlotConfig:
         plt.rcParams["axes.facecolor"] = "None"
         plt.rcParams["axes.edgecolor"] = "black"
         plt.rcParams["axes.grid"] = True
-        plt.rcParams["axes.ymargin"] = 0.20
+        plt.rcParams["axes.ymargin"] = ymargin
         plt.rcParams["axes.spines.bottom"] = True
         plt.rcParams["axes.spines.left"] = True
         plt.rcParams["axes.spines.right"] = True

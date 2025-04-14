@@ -18,154 +18,6 @@ from libs.utils.config_variables import (
     CALC_CONFIG_DIR,
 )
 
-
-def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
-    """Calculate variables for notes based on multiple dataframes."""
-    all_vars = []
-    for df, name in zip(dfs, sensor_names):
-        # Apply mask if provided
-        if mask is not None:
-            df = df[mask(df)]
-
-        first_date = pd.to_datetime(df[serie_x].iloc[0])
-        last_date = pd.to_datetime(df[serie_x].iloc[-1])
-        max_value = df[target_column].max()
-        max_date = pd.to_datetime(df.loc[df[target_column].idxmax(), serie_x])
-        total_records = len(df)
-        mean_freq = (
-            (last_date - first_date).days / total_records if total_records > 0 else 0
-        )
-
-        all_vars.append(
-            {
-                "sensor_name": name,
-                "total_records": total_records,
-                "max_value": max_value,
-                "max_date": max_date,
-                "last_value": df[target_column].iloc[-1],
-                "first_date": first_date,
-                "last_date": last_date,
-                "mean_freq": round_decimal(mean_freq, 2),
-            }
-        )
-    return all_vars
-
-
-def create_note(
-    group_args,
-    data_sensors,
-    target_column,
-    unit_target,
-    series_names,
-    serie_x,
-    mask=None,
-):
-    # Initialize NotesHandler
-    note_handler = NotesHandler()
-
-    target_column_name = series_names[target_column].lower().split("(")[0]
-
-    # Apply mask and calculate combined statistics
-    dfs = [df[mask(df)] if mask else df for df in data_sensors["df"]]
-    combined_df = pd.concat(dfs, ignore_index=True)
-
-    first_date = pd.to_datetime(combined_df[serie_x].iloc[0])
-    last_date = pd.to_datetime(combined_df[serie_x].iloc[-1])
-    max_value = combined_df[target_column].max()
-    max_date = pd.to_datetime(
-        combined_df.loc[combined_df[target_column].idxmax(), serie_x]
-    )
-
-    valid_dfs = [df for df in dfs if not df.empty and target_column in df.columns and len(df[target_column].dropna()) > 0]
-    if valid_dfs:
-        last_value = max(df[target_column].iloc[-1] for df in valid_dfs)
-    else:
-        last_value = None  # o cualquier valor por defecto
-
-    # last_value = max(df[target_column].iloc[-1] for df in dfs)
-
-    # Define sections with separated notes
-    sections = [
-        {
-            "title": "Ubicación:",
-            "content": [group_args["location"]],
-            "format_type": "paragraph",
-        },
-        {
-            "title": "Notas:",
-            "content": [
-                f"En el periodo entre {format_date_long(first_date)} y {format_date_long(last_date)}, "
-                f"se registró un valor máximo de {target_column_name} de {round_decimal(max_value, 2)} {unit_target} "
-                f"el día {format_date_short(max_date)}.",
-                f"El último valor registrado de {target_column_name} fue de {round_decimal(last_value, 2)} {unit_target} "
-                f"el día {format_date_short(last_date)}.",
-            ],
-            "format_type": "numbered",
-        },
-    ]
-
-    return note_handler.create_notes(sections)
-
-
-def create_map(dxf_path, data_sensors):
-
-    plotter = PlotBuilder()
-    map_args = {
-        "dxf_path": dxf_path,
-        "size": [2.0, 1.5],
-        "title_x": "",
-        "title_y": "",
-        "title_chart": "",
-        "show_legend": True,
-        "dxf_params": {"color": "black", "linestyle": "-", "linewidth": 0.02},
-        "format_params": {
-            "show_grid": False,
-            "show_xticks": False,
-            "show_yticks": False,
-        },
-    }
-
-    data_args = {
-        "x": data_sensors["east"],
-        "y": data_sensors["north"],
-        "note": data_sensors["names"],
-        "color": "red",
-        "linestyle": "",
-        "linewidth": 0,
-        "marker": "o",
-        "label": "",
-        "fontsize": 6,
-        "markersize": 2,
-    }
-
-    plotter.plot_series(
-        data=[
-            {
-                "x": data_args["x"],
-                "y": data_args["y"],
-                "color": data_args["color"],
-                "linestyle": data_args["linestyle"],
-                "lineweight": data_args["linewidth"],
-                "marker": data_args["marker"],
-                "markersize": data_args["markersize"],
-                "label": data_args["label"],
-                "note": data_args["note"],
-                "fontsize": data_args["fontsize"],
-            }
-        ],
-        dxf_path=map_args["dxf_path"],
-        size=map_args["size"],
-        title_x=map_args["title_x"],
-        title_y=map_args["title_y"],
-        title_chart=map_args["title_chart"],
-        show_legend=map_args["show_legend"],
-        dxf_params=map_args["dxf_params"],
-        format_params=map_args["format_params"],
-    )
-
-    return plotter.get_drawing()
-
-
 def get_unique_combination(df_index, used_combinations, total_dfs):
     """
     Generate a unique combination of color and marker for a given dataframe index.
@@ -197,6 +49,143 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
 
     used_combinations.add(combination)
     return combination
+
+def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
+    """Calculate variables for notes based on multiple dataframes."""
+    all_vars = []
+    for df, name in zip(dfs, sensor_names):
+        # Apply mask if provided
+        if mask is not None:
+            df = df[mask(df)]
+
+        first_date = pd.to_datetime(df[serie_x].iloc[0])
+        last_date = pd.to_datetime(df[serie_x].iloc[-1])
+        max_value = abs(df[target_column]).max()
+        max_date = pd.to_datetime(df.loc[df[target_column].idxmax(), serie_x])
+        total_records = len(df)
+        mean_freq = (
+            (last_date - first_date).days / total_records if total_records > 0 else 0
+        )
+
+        all_vars.append(
+            {
+                "sensor_name": name,
+                "total_records": total_records,
+                "max_value": max_value,
+                "max_date": max_date,
+                "last_value": df[target_column].iloc[-1],
+                "first_date": first_date,
+                "last_date": last_date,
+                "mean_freq": round_decimal(mean_freq, 2),
+            }
+        )
+    return all_vars
+
+def create_note(
+    group_args,
+    data_sensors,
+    target_column,
+    unit_target,
+    series_names,
+    serie_x,
+    mask=None,
+):
+    # Initialize NotesHandler
+    note_handler = NotesHandler()
+
+    target_column_name = series_names[target_column].lower().split("(")[0]
+
+    # Apply mask and calculate combined statistics
+    dfs = [df[mask(df)] if mask else df for df in data_sensors["df"]]
+    combined_df = pd.concat(dfs, ignore_index=True)
+
+    first_date = pd.to_datetime(combined_df[serie_x].iloc[0])
+    last_date = pd.to_datetime(combined_df[serie_x].iloc[-1])
+    max_value = combined_df[target_column].max()
+    max_date = pd.to_datetime(
+        combined_df.loc[combined_df[target_column].idxmax(), serie_x]
+    )
+
+    valid_dfs = [df for df in dfs if not df.empty and target_column in df.columns and len(df[target_column].dropna()) > 0]
+    if valid_dfs:
+        last_value = max(df[target_column].iloc[-1] for df in valid_dfs)
+    else:
+        last_value = None
+
+    # Define sections with separated notes
+    sections = [
+        {
+            "title": "Ubicación:",
+            "content": [f"{group_args['name']} - {group_args['location']}"],
+            "format_type": "paragraph",
+        },
+        {
+            "title": "Notas:",
+            "content": [
+                f"En el periodo entre {format_date_long(first_date)} y {format_date_long(last_date)}, "
+                f"se registró un valor máximo de {target_column_name} de {round_decimal(max_value, 2)} {unit_target} "
+                f"el día {format_date_short(max_date)}.",
+                f"El último valor registrado de {target_column_name} fue de {round_decimal(last_value, 2)} {unit_target} "
+                f"el día {format_date_short(last_date)}.",
+            ],
+            "format_type": "numbered",
+        },
+    ]
+
+    return note_handler.create_notes(sections)
+
+def create_map(dxf_path, data_sensors):
+    plotter = PlotBuilder(ymargin=0)
+    map_args = {
+        "dxf_path": dxf_path,
+        "size": [2.0, 1.5],
+        "title_x": "",
+        "title_y": "",
+        "title_chart": "",
+        "show_legend": False,
+        "dxf_params": {"color": "black", "linestyle": "-", "linewidth": 0.02},
+        "format_params": {
+            "show_grid": False,
+            "show_xticks": False,
+            "show_yticks": False,
+        },
+    }
+
+    used_combinations = set()
+    total_dfs = len(data_sensors["df"])
+
+    series = []
+    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
+        color, marker = get_unique_combination(i, used_combinations, total_dfs)
+        series.append({
+            "x": df["east"].tolist(),
+            "y": df["north"].tolist(),
+            "color": color,
+            "linestyle": "",
+            "lineweight": 0,
+            "marker": marker,
+            "markersize": 2,
+            "label": name,
+            "note": name,
+            "fontsize": 6,
+        })
+
+    plotter.plot_series(
+        data=series,
+        dxf_path=map_args["dxf_path"],
+        size=map_args["size"],
+        title_x=map_args["title_x"],
+        title_y=map_args["title_y"],
+        title_chart=map_args["title_chart"],
+        show_legend=map_args["show_legend"],
+        dxf_params=map_args["dxf_params"],
+        format_params=map_args["format_params"],
+    )
+
+    return plotter.get_drawing()
+
+
+
 
 
 def create_ts_cell_1(
@@ -263,10 +252,11 @@ def create_ts_cell_1(
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
     )
+    n = len(series)
     return plotter.get_drawing(), plotter.get_legend(
-        box_width=7.5,
-        box_height=0.5,
-        ncol=plotter.get_num_labels(),
+        box_width=1.25 * n,
+        box_height=1.0,
+        ncol=6,
     )
 
 
@@ -350,8 +340,8 @@ def create_ts_cell_2(
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
-        box_height=0.5,
-        ncol=plotter.get_num_labels(),
+        box_height=1.0,
+        ncol=6,
     )
 
 
@@ -481,7 +471,8 @@ def generate_report(
     end_query,
     appendix,
     start_item,
-    geo_structure,
+    structure_code,
+    structure_name,
     sensor_type,
     output_dir,
     static_report_params,
@@ -543,7 +534,7 @@ def generate_report(
 
             # Create and configure plot grid
             plot_grid = PlotMerger(fig_size=(7.5, 5.5))
-            plot_grid.create_grid(4, 1, row_ratios=[0.03, 0.47, 0.03, 0.47])
+            plot_grid.create_grid(4, 1, row_ratios=[0.06, 0.44, 0.06, 0.44])
             plot_grid.add_object(chart_cell1, (0, 0))
             plot_grid.add_object(legend1, (1, 0))
             plot_grid.add_object(chart_cell2, (2, 0))
@@ -568,7 +559,7 @@ def generate_report(
             chart_title_elements = [
                 f"Registro histórico de {target_column_name}",
                 group_args["name"],
-                geo_structure,
+                structure_name,
             ]
             chart_title = " / ".join(filter(None, chart_title_elements))
 
@@ -585,9 +576,9 @@ def generate_report(
             )
 
             # Format the PDF filename
-            geo_structure_formatted = geo_structure.replace(" ", "_")
+            structure_formatted = structure_code.replace(" ", "_")
             sensor_type_formatted = sensor_type.replace(" ", "_").upper()
-            pdf_filename = f"{output_dir}/{appendix}_{current_item}_{geo_structure_formatted}_{sensor_type_formatted}.pdf"
+            pdf_filename = f"{output_dir}/{appendix}_{current_item}_{structure_formatted}_{sensor_type_formatted}.pdf"
 
             # Generate PDF
             pdf_generator.generate_pdf(pdf_path=pdf_filename)
@@ -623,7 +614,7 @@ def generate_report(
                     f"{serie_aka} de {sensor_type_name}",
                     name,
                     group_args["name"],
-                    geo_structure,
+                    structure_name,
                 ]
                 chart_title = " / ".join(filter(None, chart_title_elements))
 
@@ -641,9 +632,9 @@ def generate_report(
                 )
 
                 # Format the PDF filename
-                geo_structure_formatted = geo_structure.replace(" ", "_")
+                structure_formatted = structure_code.replace(" ", "_")
                 sensor_type_formatted = sensor_type.replace(" ", "_").upper()
-                pdf_filename = f"{output_dir}/{appendix}_{current_item}_{geo_structure_formatted}_{sensor_type_formatted}_{name.replace(' ', '_')}.pdf"
+                pdf_filename = f"{output_dir}/{appendix}_{current_item}_{structure_formatted}_{sensor_type_formatted}_{name.replace(' ', '_')}.pdf"
 
                 # Generate PDF
                 pdf_generator.generate_pdf(pdf_path=pdf_filename)

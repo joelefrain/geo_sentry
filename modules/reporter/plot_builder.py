@@ -73,7 +73,9 @@ class PlotBuilder:
     - Memory-efficient resource management
     """
 
-    def __init__(self, style_file: str = "default", ts_serie: bool = True):
+    def __init__(
+        self, style_file: str = "default", ts_serie: bool = True, ymargin: float = 0.20
+    ):
         """
         Initialize the Plotter class.
 
@@ -88,8 +90,8 @@ class PlotBuilder:
         self.ax2: plt.Axes = None
         self.show_legend: bool = False
         self._is_closed: bool = False
-        
-        PlotConfig.setup_matplotlib(ts_serie)
+
+        PlotConfig.setup_matplotlib(ts_serie, ymargin)
 
         # Load default styles from TOML
         style_path = os.path.join(
@@ -396,7 +398,9 @@ class PlotBuilder:
         if show_legend:
             self.ax1.legend()
 
-    def get_legend(self, box_width: int = 4, box_height: int = 2, ncol: int = 1) -> "Drawing":
+    def get_legend(
+        self, box_width: int = 4, box_height: int = 2, ncol: int = 1
+    ) -> "Drawing":
         """
         Get only the legend as a separate drawing.
 
@@ -445,7 +449,7 @@ class PlotBuilder:
         -------
         int
             Number of unique legend labels.
-        
+
         Raises
         ------
         RuntimeError
@@ -583,22 +587,22 @@ class PlotBuilder:
                     self.ax1.legend(
                         unique_handles,
                         unique_labels,
-                        loc='center right',
-                        bbox_to_anchor=(1.15, 0.5)
+                        loc="center right",
+                        bbox_to_anchor=(1.15, 0.5),
                     )
                 else:
                     self.ax1.legend(unique_handles, unique_labels)
 
     def _get_unique_legend_pairs(self, handles, labels):
         """Get unique handle-label pairs while preserving order of appearance.
-        
+
         Parameters
         ----------
         handles : list
             List of legend handles
         labels : list
             List of legend labels
-            
+
         Returns
         -------
         list
@@ -606,12 +610,12 @@ class PlotBuilder:
         """
         seen = set()
         unique_pairs = []
-        
+
         for handle, label in zip(handles, labels):
             if label not in seen:
                 seen.add(label)
                 unique_pairs.append((handle, label))
-                
+
         return unique_pairs
 
     def _add_single_color_band(
@@ -789,12 +793,14 @@ class PlotBuilder:
         # Handle notes if provided using the auxiliary method
         self._add_notes(x_point, y_point, dx, dy, series)
 
-    def _create_legend_drawing(self, box_width: int, box_height: int, ncol: int = 1) -> "Drawing":
+    def _create_legend_drawing(
+        self, box_width: int, box_height: int, ncol: int = 1
+    ) -> "Drawing":
         """Create a drawing of the legend with unique labels."""
         fig_legend = plt.figure(figsize=(box_width, box_height))
         ax_legend = fig_legend.add_subplot(111)
         ax_legend.axis("off")
-        
+
         # Get handles and labels from both axes if they exist
         handles, labels = self.ax1.get_legend_handles_labels()
         if self.ax2 is not None:
@@ -806,9 +812,11 @@ class PlotBuilder:
         unique_pairs = self._get_unique_legend_pairs(handles, labels)
         if unique_pairs:
             handles, labels = zip(*unique_pairs)
-            wrapped_labels = [self._wrap_label(label, box_width * 5) for label in labels]
+            wrapped_labels = [
+                self._wrap_label(label, box_width * 5) for label in labels
+            ]
             legend = fig_legend.legend(handles, wrapped_labels, loc="center", ncol=ncol)
-            
+
             fig_legend.canvas.draw()
             bbox = legend.get_window_extent().transformed(
                 fig_legend.dpi_scale_trans.inverted()
@@ -820,7 +828,7 @@ class PlotBuilder:
             plt.close(fig_legend)
             buffer.seek(0)
             return svg2rlg(buffer)
-        
+
         return None
 
     def _wrap_label(self, text: str, max_width: int) -> str:
@@ -914,9 +922,15 @@ class PlotMerger:
         self.positions.append(position)
         self.spans.append(span)
 
-    def create_grid(self, rows: int, cols: int, row_ratios: List[float] = None, col_ratios: List[float] = None) -> "PlotMerger":
+    def create_grid(
+        self,
+        rows: int,
+        cols: int,
+        row_ratios: List[float] = None,
+        col_ratios: List[float] = None,
+    ) -> "PlotMerger":
         """Set grid dimensions and optional row/column ratios.
-        
+
         Parameters
         ----------
         rows : int
@@ -927,14 +941,14 @@ class PlotMerger:
             Relative heights of each row. Must sum to 1 if provided.
         col_ratios : List[float], optional
             Relative widths of each column. Must sum to 1 if provided.
-        
+
         Returns
         -------
         PlotMerger
             Self for method chaining
         """
         self.grid_dims = (rows, cols)
-        
+
         # Validate and set row ratios
         if row_ratios is not None:
             if len(row_ratios) != rows:
@@ -943,7 +957,7 @@ class PlotMerger:
                 raise ValueError("row_ratios must sum to 1")
             self.row_ratios = row_ratios
         else:
-            self.row_ratios = [1/rows] * rows
+            self.row_ratios = [1 / rows] * rows
 
         # Validate and set column ratios
         if col_ratios is not None:
@@ -953,7 +967,7 @@ class PlotMerger:
                 raise ValueError("col_ratios must sum to 1")
             self.col_ratios = col_ratios
         else:
-            self.col_ratios = [1/cols] * cols
+            self.col_ratios = [1 / cols] * cols
 
         return self
 
@@ -979,15 +993,15 @@ class PlotMerger:
     def _get_cell_dimensions(self, spacing: float) -> Tuple[List[float], List[float]]:
         """Calculate cell width and height with spacing and ratios."""
         rows, cols = self.grid_dims
-        
+
         # Calculate total available space after spacing
         available_width = self.fig_width - (cols - 1) * spacing
         available_height = self.fig_height - (rows - 1) * spacing
-        
+
         # Calculate cell dimensions based on ratios
         cell_widths = [ratio * available_width for ratio in self.col_ratios]
         cell_heights = [ratio * available_height for ratio in self.row_ratios]
-        
+
         return cell_widths, cell_heights
 
     def _iter_objects(self) -> Tuple:
@@ -1025,15 +1039,22 @@ class PlotMerger:
         drawing.add(border)
 
     def _get_span_size(
-        self, cell_dims: Tuple[List[float], List[float]], row: int, col: int, row_span: int, col_span: int
+        self,
+        cell_dims: Tuple[List[float], List[float]],
+        row: int,
+        col: int,
+        row_span: int,
+        col_span: int,
     ) -> Tuple[float, float]:
         """Calculate total span width and height."""
         cell_widths, cell_heights = cell_dims
-        
+
         # Sum the widths and heights of spanned cells
-        span_width = sum(cell_widths[col:col+col_span])
-        span_height = sum(cell_heights[self.grid_dims[0]-row-row_span:self.grid_dims[0]-row])
-        
+        span_width = sum(cell_widths[col : col + col_span])
+        span_height = sum(
+            cell_heights[self.grid_dims[0] - row - row_span : self.grid_dims[0] - row]
+        )
+
         return span_width, span_height
 
     def _get_scale_factor(
@@ -1062,7 +1083,10 @@ class PlotMerger:
         x += (span_width - scaled_width) / 2
 
         # Calculate y position based on row ratios
-        y = sum(cell_heights[:self.grid_dims[0]-row-row_span]) + (self.grid_dims[0]-row-row_span) * spacing
+        y = (
+            sum(cell_heights[: self.grid_dims[0] - row - row_span])
+            + (self.grid_dims[0] - row - row_span) * spacing
+        )
         y += (span_height - scaled_height) / 2
 
         return x, y
@@ -1097,9 +1121,14 @@ class PlotMerger:
         """Create a border rectangle for the cell."""
         cell_widths, cell_heights = cell_dims
         x = sum(cell_widths[:col]) + col * spacing
-        y = sum(cell_heights[:self.grid_dims[0]-row-row_span]) + (self.grid_dims[0]-row-row_span) * spacing
-        width = sum(cell_widths[col:col+col_span]) + spacing * (col_span - 1)
-        height = sum(cell_heights[self.grid_dims[0]-row-row_span:self.grid_dims[0]-row]) + spacing * (row_span - 1)
+        y = (
+            sum(cell_heights[: self.grid_dims[0] - row - row_span])
+            + (self.grid_dims[0] - row - row_span) * spacing
+        )
+        width = sum(cell_widths[col : col + col_span]) + spacing * (col_span - 1)
+        height = sum(
+            cell_heights[self.grid_dims[0] - row - row_span : self.grid_dims[0] - row]
+        ) + spacing * (row_span - 1)
         return Rect(x, y, width, height, strokeColor=color, fillColor=None)
 
     @staticmethod

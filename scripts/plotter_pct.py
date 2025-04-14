@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     start_item = 1
     appendix = "A"
-    output_dir = "./outputs"
+    output_dir = "./outputs/processing"
     sensor_type = "pct"
     plot_template = "merged_plot_type_01"
     plotter_module = importlib.import_module(f"modules.reporter.data.plotters.{plot_template}")
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     column_config = {
         "plots": [
             {
-                "target_column": "diff_disp_total_abs",
+                "target_column": "diff_horz_abs",
                 "unit_target": "cm",
                 "ts_serie_flag": True,
                 "series_x": "time",
@@ -86,14 +86,25 @@ if __name__ == "__main__":
     start_query = "2024-08-01 00:00:00"
     end_query = "2025-04-09 00:00:00"
 
-    # structures = ["PAD_2A", "PAD_2B_2C", "DME_SUR", "DME_CHO"]
-    structures = ["DME_CHO"]
+    structure_names = {
+        "PAD_1A": "Pad 1A",
+        "PAD_2A": "Pad 2A",
+        "PAD_2B_2C": "Pad 2B-2C",
+        "DME_SUR": "DME Sur",
+        "DME_CHO": "DME Choloque",
+    }
 
-    for structure in structures:
-        df_structure = sensor_df.groupby("structure").get_group(structure)
+    for structure_code, structure_name in structure_names.items():
+        
+        try:
+            df_structure = sensor_df.groupby("structure").get_group(structure_code)
+        except KeyError as e:
+            print(f"KeyError: {e} not found in the DataFrame. Skipping this entry.")
+            continue
+        
         df_structure.dropna(subset=["first_record", "last_record"], inplace=True)
-        dxf_path = f"data\\config\\sample_client\\sample_project\\dxf\\{structure}.dxf"
-        geo_structure = structure
+        dxf_path = f"data\\config\\sample_client\\sample_project\\dxf\\{structure_code}.dxf"
+
 
         for group, df_group in df_structure.groupby("group"):
             
@@ -104,11 +115,11 @@ if __name__ == "__main__":
 
             dfs = []
             for code in names:
-                csv_path = f"var\\sample_client\\sample_project\\processed_data\\PCT\\{structure}.{code}.csv"
-                df_sensor = read_df_on_time_from_csv(csv_path)
+                csv_path = f"var\\sample_client\\sample_project\\processed_data\\PCT\\{structure_code}.{code}.csv"
+                df_sensor = read_df_on_time_from_csv(csv_path, set_index=False)
                 dfs.append(df_sensor)
 
-            print(f"[{structure} - {group} - {names}] Generating PDF...")
+            print(f"[{structure_code} - {group} - {names}] Generating PDF...")
             data_sensors = {
                 "names": names,
                 "east": east,
@@ -118,7 +129,7 @@ if __name__ == "__main__":
 
             group_args = {
                 "name": group,
-                "location": structure,
+                "location": structure_name,
             }
 
             generated_pdf = generate_report(
@@ -129,12 +140,13 @@ if __name__ == "__main__":
                 end_query=end_query,
                 appendix=appendix,
                 start_item=start_item,
-                geo_structure=geo_structure,
+                structure_code=structure_code,
+                structure_name=structure_name,
                 sensor_type=sensor_type,
                 output_dir=output_dir,
                 static_report_params=static_report_params,
                 column_config=column_config,
             )
-            print(f"[{structure} - {group}] Generated PDF: {generated_pdf}")
+            print(f"[{structure_code} - {group}] Generated PDF: {generated_pdf}")
             n_pdf = len(generated_pdf)
             start_item += n_pdf

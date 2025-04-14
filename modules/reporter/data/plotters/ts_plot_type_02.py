@@ -1,7 +1,5 @@
 import os
 import sys
-from matplotlib import colormaps
-from matplotlib.colors import rgb2hex
 import pandas as pd
 
 # Add 'libs' path to sys.path
@@ -14,9 +12,9 @@ from libs.utils.config_loader import load_toml
 from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
-    COLOR_PALETTE,
     CALC_CONFIG_DIR,
 )
+from libs.utils.plot_helpers import get_unique_combination
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -178,37 +176,7 @@ def create_map(dxf_path, data_sensors):
     return plotter.get_drawing()
 
 
-def get_unique_combination(df_index, used_combinations, total_dfs):
-    """
-    Generate a unique combination of color and marker for a given dataframe index.
-    Ensures consistency across series.
-    """
-    from itertools import cycle
 
-    # Define unique styles for markers
-    unique_styles = {"markers": ["o", "s", "D", "v", "^", "<", ">", "p", "h"]}
-
-    # Generate unique colors for each dataframe
-    colormap = colormaps[COLOR_PALETTE]
-    if total_dfs == 1:
-        color = rgb2hex(
-            colormap(0.4)
-        )  # Use a fixed value if there's only one dataframe
-    else:
-        color = rgb2hex(colormap(0.4 + (df_index * 0.4 / (total_dfs - 1))))
-
-    # Cycle through markers to ensure consistency
-    marker_cycle = cycle(unique_styles["markers"])
-    for _ in range(df_index + 1):
-        marker = next(marker_cycle)
-
-    combination = (color, marker)
-    while combination in used_combinations:
-        marker = next(marker_cycle)
-        combination = (color, marker)
-
-    used_combinations.add(combination)
-    return combination
 
 
 def create_cell_1(

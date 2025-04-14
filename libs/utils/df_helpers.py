@@ -11,11 +11,11 @@ import pandas as pd
 from pathlib import Path
 
 
-def read_df_on_time_from_csv(path: Path) -> pd.DataFrame:
+def read_df_on_time_from_csv(path: Path, set_index: bool = True) -> pd.DataFrame:
     # Leer CSV desde una ruta
     df = read_df_from_csv(path)
     # Convertir la columna time a datetime preservando milisegundos
-    df = config_time_df(df)
+    df = config_time_df(df, set_index)
     return df
 
 
@@ -25,9 +25,11 @@ def read_df_from_csv(path: Path) -> pd.DataFrame:
     return df
 
 
-def config_time_df(df: pd.DataFrame) -> pd.DataFrame:
-    # Convertir la columna time a datetime preservando milisegundos
+def config_time_df(df: pd.DataFrame, set_index: bool = True) -> pd.DataFrame:
+    # Convertir la columna time a datetime y establecer como índice
     df["time"] = pd.to_datetime(df["time"], format="mixed", errors="raise")
+    if set_index:
+        df = df.set_index('time')
     return df
 
 
