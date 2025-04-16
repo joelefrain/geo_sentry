@@ -1,11 +1,14 @@
 import os
 import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
 from matplotlib import colormaps
 from matplotlib.colors import rgb2hex
 import pandas as pd
+import numpy as np
 
 # Add 'libs' path to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from modules.reporter.plot_builder import PlotMerger, PlotBuilder
 from modules.reporter.report_builder import ReportBuilder, load_svg
@@ -14,9 +17,10 @@ from libs.utils.config_loader import load_toml
 from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
-    COLOR_PALETTE,
     CALC_CONFIG_DIR,
 )
+
+COLOR_PALETTE = "gist_rainbow"
 
 def get_unique_combination(df_index, used_combinations, total_dfs):
     """
@@ -28,14 +32,14 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
     # Define unique styles for markers
     unique_styles = {"markers": ["o", "s", "D", "v", "^", "<", ">", "p", "h"]}
 
-    # Generate unique colors for each dataframe
+    # Generate random colors from the colormap
     colormap = colormaps[COLOR_PALETTE]
     if total_dfs == 1:
-        color = rgb2hex(
-            colormap(0.4)
-        )  # Use a fixed value if there's only one dataframe
+        color = rgb2hex(colormap(0.4))  # Use a fixed value if there's only one dataframe
     else:
-        color = rgb2hex(colormap(0.4 + (df_index * 0.4 / (total_dfs - 1))))
+        # Generate a random value between 0.2 and 0.8 to avoid too light/dark colors
+        random_pos = 0.2 + (np.random.random() * 0.6)
+        color = rgb2hex(colormap(random_pos))
 
     # Cycle through markers to ensure consistency
     marker_cycle = cycle(unique_styles["markers"])
@@ -44,6 +48,8 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
 
     combination = (color, marker)
     while combination in used_combinations:
+        random_pos = 0.2 + (np.random.random() * 0.6)
+        color = rgb2hex(colormap(random_pos))
         marker = next(marker_cycle)
         combination = (color, marker)
 
@@ -135,7 +141,7 @@ def create_note(
     return note_handler.create_notes(sections)
 
 def create_map(dxf_path, data_sensors):
-    plotter = PlotBuilder(ymargin=0)
+    plotter = PlotBuilder(ts_serie=True, ymargin=0)
     map_args = {
         "dxf_path": dxf_path,
         "size": [2.0, 1.5],

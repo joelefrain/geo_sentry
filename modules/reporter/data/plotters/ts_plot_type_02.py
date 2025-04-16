@@ -1,9 +1,12 @@
 import os
 import sys
-import pandas as pd
 
-# Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
+from matplotlib import colormaps
+from matplotlib.colors import rgb2hex
+import pandas as pd
+import numpy as np
 
 from modules.reporter.plot_builder import PlotMerger, PlotBuilder
 from modules.reporter.report_builder import ReportBuilder, load_svg
@@ -14,21 +17,63 @@ from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
-from libs.utils.plot_helpers import get_unique_combination
+
+COLOR_PALETTE = "CMRmap"
+
+def get_unique_combination(df_index, used_combinations, total_dfs):
+    """
+    Generate a unique combination of color and marker for a given dataframe index.
+    Ensures consistency across series.
+    """
+    from itertools import cycle
+
+    # Define unique styles for markers
+    unique_styles = {"markers": ["o", "s", "D", "v", "^", "<", ">", "p", "h"]}
+
+    # Generate random colors from the colormap
+    colormap = colormaps[COLOR_PALETTE]
+    if total_dfs == 1:
+        color = rgb2hex(colormap(0.4))  # Use a fixed value if there's only one dataframe
+    else:
+        # Generate a random value between 0.2 and 0.8 to avoid too light/dark colors
+        random_pos = 0.2 + (np.random.random() * 0.6)
+        color = rgb2hex(colormap(random_pos))
+
+    # Cycle through markers to ensure consistency
+    marker_cycle = cycle(unique_styles["markers"])
+    for _ in range(df_index + 1):
+        marker = next(marker_cycle)
+
+    combination = (color, marker)
+    while combination in used_combinations:
+        random_pos = 0.2 + (np.random.random() * 0.6)
+        color = rgb2hex(colormap(random_pos))
+        marker = next(marker_cycle)
+        combination = (color, marker)
+
+    used_combinations.add(combination)
+    return combination
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
     """Calculate variables for notes based on multiple dataframes."""
     all_vars = []
     for df, name in zip(dfs, sensor_names):
+        
         # Apply mask if provided
         if mask is not None:
             df = df[mask(df)]
 
         first_date = pd.to_datetime(df[serie_x].iloc[0])
         last_date = pd.to_datetime(df[serie_x].iloc[-1])
-        max_value = df[target_column].max()
-        max_date = pd.to_datetime(df.loc[df[target_column].idxmax(), serie_x])
+        
+        # Encontrar el índice del valor de mayor magnitud (absoluto)
+        idx_max_abs = df[target_column].abs().idxmax()
+
+        # Obtener el valor absoluto máximo y la fecha correspondiente
+        max_value = abs(df.loc[idx_max_abs, target_column])
+        max_date = pd.to_datetime(df.loc[idx_max_abs, serie_x])
+        
         total_records = len(df)
         mean_freq = (
             (last_date - first_date).days / total_records if total_records > 0 else 0
@@ -62,9 +107,7 @@ def create_note(
     # Initialize NotesHandler
     note_handler = NotesHandler()
 
-    target_column_name = (
-        series_names.get(target_column, target_column).lower().split("(")[0]
-    )
+    target_column_name = series_names[target_column].lower().split("(")[0]
 
     # Calculate variables for all sensors
     calc_vars = calculate_note_variables(
@@ -78,11 +121,11 @@ def create_note(
             "content": [group_args["location"]],
             "format_type": "paragraph",
         },
-        {
-            "title": "Material:",
-            "content": [group_args["material"]],
-            "format_type": "paragraph",
-        },
+        # {
+        #     "title": "Material:",
+        #     "content": [group_args["material"]],
+        #     "format_type": "paragraph",
+        # },
         {
             "title": "Notas:",
             "content": [
@@ -101,8 +144,7 @@ def create_note(
 
 
 def create_map(dxf_path, data_sensors):
-
-    plotter = PlotBuilder(ts_serie=True)
+    plotter = PlotBuilder(ts_serie=True, ymargin=0)
     map_args = {
         "dxf_path": dxf_path,
         "size": [2.0, 1.5],
@@ -118,35 +160,28 @@ def create_map(dxf_path, data_sensors):
         },
     }
 
-    data_args = {
-        "x": data_sensors["east"],
-        "y": data_sensors["north"],
-        "note": data_sensors["names"],
-        "color": "red",
-        "linestyle": "",
-        "linewidth": 0,
-        "marker": "o",
-        "label": "",
-        "fontsize": 6,
-        "markersize": 10,
-        "arrow": {"position": "first", "angle": 45, "radius": 250, "color": "None"},
-    }
+    # Keep track of used combinations for consistent colors
+    used_combinations = set()
+    series_data = []
+
+    # Generate unique color combinations for each sensor
+    for i, name in enumerate(data_sensors["names"]):
+        color, marker = get_unique_combination(i, used_combinations, len(data_sensors["names"]))
+        series_data.append({
+            "x": data_sensors["east"][i],
+            "y": data_sensors["north"][i],
+            "color": color,
+            "linetype": "",
+            "lineweight": 0,
+            "marker": "o",
+            "markersize": 10,
+            "label": "",
+            "note": name,
+            "fontsize": 6,
+        })
 
     plotter.plot_series(
-        data=[
-            {
-                "x": data_args["x"],
-                "y": data_args["y"],
-                "color": data_args["color"],
-                "linetype": data_args["linestyle"],
-                "lineweight": data_args["linewidth"],
-                "marker": data_args["marker"],
-                "markersize": data_args["markersize"],
-                "label": data_args["label"],
-                "note": data_args["note"],
-                "fontsize": data_args["fontsize"],
-            }
-        ],
+        data=series_data,
         dxf_path=map_args["dxf_path"],
         size=map_args["size"],
         title_x=map_args["title_x"],
@@ -157,26 +192,7 @@ def create_map(dxf_path, data_sensors):
         format_params=map_args["format_params"],
     )
 
-    plotter.add_arrow(
-        data=[
-            {
-                "x": data_args["x"],
-                "y": data_args["y"],
-                "note": data_args["note"],
-                "fontsize": data_args["fontsize"],
-                "color": data_args["arrow"]["color"],
-            }
-        ],
-        position=data_args["arrow"]["position"],
-        angle=data_args["arrow"]["angle"],
-        radius=data_args["arrow"]["radius"],
-        color=data_args["arrow"]["color"],
-    )
-
     return plotter.get_drawing()
-
-
-
 
 
 def create_cell_1(
@@ -252,7 +268,11 @@ def create_cell_1(
                     color = style["color"]
                     marker = style["marker"]
 
-                label = name if primary_column and column == unique_serie else style["label_prefix"]
+                label = (
+                    name
+                    if primary_column and column == unique_serie
+                    else style["label_prefix"]
+                )
 
                 series.append(
                     {
@@ -358,7 +378,6 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        invert_y=True,
     )
 
     return plotter.get_drawing(), plotter.get_legend(
@@ -376,7 +395,8 @@ def generate_report(
     end_query,
     appendix,
     start_item,
-    geo_structure,
+    structure_code,
+    structure_name,
     sensor_type,
     output_dir,
     static_report_params,
@@ -446,12 +466,11 @@ def generate_report(
         mask,
     )
     lower_cell = create_map(dxf_path, data_sensors)
-    logo_cell = load_svg(LOGO_SVG, 0.08)
+    logo_cell = load_svg(LOGO_SVG, 0.95)
     chart_title_elements = [
         f"Registro histórico de {sensor_type_name}",
         " - ".join(data_sensors["names"]),
-        group_args["name"],
-        geo_structure,
+        structure_name,
     ]
     chart_title = " / ".join(filter(None, chart_title_elements))
 
@@ -471,11 +490,15 @@ def generate_report(
     os.makedirs(output_dir, exist_ok=True)
 
     # Format the PDF filename
-    geo_structure_formatted = geo_structure.replace(" ", "_")
+    structure_formatted = structure_code.replace(" ", "_")
     sensor_type_formatted = sensor_type.replace(" ", "_").upper()
-    pdf_filename = f"{output_dir}/{appendix}_{start_item}_{geo_structure_formatted}_{sensor_type_formatted}.pdf"
+    pdf_filenames = []
+
+    # Generate base filename
+    base_filename = f"{output_dir}/{appendix}_{start_item}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
+    pdf_filenames.append(base_filename)
 
     # Generate PDF
-    pdf_generator.generate_pdf(pdf_path=pdf_filename)
+    pdf_generator.generate_pdf(pdf_path=base_filename)
 
-    return pdf_filename
+    return pdf_filenames

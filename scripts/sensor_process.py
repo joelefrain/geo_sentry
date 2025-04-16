@@ -285,7 +285,7 @@ def get_operativity(cut_off, location_data_folder_base, work_path, sensor_names)
         create_empty_file(operativity_path)
         existing_df = pd.DataFrame(columns=["structure", "sensor_type", "code", "operativiy",
                                           "first_record", "first_value", "last_record",
-                                          "last_value", "max_value"])
+                                          "last_value", "max_value", "max_record"])
     else:
         existing_df = read_df_from_csv(operativity_path)
 
@@ -339,11 +339,12 @@ def get_processed_data(
 
         create_empty_file(processed_csv_path)
 
-        preprocess_df = read_df_on_time_from_csv(preprocessed_csv_path)
+        preprocess_df = read_df_on_time_from_csv(preprocessed_csv_path, set_index=False)
 
         process_df = read_or_create_df(processed_csv_path, default_columns=["time"])
 
-        process_df = config_time_df(process_df)
+        process_df = config_time_df(process_df, set_index=False)
+
         temp_df = merge_new_records(process_df, preprocess_df, match_columns=["time"])
 
         processor = DataProcessor(sensor_type.lower())
@@ -430,6 +431,13 @@ def get_main_records(work_path, sensor_names):
                         # Obtener valor máximo
                         max_value = f"{df[target_column].max()}"
                     
+                    # Encontrar el registro del valor máximo
+                    max_record = None
+                    if target_column and target_column in df.columns:
+                        max_idx = df[target_column].idxmax()
+                        if max_idx is not None:
+                            max_record = df.loc[max_idx, 'time']
+                    
                     mask = (operativity_df['structure'] == structure) & \
                            (operativity_df['sensor_type'] == sensor_type) & \
                            (operativity_df['code'] == code)
@@ -438,6 +446,7 @@ def get_main_records(work_path, sensor_names):
                     operativity_df.loc[mask, 'first_value'] = first_value
                     operativity_df.loc[mask, 'last_record'] = last_record
                     operativity_df.loc[mask, 'last_value'] = last_value
+                    operativity_df.loc[mask, 'max_record'] = max_record
                     operativity_df.loc[mask, 'max_value'] = max_value
                     
             except Exception as e:
@@ -489,19 +498,19 @@ if __name__ == "__main__":
 
     work_path = get_work_path(company_code, project_code)
 
-    exec_preprocess(
-        cut_off,
-        sensor_raw_name,
-        exclude_sheets,
-        custom_functions,
-        company_code,
-        project_code,
-        structure_names,
-        sensor_names,
-        order_structure,
-        order_sensors,
-        work_path,
-    )
+    # exec_preprocess(
+    #     cut_off,
+    #     sensor_raw_name,
+    #     exclude_sheets,
+    #     custom_functions,
+    #     company_code,
+    #     project_code,
+    #     structure_names,
+    #     sensor_names,
+    #     order_structure,
+    #     order_sensors,
+    #     work_path,
+    # )
 
     exec_process(cut_off, work_path, sensor_names)
     

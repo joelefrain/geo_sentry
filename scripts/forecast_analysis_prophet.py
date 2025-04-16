@@ -463,6 +463,7 @@ class TimeSeriesAnalyzer:
         plt.title(f"Pronóstico SARIMA (p,d,q)=(1,1,1) - {description} ({unit})")
         plt.xlabel("Fecha de registro")
         plt.ylabel(f"{description} ({unit})")
+        plt.legend()
         self.plot_saver.save_plot(f"forecast_{column}")
 
 
@@ -506,7 +507,7 @@ def process_pct_data(structure: str, num_item: int = 1) -> int:
     structure_display_name = structure_names[structure]
     
     initial_num_item = num_item  # Store initial value to calculate PDFs created
-    appendix = "B"
+    appendix = "F"
 
     # Process each group in structure
     for group, df_group in df_structure.groupby("group"):

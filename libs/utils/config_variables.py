@@ -13,7 +13,7 @@ DECIMAL_CHAR = ","
 DOC_TITLE = "SIG-AND"
 THEME_COLOR = "#0069AA"
 THEME_COLOR_FONT = "white"
-COLOR_PALETTE = "rainbow"
+COLOR_PALETTE = "RdYlGn"
 
 # Paths to data files
 # ---------------------------------------------------------------

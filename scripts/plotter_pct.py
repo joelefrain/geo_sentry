@@ -31,14 +31,18 @@ if __name__ == "__main__":
     sensor_df = pd.read_csv(
         "var\sample_client\sample_project\processed_data\operativity.csv", sep=";"
     )
-    sensor_df = sensor_df[(sensor_df["sensor_type"] == "PCT") & (sensor_df["operativiy"] == True)]
+    sensor_df = sensor_df[
+        (sensor_df["sensor_type"] == "PCT") & (sensor_df["operativiy"] == True)
+    ]
 
     start_item = 1
-    appendix = "A"
+    appendix = "C"
     output_dir = "./outputs/processing"
     sensor_type = "pct"
     plot_template = "merged_plot_type_01"
-    plotter_module = importlib.import_module(f"modules.reporter.data.plotters.{plot_template}")
+    plotter_module = importlib.import_module(
+        f"modules.reporter.data.plotters.{plot_template}"
+    )
     generate_report = plotter_module.generate_report
 
     column_config = {
@@ -95,19 +99,20 @@ if __name__ == "__main__":
     }
 
     for structure_code, structure_name in structure_names.items():
-        
+
         try:
             df_structure = sensor_df.groupby("structure").get_group(structure_code)
         except KeyError as e:
             print(f"KeyError: {e} not found in the DataFrame. Skipping this entry.")
             continue
-        
-        df_structure.dropna(subset=["first_record", "last_record"], inplace=True)
-        dxf_path = f"data\\config\\sample_client\\sample_project\\dxf\\{structure_code}.dxf"
 
+        df_structure.dropna(subset=["first_record", "last_record"], inplace=True)
+        dxf_path = (
+            f"data\\config\\sample_client\\sample_project\\dxf\\{structure_code}.dxf"
+        )
 
         for group, df_group in df_structure.groupby("group"):
-            
+
             # Generar listas para data_sensors
             names = df_group["code"].tolist()
             east = df_group["east"].tolist()
@@ -115,7 +120,7 @@ if __name__ == "__main__":
 
             dfs = []
             for code in names:
-                csv_path = f"var\\sample_client\\sample_project\\processed_data\\PCT\\{structure_code}.{code}.csv"
+                csv_path = f"var\\sample_client\\sample_project\\processed_data\\{sensor_type.upper()}\\{structure_code}.{code}.csv"
                 df_sensor = read_df_on_time_from_csv(csv_path, set_index=False)
                 dfs.append(df_sensor)
 
@@ -143,7 +148,7 @@ if __name__ == "__main__":
                 structure_code=structure_code,
                 structure_name=structure_name,
                 sensor_type=sensor_type,
-                output_dir=output_dir,
+                output_dir=f"{output_dir}/{structure_code}/{sensor_type}",
                 static_report_params=static_report_params,
                 column_config=column_config,
             )
