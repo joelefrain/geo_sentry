@@ -20,7 +20,8 @@ from libs.utils.config_variables import (
     CALC_CONFIG_DIR,
 )
 
-COLOR_PALETTE = "gist_rainbow"
+COLOR_PALETTE = "hsv"
+
 
 def get_unique_combination(df_index, used_combinations, total_dfs):
     """
@@ -35,11 +36,13 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
     # Generate random colors from the colormap
     colormap = colormaps[COLOR_PALETTE]
     if total_dfs == 1:
-        color = rgb2hex(colormap(0.4))  # Use a fixed value if there's only one dataframe
+        color = rgb2hex(
+            colormap(0.5)
+        )  # Use a fixed value if there's only one dataframe
     else:
-        # Generate a random value between 0.2 and 0.8 to avoid too light/dark colors
-        random_pos = 0.2 + (np.random.random() * 0.6)
-        color = rgb2hex(colormap(random_pos))
+        # Calculate equidistant position based on df_index
+        pos = df_index / (total_dfs - 1)
+        color = rgb2hex(colormap(pos))
 
     # Cycle through markers to ensure consistency
     marker_cycle = cycle(unique_styles["markers"])
@@ -48,13 +51,14 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
 
     combination = (color, marker)
     while combination in used_combinations:
-        random_pos = 0.2 + (np.random.random() * 0.6)
+        random_pos = np.random.random()
         color = rgb2hex(colormap(random_pos))
         marker = next(marker_cycle)
         combination = (color, marker)
 
     used_combinations.add(combination)
     return combination
+
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
     """Calculate variables for notes based on multiple dataframes."""
@@ -66,8 +70,10 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         first_date = pd.to_datetime(df[serie_x].iloc[0])
         last_date = pd.to_datetime(df[serie_x].iloc[-1])
-        max_value = abs(df[target_column]).max()
-        max_date = pd.to_datetime(df.loc[df[target_column].idxmax(), serie_x])
+        idx_max_abs = df[target_column].abs().idxmax()
+        max_value = df.loc[idx_max_abs, target_column]
+        max_date = pd.to_datetime(df.loc[idx_max_abs, serie_x])
+
         total_records = len(df)
         mean_freq = (
             (last_date - first_date).days / total_records if total_records > 0 else 0
@@ -86,6 +92,7 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
             }
         )
     return all_vars
+
 
 def create_note(
     group_args,
@@ -112,7 +119,13 @@ def create_note(
         combined_df.loc[combined_df[target_column].idxmax(), serie_x]
     )
 
-    valid_dfs = [df for df in dfs if not df.empty and target_column in df.columns and len(df[target_column].dropna()) > 0]
+    valid_dfs = [
+        df
+        for df in dfs
+        if not df.empty
+        and target_column in df.columns
+        and len(df[target_column].dropna()) > 0
+    ]
     if valid_dfs:
         last_value = max(df[target_column].iloc[-1] for df in valid_dfs)
     else:
@@ -140,6 +153,7 @@ def create_note(
 
     return note_handler.create_notes(sections)
 
+
 def create_map(dxf_path, data_sensors):
     plotter = PlotBuilder(ts_serie=True, ymargin=0)
     map_args = {
@@ -163,18 +177,20 @@ def create_map(dxf_path, data_sensors):
     series = []
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
         color, marker = get_unique_combination(i, used_combinations, total_dfs)
-        series.append({
-            "x": df["east"].tolist(),
-            "y": df["north"].tolist(),
-            "color": color,
-            "linestyle": "",
-            "lineweight": 0,
-            "marker": marker,
-            "markersize": 2,
-            "label": name,
-            "note": name,
-            "fontsize": 6,
-        })
+        series.append(
+            {
+                "x": df["east"].tolist(),
+                "y": df["north"].tolist(),
+                "color": color,
+                "linestyle": "",
+                "lineweight": 0,
+                "marker": marker,
+                "markersize": 2,
+                "label": name,
+                "note": name,
+                "fontsize": 6,
+            }
+        )
 
     plotter.plot_series(
         data=series,
@@ -189,9 +205,6 @@ def create_map(dxf_path, data_sensors):
     )
 
     return plotter.get_drawing()
-
-
-
 
 
 def create_ts_cell_1(
@@ -258,11 +271,16 @@ def create_ts_cell_1(
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
     )
-    n = len(series)
+
+    if len(series) >= 6:
+        ncol = 6
+    else:
+        ncol = len(series) / 2
+
     return plotter.get_drawing(), plotter.get_legend(
-        box_width=1.25 * n,
+        box_width=7.5,
         box_height=1.0,
-        ncol=6,
+        ncol=ncol,
     )
 
 
@@ -344,10 +362,15 @@ def create_ts_cell_2(
         show_legend=plot_format["show_legend"],
     )
 
+    if len(series) >= 6:
+        ncol = 6
+    else:
+        ncol = len(series) / 2
+
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
         box_height=1.0,
-        ncol=6,
+        ncol=ncol,
     )
 
 
@@ -407,7 +430,9 @@ def create_non_ts_cell_1(
 
     series = []
     total_dfs = len(data_sensors["df"])
-    for i, (df, series_name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
+    for i, (df, series_name) in enumerate(
+        zip(data_sensors["df"], data_sensors["names"])
+    ):
         if target_column in df.columns:
             color, marker = get_unique_combination(i, used_combinations, total_dfs)
             label = series_name

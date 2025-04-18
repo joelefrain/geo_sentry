@@ -20,6 +20,7 @@ from libs.utils.config_variables import (
 
 COLOR_PALETTE = "CMRmap"
 
+
 def get_unique_combination(df_index, used_combinations, total_dfs):
     """
     Generate a unique combination of color and marker for a given dataframe index.
@@ -33,11 +34,13 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
     # Generate random colors from the colormap
     colormap = colormaps[COLOR_PALETTE]
     if total_dfs == 1:
-        color = rgb2hex(colormap(0.4))  # Use a fixed value if there's only one dataframe
+        color = rgb2hex(
+            colormap(0.5)
+        )  # Use a fixed value if there's only one dataframe
     else:
-        # Generate a random value between 0.2 and 0.8 to avoid too light/dark colors
-        random_pos = 0.2 + (np.random.random() * 0.6)
-        color = rgb2hex(colormap(random_pos))
+        # Calculate equidistant position based on df_index
+        pos = df_index / (total_dfs - 1)
+        color = rgb2hex(colormap(pos))
 
     # Cycle through markers to ensure consistency
     marker_cycle = cycle(unique_styles["markers"])
@@ -46,7 +49,7 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
 
     combination = (color, marker)
     while combination in used_combinations:
-        random_pos = 0.2 + (np.random.random() * 0.6)
+        random_pos = np.random.random()
         color = rgb2hex(colormap(random_pos))
         marker = next(marker_cycle)
         combination = (color, marker)
@@ -59,21 +62,17 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
     """Calculate variables for notes based on multiple dataframes."""
     all_vars = []
     for df, name in zip(dfs, sensor_names):
-        
+
         # Apply mask if provided
         if mask is not None:
             df = df[mask(df)]
 
         first_date = pd.to_datetime(df[serie_x].iloc[0])
         last_date = pd.to_datetime(df[serie_x].iloc[-1])
-        
-        # Encontrar el índice del valor de mayor magnitud (absoluto)
         idx_max_abs = df[target_column].abs().idxmax()
-
-        # Obtener el valor absoluto máximo y la fecha correspondiente
-        max_value = abs(df.loc[idx_max_abs, target_column])
+        max_value = df.loc[idx_max_abs, target_column]
         max_date = pd.to_datetime(df.loc[idx_max_abs, serie_x])
-        
+
         total_records = len(df)
         mean_freq = (
             (last_date - first_date).days / total_records if total_records > 0 else 0
@@ -166,19 +165,23 @@ def create_map(dxf_path, data_sensors):
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
-        color, marker = get_unique_combination(i, used_combinations, len(data_sensors["names"]))
-        series_data.append({
-            "x": data_sensors["east"][i],
-            "y": data_sensors["north"][i],
-            "color": color,
-            "linetype": "",
-            "lineweight": 0,
-            "marker": "o",
-            "markersize": 10,
-            "label": "",
-            "note": name,
-            "fontsize": 6,
-        })
+        color, marker = get_unique_combination(
+            i, used_combinations, len(data_sensors["names"])
+        )
+        series_data.append(
+            {
+                "x": data_sensors["east"][i],
+                "y": data_sensors["north"][i],
+                "color": color,
+                "linetype": "",
+                "lineweight": 0,
+                "marker": "o",
+                "markersize": 10,
+                "label": "",
+                "note": name,
+                "fontsize": 6,
+            }
+        )
 
     plotter.plot_series(
         data=series_data,

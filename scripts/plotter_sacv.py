@@ -56,7 +56,6 @@ if __name__ == "__main__":
         "DME_CHO": "DME Choloque",
     }
 
-
     column_config = {
         "target_column": "settlement_m",
         "unit_target": "m",
@@ -84,7 +83,7 @@ if __name__ == "__main__":
         )
 
         # If group is not assigned, use the sensor code as group
-        df_structure['group'] = df_structure['group'].fillna(df_structure['code'])
+        df_structure["group"] = df_structure["group"].fillna(df_structure["code"])
         for group, df_group in df_structure.groupby("group"):
 
             # Generar listas para data_sensors
