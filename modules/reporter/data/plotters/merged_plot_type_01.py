@@ -50,13 +50,13 @@ def get_unique_combination(df_index, used_combinations, total_dfs):
         marker = next(marker_cycle)
 
     combination = (color, marker)
-    while combination in used_combinations:
-        random_pos = np.random.random()
-        color = rgb2hex(colormap(random_pos))
-        marker = next(marker_cycle)
-        combination = (color, marker)
+    # while combination in used_combinations:
+    #     random_pos = np.random.random()
+    #     color = rgb2hex(colormap(random_pos))
+    #     marker = next(marker_cycle)
+    #     combination = (color, marker)
 
-    used_combinations.add(combination)
+    # used_combinations.add(combination)
     return combination
 
 

@@ -1,23 +1,23 @@
 import os
 import sys
-import tomli
-from adjustText import adjust_text
-import matplotlib.patheffects as path_effects
 
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from libs.utils.config_plot import PlotConfig
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
+import tomli
 import ezdxf
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.patheffects as path_effects
+
 from io import BytesIO
+from adjustText import adjust_text
 from svglib.svglib import svg2rlg
 from reportlab.graphics.shapes import Drawing, Group, Rect
 from typing import Tuple, List
+
+from libs.utils.config_plot import PlotConfig
 
 
 class PlotBuilder:
@@ -648,7 +648,7 @@ class PlotBuilder:
             label=name_band[index],
         )
 
-    def _add_notes(
+    def add_notes(
         self, x_point: float, y_point: float, dx: float, dy: float, series: dict
     ) -> None:
         """
@@ -789,9 +789,6 @@ class PlotBuilder:
             mutation_scale=5,
         )
         self.ax1.add_patch(arrow)
-
-        # Handle notes if provided using the auxiliary method
-        self._add_notes(x_point, y_point, dx, dy, series)
 
     def _create_legend_drawing(
         self, box_width: int, box_height: int, ncol: int = 1

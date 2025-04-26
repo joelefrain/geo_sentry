@@ -1,10 +1,18 @@
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 import numpy as np
 import pandas as pd
 import ezdxf
-from ezdxf import units
+
 from bokeh.plotting import figure, save, output_file
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.glyphs import Scatter
+
+from libs.utils.config_variables import SENSOR_VISUAL_CONFIG
 
 class SectionPlotter:
     def __init__(self, line_start_utm, line_end_utm, base_elevation, dxf_path):
@@ -110,11 +118,11 @@ class SectionPlotter:
     def plot_section(self, sensors_df, output_path):
         """Genera el gráfico HTML con la sección y sensores."""
         # Configurar figura
-        p = figure(title="Perfil de Sección con Sensores",
+        p = figure(title="Sección longitudinal",
                   x_axis_label='Distancia a lo largo de la sección (m)',
                   y_axis_label='Elevación (m)',
-                  tools="pan,wheel_zoom,box_zoom,reset,save")  # Removido tap
-        
+                  tools="pan,wheel_zoom,box_zoom,reset,save")
+
         # Dibujar todas las líneas del DXF
         for line in self.lines_data:
             points = line['points']
@@ -123,21 +131,14 @@ class SectionPlotter:
             color = self._dxf_color_to_hex(line['color'])
             p.line(x_coords, y_coords, line_width=2, color=color)
 
-        # Configurar símbolos y colores para tipos de sensores
-        sensor_config = {
-            'temperature': {'marker': 'circle', 'color': 'red'},
-            'pressure': {'marker': 'square', 'color': 'blue'},
-            'level': {'marker': 'triangle', 'color': 'green'}
-        }
-        
         # Procesar cada sensor
         for _, sensor in sensors_df.iterrows():
             x_section = self._project_point(sensor['east'], sensor['north'])
             y_section = sensor['elevation']
-            
-            config = sensor_config.get(sensor['sensor_type'], 
-                                     {'marker': 'circle', 'color': 'gray'})
-            
+
+            # Obtener configuración visual del diccionario global
+            config = SENSOR_VISUAL_CONFIG[sensor['sensor_type']]
+
             # Crear glyph para el sensor
             source = ColumnDataSource(data={
                 'x': [x_section],
@@ -178,7 +179,7 @@ if __name__ == '__main__':
     
     test_sensors = pd.DataFrame({
         'name': ['Sensor Lima', 'Sensor Cusco', 'Sensor Arequipa'],
-        'sensor_type': ['temperature', 'pressure', 'level'],
+        'sensor_type': ['PCV', 'PCT', 'SACV'],
         'east': [279033, 279150, 279180],  # Coordenadas a lo largo de la línea
         'north': [8665000, 8665000, 8665000],  # Mismo norte que la línea
         'zone_number': [18, 18, 18],
