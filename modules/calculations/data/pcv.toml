@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [base]
 base_line_column = "base_line"
 base_columns = ["time_0", "digits_0", "temperature_0", "barometric_load_0", "sensor_level_0", "lineal_factor_0", "temperature_factor_0"]
@@ -33,39 +32,3 @@ unit = "kPa"
 
 [inline.es]
 target_phrase = "carga hidráulica"
-=======
-[base]
-base_line_column = "base_line"
-base_columns = ["time_0", "digits_0", "temperature_0", "barometric_load_0", "sensor_level_0", "lineal_factor_0", "temperature_factor_0"]
-
-[abs]
-diff_time_abs = "lambda df, base: (df['time'] - base['time_0']).dt.total_seconds() / (24 * 3600)"
-hydraulic_load_kpa = "lambda df, base: (df['digits'] - base['digits_0']) * base['lineal_factor_0'] + (df['temperature'] - base['temperature_0']) * base['temperature_factor_0'] - (df['barometric_load'] - base['barometric_load_0']) * 10"
-hydraulic_load_m = "lambda df: df['hydraulic_load_kpa'] * np.divide(1, 9.80665)"
-piezometric_level = "lambda df, base: np.where(df['hydraulic_load_m'] < 0, base['sensor_level_0'], base['sensor_level_0'] + df['hydraulic_load_m'])"
-
-[rel]
-diff_time_rel = "lambda df: df['time'].diff().dt.total_seconds() / (24 * 3600)"
-
-[names.es]
-diff_time_abs = "Duración de monitoreo (días)"
-diff_time_rel = "Frecuencia de monitoreo (días)"
-hydraulic_load_kpa = "Carga hidráulica (kPa)"
-hydraulic_load_m = "Carga hidráulica (m)"
-piezometric_level = "Nivel piezométrico (m s. n. m.)"
-time = "Fecha de registro"
-digits = "Dígitos"
-temperature = "Temperatura (°C)"
-barometric_load = "Carga barométrica (kPa)"
-sensor_level = "Nivel del sensor (m s. n. m.)"
-terrain_level = "Nivel del terreno (m s. n. m.)"
-lineal_factor = "Factor de calibración lineal (G)"
-temperature_factor = "Factor de calibración de temperatura (K)"
-
-[target]
-column = "hydraulic_load_kpa"
-unit = "kPa"
-
-[inline.es]
-target_phrase = "carga hidráulica"
->>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)

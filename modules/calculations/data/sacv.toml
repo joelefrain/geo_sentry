@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [base]
 base_line_column = "base_line"
 base_columns = ["time_0", "digits_0", "temperature_0", "diff_e_res_0", "sensor_level_0", "lineal_factor_0", "temperature_factor_0"]
@@ -34,41 +33,4 @@ column = "settlement_cm"
 unit = "cm"
 
 [inline.es]
-=======
-[base]
-base_line_column = "base_line"
-base_columns = ["time_0", "digits_0", "temperature_0", "diff_e_res_0", "sensor_level_0", "lineal_factor_0", "temperature_factor_0"]
-
-[abs]
-diff_time_abs = "lambda df, base: (df['time'] - base['time_0']).dt.total_seconds() / (24 * 3600)"
-settlement_m = "lambda df, base: (df['digits'] - base['digits_0']) * base['lineal_factor_0'] + (df['temperature'] - base['temperature_0']) * base['temperature_factor_0'] - base['diff_e_res_0']"
-settlement_cm = "lambda df: df['settlement_m'] * 100"
-settlement_level = "lambda df, base: base['sensor_level_0'] - df['settlement_m']"
-
-[rel]
-diff_time_rel = "lambda df: df['time'].diff().dt.total_seconds() / (24 * 3600)"
-mean_vel_rel = "lambda df: df['settlement_cm'] / df['diff_time_rel']"
-
-[names.es]
-diff_time_abs = "Duración de monitoreo (días)"
-diff_time_rel = "Frecuencia de monitoreo (días)"
-settlement_m = "Asentamiento (m)"
-settlement_cm = "Asentamiento (cm)"
-settlement_level = "Cota actual del sensor (m s. n. m.)"
-mean_vel_rel = "Velocidad media relativa (cm/día)"
-time = "Fecha de registro"
-digits = "Dígitos"
-temperature = "Temperatura (°C)"
-diff_e_res = "Elevación de reservorio (m)"
-sensor_level = "Nivel del sensor (m s. n. m.)"
-terrain_level = "Nivel del terreno (m s. n. m.)"
-lineal_factor = "Factor de calibración lineal (G)"
-temperature_factor = "Factor de calibración de temperatura (K)"
-
-[target]
-column = "settlement_cm"
-unit = "cm"
-
-[inline.es]
->>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)
 target_phrase = "asentamiento"

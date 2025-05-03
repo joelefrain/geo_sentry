@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [base]
 base_line_column = "base_line"
 base_columns = ["time_0", "east_0", "north_0", "elevation_0"]
@@ -74,81 +73,4 @@ column = "diff_disp_total_abs"
 unit = "cm"
 
 [inline.es]
-=======
-[base]
-base_line_column = "base_line"
-base_columns = ["time_0", "east_0", "north_0", "elevation_0"]
-
-[abs]
-diff_time_abs = "lambda df, base: (df['time'] - base['time_0']).dt.total_seconds() / (24 * 3600)"
-diff_east_abs = "lambda df, base: 100 * (df['east'] - base['east_0'])"
-diff_north_abs = "lambda df, base: 100 * (df['north'] - base['north_0'])"
-diff_vert_abs = "lambda df, base: 100 * (df['elevation'] - base['elevation_0'])"
-diff_horz_abs = "lambda df: np.sqrt(df['diff_east_abs']**2 + df['diff_north_abs']**2)"
-diff_disp_total_abs = "lambda df: np.sqrt(df['diff_vert_abs']**2 + df['diff_horz_abs']**2)"
-acum_disp_total_abs = "lambda df: df['diff_disp_total_abs'].cumsum()"
-mean_vel_abs = "lambda df: df['diff_disp_total_abs'] / df['diff_time_abs']"
-inv_mean_vel_abs = "lambda df: np.where(df['mean_vel_abs'] == 0, 0, 1 / df['mean_vel_abs'])"
-horz_angle_abs_rad = "lambda df, base: np.arctan2((df['east'] - base['east_0']), (df['north'] - base['north_0']))"
-horz_angle_abs_grad = "lambda df: np.degrees(df['horz_angle_abs_rad']) % 360"
-dip_abs_rad = "lambda df: np.arctan2(-df['diff_vert_abs'], df['diff_horz_abs'])"
-dip_abs_grad = "lambda df: np.degrees(df['dip_abs_rad'])"
-azimuth_abs_grad = "lambda df: df['horz_angle_abs_grad'] % 360"
-
-[rel]
-diff_time_rel = "lambda df: df['time'].diff().dt.total_seconds() / (24 * 3600)"
-diff_east_rel = "lambda df: 100 * df['east'].diff()"
-diff_north_rel = "lambda df: 100 * df['north'].diff()"
-diff_vert_rel = "lambda df: 100 * df['elevation'].diff()"
-diff_horz_rel = "lambda df: np.sqrt(df['diff_east_rel']**2 + df['diff_north_rel']**2)"
-diff_disp_total_rel = "lambda df: np.sqrt(df['diff_vert_rel']**2 + df['diff_horz_rel']**2)"
-acum_disp_total_rel = "lambda df: df['diff_disp_total_rel'].cumsum()"
-mean_vel_rel = "lambda df: df['diff_disp_total_rel'] / df['diff_time_rel']"
-inv_mean_vel_rel = "lambda df: np.where(df['mean_vel_rel'] == 0, 0, 1 / df['mean_vel_rel'])"
-horz_angle_rel_rad = "lambda df: np.arctan2(df['east'].diff(), df['north'].diff())"
-horz_angle_rel_grad = "lambda df: np.degrees(df['horz_angle_rel_rad']) % 360"
-dip_rel_rad = "lambda df: np.arctan2(-df['diff_vert_rel'], df['diff_horz_rel'])"
-dip_rel_grad = "lambda df: np.degrees(df['dip_rel_rad'])"
-azimuth_rel_grad = "lambda df: df['horz_angle_rel_grad'] % 360"
-
-[names.es]
-diff_horz_abs = "Desplazamiento horizontal absoluto (cm)"
-diff_vert_abs = "Desplazamiento vertical absoluto (cm)"
-diff_disp_total_abs = "Desplazamiento total absoluto (cm)"
-mean_vel_rel = "Velocidad media relativa (cm/día)"
-inv_mean_vel_rel = "Inversa de velocidad media relativa (día/cm)"
-dip_abs_grad = "Buzamiento absoluto (°)"
-azimuth_abs_grad = "Azimut absoluto (°)"
-dip_rel_grad = "Buzamiento relativo (°)"
-azimuth_rel_grad = "Azimut relativo (°)"
-diff_time_rel = "Frecuencia de monitoreo (días)"
-time = "Fecha de registro"
-east = "Este (m)"
-north = "Norte (m)"
-elevation = "Elevación (m s. n. m.)"
-diff_time_abs = "Duración de monitoreo (días)"
-diff_east_abs = "Δ Este absoluto (cm)"
-diff_north_abs = "Δ Norte absoluto (cm)"
-acum_disp_total_abs = "Desplazamiento total acumulado absoluto (cm)"
-mean_vel_abs = "Velocidad media absoluta (cm/día)"
-inv_mean_vel_abs = "Inversa de velocidad media absoluta (día/cm)"
-horz_angle_abs_rad = "Ángulo horizontal absoluto (rad)"
-horz_angle_abs_grad = "Ángulo horizontal absoluto (°)"
-dip_abs_rad = "Buzamiento absoluto (rad)"
-diff_east_rel = "Δ Este relativo (cm)"
-diff_north_rel = "Δ Norte relativo (cm)"
-diff_vert_rel = "Δ Vertical relativo (cm)"
-diff_horz_rel = "Δ Horizontal relativo (cm)"
-diff_disp_total_rel = "Δ Total relativo (cm)"
-acum_disp_total_rel = "Desplazamiento total acumulado relativo (cm)"
-horz_angle_rel_rad = "Ángulo horizontal relativo (rad)"
-horz_angle_rel_grad = "Ángulo horizontal relativo (°)"
-dip_rel_rad = "Buzamiento relativo (rad)"
-
-[target]
-column = "diff_disp_total_abs"
-unit = "cm"
-
-[inline.es]
->>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)
 target_phrase = "desplazamiento total absoluto"

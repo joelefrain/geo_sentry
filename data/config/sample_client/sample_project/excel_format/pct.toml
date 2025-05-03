@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [process]
 start_row = 20
 columns = [3, 6, 7, 8]
@@ -11,18 +10,4 @@ column_names = ["time", "east", "north", "elevation"]
 [location.attributes]
 east = "E14"
 north = "F14"
-=======
-[process]
-start_row = 20
-columns = [3, 6, 7, 8]
-column_names = ["time", "east", "north", "elevation"]
-
-[process.attributes]
-
-[process.custom_functions]
-
-[location.attributes]
-east = "E14"
-north = "F14"
->>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)
 elevation = "G14"

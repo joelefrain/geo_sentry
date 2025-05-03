@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [process]
 start_row = 22
 columns = [1, 3, 4]
@@ -20,27 +19,4 @@ column = ["time", "digits", "temperature"]
 [location.attributes]
 east = "G12"
 north = "G11"
-=======
-[process]
-start_row = 22
-columns = [1, 3, 4]
-column_names = ["time", "digits", "temperature"]
-
-[process.attributes]
-sensor_level = "G16"
-terrain_level = "G14"
-lineal_factor = "E17"
-temperature_factor = "E18"
-
-[process.custom_functions]
-barometric_load = "lambda row: 0"
-
-[process.selected_attr]
-cell = ["C10", "D10", "F10"]
-column = ["time", "digits", "temperature"]
-
-[location.attributes]
-east = "G12"
-north = "G11"
->>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)
 elevation = "G16"

@@ -10,4 +10,3 @@ ezdxf
 svglib
 statsmodels
 prophet
-babel
