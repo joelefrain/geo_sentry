@@ -6,7 +6,10 @@ from pathlib import Path
 # Constants for formats
 # ---------------------------------------------------------------
 SEP_FORMAT = ";"
+
+# Constants for number formats
 DECIMAL_CHAR = ","
+THOUSAND_CHAR = " "
 
 # Defaults for the report
 # ---------------------------------------------------------------

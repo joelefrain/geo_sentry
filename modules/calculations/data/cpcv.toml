@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [base]
 base_line_column = "base_line"
 base_columns = ["time_0", "digits_0", "temperature_0", "lineal_factor_0", "temperature_factor_0"]
@@ -29,3 +30,36 @@ unit = "kPa"
 
 [inline.es]
 target_phrase = "presión"
+=======
+[base]
+base_line_column = "base_line"
+base_columns = ["time_0", "digits_0", "temperature_0", "lineal_factor_0", "temperature_factor_0"]
+
+[abs]
+diff_time_abs = "lambda df, base: (df['time'] - base['time_0']).dt.total_seconds() / (24 * 3600)"
+pressure_mpa = "lambda df, base: (df['digits'] - base['digits_0']) * base['lineal_factor_0'] + (df['temperature'] - base['temperature_0']) * base['temperature_factor_0']"
+pressure_kpa = "lambda df: df['pressure_mpa'] * 1000"
+
+[rel]
+diff_time_rel = "lambda df: df['time'].diff().dt.total_seconds() / (24 * 3600)"
+
+[names.es]
+diff_time_abs = "Duración de monitoreo (días)"
+diff_time_rel = "Frecuencia de monitoreo (días)"
+pressure_mpa = "Presión (MPa)"
+pressure_kpa = "Presión (kPa)"
+time = "Fecha de registro"
+digits = "Dígitos"
+temperature = "Temperatura (°C)"
+sensor_level = "Nivel del sensor (m s. n. m.)"
+terrain_level = "Nivel del terreno (m s. n. m.)"
+lineal_factor = "Factor de calibración lineal (G)"
+temperature_factor = "Factor de calibración de temperatura (K)"
+
+[target]
+column = "pressure_kpa"
+unit = "kPa"
+
+[inline.es]
+target_phrase = "presión"
+>>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)

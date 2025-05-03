@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from babel import Locale
 import locale
 
 
@@ -6,26 +7,18 @@ class PlotConfig:
     """Class to configure global matplotlib parameters."""
 
     @classmethod
-    def setup_matplotlib(cls, ts_serie=True, ymargin=0.20):
-        """Configure global matplotlib parameters.
-
-        Parameters
-        ----------
-        use_date_format : bool, optional
-            Whether to use date format for x-axis, by default False.
-        x_data_range : tuple, optional
-            The range of x-axis data (start, end), by default None.
-        """
-
-        plt.rcParams["backend"] = "Agg"
-        
-        # Set font family
-        plt.rcParams["font.family"] = "Arial"
-        plt.rcParams["font.size"] = 8
-
-        # Enable locale settings for number formatting
+    def setup_matplotlib(cls, ts_serie=True, ymargin=0.20, lang="fr"):
+        """Configure global matplotlib parameters."""
+        # Set system locale for number formatting
         plt.rcParams["axes.formatter.use_locale"] = True
-        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+        # locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+
+        # Disable interactive mode and set backend to Agg for non-interactive plotting
+        plt.rcParams["backend"] = "Agg"
+
+        # Set font family
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.size"] = 8
 
         # Configure figure appearance
         plt.rcParams["figure.constrained_layout.use"] = True

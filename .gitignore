@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Databases
 *.db
 *.sqlite
@@ -59,4 +60,67 @@ __pycache__/
 *.pdf
 *.xlsx
 *.svg
+=======
+# Databases
+*.db
+*.sqlite
+
+# IDE settings
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Test files and caches
+__pycache__/
+*.pyc
+test_*/
+tests/
+seed/
+
+# Virtual environments
+.venv/
+venv/
+
+# Data
+.qodo
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Environment variables
+.env
+.env.*
+
+# Build artifacts
+dist/
+build/
+
+# Cache files
+__pycache__/
+*.pyc
+
+# Custom exclusions
+.qodo
+
+# Supporting files
+*.csv
+*.json
+*.geojson
+*.xml
+*.html
+*.txt
+*.pdf
+*.xlsx
+*.svg
+>>>>>>> 118aabc (update | Independizacion del locale del sistema operativo)
 !requirements.txt
