@@ -450,7 +450,7 @@ def generate_report(
     pdf_filenames = []
 
     # Generate base filename
-    base_filename = f"{output_dir}/{appendix}_{start_item}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
+    base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
     pdf_filenames.append(base_filename)
 
     # Generate PDF

@@ -21,6 +21,7 @@ from libs.utils.config_variables import (
 
 COLOR_PALETTE = "Spectral"
 
+
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
     """Calculate variables for notes based on multiple dataframes."""
     all_vars = []
@@ -136,7 +137,9 @@ def create_map(dxf_path, data_sensors):
 
     series = []
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
+        color, marker = get_unique_marker_convo(
+            i, total_dfs, color_palette=COLOR_PALETTE
+        )
         series.append(
             {
                 "x": df["east"].tolist(),
@@ -204,7 +207,9 @@ def create_ts_cell_1(
     total_dfs = len(data_sensors["df"])
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
         if target_column in df.columns:
-            color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
+            color, marker = get_unique_marker_convo(
+                i, total_dfs, color_palette=COLOR_PALETTE
+            )
             label = name
 
             series.append(
@@ -286,7 +291,9 @@ def create_ts_cell_2(
         for column, style in series_styles.items():
             if column in filtered_df.columns:
                 if column == unique_serie:
-                    color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
+                    color, marker = get_unique_marker_convo(
+                        i, total_dfs, color_palette=COLOR_PALETTE
+                    )
                 else:
                     color = style["color"]
                     marker = style["marker"]
@@ -385,7 +392,9 @@ def create_non_ts_cell_1(
         zip(data_sensors["df"], data_sensors["names"])
     ):
         if target_column in df.columns:
-            color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
+            color, marker = get_unique_marker_convo(
+                i, total_dfs, color_palette=COLOR_PALETTE
+            )
             label = series_name
 
             # Add the main series
@@ -560,7 +569,7 @@ def generate_report(
             # Format the PDF filename
             structure_formatted = structure_code.replace(" ", "_")
             sensor_type_formatted = sensor_type.replace(" ", "_").upper()
-            pdf_filename = f"{output_dir}/{appendix}_{current_item}_{structure_formatted}_{sensor_type_formatted}.pdf"
+            pdf_filename = f"{output_dir}/{appendix}_{current_item:03}_{structure_formatted}_{sensor_type_formatted}.pdf"
 
             # Generate PDF
             pdf_generator.generate_pdf(pdf_path=pdf_filename)
@@ -616,7 +625,7 @@ def generate_report(
                 # Format the PDF filename
                 structure_formatted = structure_code.replace(" ", "_")
                 sensor_type_formatted = sensor_type.replace(" ", "_").upper()
-                pdf_filename = f"{output_dir}/{appendix}_{current_item}_{structure_formatted}_{sensor_type_formatted}_{name.replace(' ', '_')}.pdf"
+                pdf_filename = f"{output_dir}/{appendix}_{current_item:03}_{structure_formatted}_{sensor_type_formatted}_{name.replace(' ', '_')}.pdf"
 
                 # Generate PDF
                 pdf_generator.generate_pdf(pdf_path=pdf_filename)

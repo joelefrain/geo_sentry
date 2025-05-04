@@ -1,6 +1,4 @@
 import os
-import argparse
-from pathlib import Path
 from PyPDF2 import PdfMerger
 
 def find_pdf_files(input_dir: str) -> list:
@@ -43,8 +41,8 @@ def merge_pdfs(pdf_files: list, output_path: str) -> None:
 def main():
 
     # Convertir rutas a absolutas
-    input_dir = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\outputs"
-    output_file = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\outputs\Anexos de procesamiento.pdf"
+    input_dir = "/home/joelefrain/Desktop/_workspace/geo_sentry/outputs/process/sample_client/sample_project"
+    output_file = "/home/joelefrain/Desktop/_workspace/geo_sentry/outputs/appendix/sample_client/sample_project/processed_data.pdf"
     
     if not os.path.isdir(input_dir):
         print(f"Error: El directorio de entrada '{input_dir}' no existe")

@@ -261,7 +261,6 @@ if __name__ == "__main__":
         "appendix_chapter": "5",
         "revsion": "B",
         "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
-        # "sensors": ["PCT"],
     }
 
     exec_plotter(**plotter_params)
