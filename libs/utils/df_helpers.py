@@ -2,12 +2,10 @@ import os
 import sys
 
 # Add 'libs' path to sys.path
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.append(base_path)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from libs.utils.config_variables import SEP_FORMAT
 
-import numpy as np
 import pandas as pd
 from pathlib import Path
 

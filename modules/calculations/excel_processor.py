@@ -2,11 +2,10 @@ import os
 import sys
 
 # Add 'libs' path to sys.path
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.append(base_path)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from libs.utils.config_variables import SEP_FORMAT
 from libs.utils.config_logger import get_logger
+from libs.utils.config_variables import SEP_FORMAT
 
 import pandas as pd
 from pathlib import Path
@@ -216,7 +215,7 @@ class ExcelProcessor:
             if valid_values and new_record:
                 # Crear un DataFrame con el nuevo registro
                 new_df = pd.DataFrame([new_record])
-                
+
                 # Asegurar que las columnas coincidan
                 for col in df.columns:
                     if col not in new_df.columns:
@@ -229,12 +228,14 @@ class ExcelProcessor:
 
                 # Concatenar el nuevo registro con el DataFrame existente
                 df = pd.concat([df, new_df], ignore_index=True)
-                
+
                 # Ordenar por tiempo si existe la columna
-                if 'time' in df.columns:
-                    df = df.sort_values('time', ignore_index=True)
-                
-                logger.info(f"✅ Nuevo registro agregado con valores de celdas seleccionadas")
+                if "time" in df.columns:
+                    df = df.sort_values("time", ignore_index=True)
+
+                logger.info(
+                    f"✅ Nuevo registro agregado con valores de celdas seleccionadas"
+                )
 
         return df
 

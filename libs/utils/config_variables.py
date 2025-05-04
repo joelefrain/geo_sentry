@@ -32,8 +32,11 @@ DATA_CONFIG = Path(__file__).parent.parent.parent / "data" / "config"
 
 # Paths to configuration directories
 # ---------------------------------------------------------------
+BASE_DIR = Path(__file__).parent.parent.parent
 CALC_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "calculations" / "data"
-REPORT_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "reporter" / "data"
+REPORT_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "reporter" / "data" / "reports"
+CHART_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "reporter" / "data" / "charts"
+NOTE_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "reporter" / "data" / "notes"
 
 OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
 PROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "process"

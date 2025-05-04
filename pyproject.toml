@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "geo_sentry"
+version = "0.1.0"
+description = "A project for geospatial data analysis and visualization."
+authors = ["Joel Efrain <etalarconjoel@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pandas = "*"
+tomli = "*"
+openpyxl = "*"
+seaborn = "*"
+matplotlib = "*"
+scikit-learn = "*"
+adjustText = "*"
+ezdxf = "*"
+svglib = "*"
+statsmodels = "*"
+prophet = "*"
+bokeh = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

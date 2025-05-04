@@ -1,5 +1,10 @@
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 import pandas as pd
-import toml
 from pathlib import Path
 from abc import ABC, abstractmethod
 from bokeh.plotting import figure, output_file, save
@@ -17,6 +22,9 @@ from bokeh.models import (
 )
 from bokeh.layouts import column, row
 from bokeh.palettes import Spectral11
+
+from libs.utils.config_loader import load_toml
+from libs.utils.config_variables import CALC_CONFIG_DIR
 
 TICK_COUNT_X = 15
 TICK_COUNT_Y = 15
@@ -37,9 +45,8 @@ class BaseScatterPlot(ABC):
         self.width = width
         self.height = height
         self.default_series = default_series or {}
-        self.instrument = instrument  # Store prisms value
-        self.instrument_config_path = self._get_default_config_path()
-        self.config = toml.load(self.instrument_config_path)
+        self.instrument = instrument
+        self.config = load_toml(CALC_CONFIG_DIR, instrument)
         self.spanish_names = self.config["names"]["es"]
         self.y_columns = y_columns or self._get_plottable_columns()
         self._validate_columns()
@@ -54,11 +61,6 @@ class BaseScatterPlot(ABC):
         self.hover = None
 
         self._initialize_components()
-
-    def _get_default_config_path(self) -> Path:
-        return (
-            Path(__file__).parent.parent / f"calculations/data/{self.instrument}.toml"
-        )
 
     def _get_plottable_columns(self) -> list[str]:
         return [

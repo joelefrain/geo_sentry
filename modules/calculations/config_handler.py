@@ -1,6 +1,13 @@
-import tomli
-from pathlib import Path
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from typing import Dict, Any, List
+
+from libs.utils.config_loader import load_toml
+from libs.utils.config_variables import CALC_CONFIG_DIR
 
 class ConfigHandler:
     """Clase para manejar la configuración y validación de datos."""
@@ -18,18 +25,7 @@ class ConfigHandler:
         Raises:
             ValueError: Si el archivo de configuración no existe.
         """
-        # Si config_name es una ruta completa, la usamos directamente
-        if Path(config_name).suffix == '.toml':
-            toml_path = Path(config_name)
-        else:
-            # Si es solo un nombre, buscamos en el directorio config
-            toml_path = Path(__file__).parent / 'config' / f'{config_name}.toml'
-            
-        if not toml_path.is_file():
-            raise ValueError(f"Archivo de configuración '{toml_path}' no encontrado.")
-        
-        with open(toml_path, "rb") as f:
-            return tomli.load(f)
+        return load_toml(CALC_CONFIG_DIR, config_name)
     
     @staticmethod
     def validate_config(config: Dict[str, Any], required_sections: List[str]) -> bool:

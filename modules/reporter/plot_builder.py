@@ -4,7 +4,6 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-import tomli
 import ezdxf
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +17,8 @@ from reportlab.graphics.shapes import Drawing, Group, Rect
 from typing import Tuple, List
 
 from libs.utils.config_plot import PlotConfig
+from libs.utils.config_loader import load_toml
+from libs.utils.config_variables import CHART_CONFIG_DIR
 
 
 class PlotBuilder:
@@ -94,15 +95,13 @@ class PlotBuilder:
         PlotConfig.setup_matplotlib(ts_serie, ymargin)
 
         # Load default styles from TOML
-        style_path = os.path.join(
-            os.path.dirname(__file__), f"data/charts/{style_file}.toml"
-        )
         try:
-            with open(style_path, "rb") as f:
-                self.default_styles = tomli.load(f)
+            self.default_styles = load_toml(CHART_CONFIG_DIR, style_file)
         except Exception as e:
             self.default_styles = {}
-            raise RuntimeError(f"Could not load styles from {style_path}: {e}")
+            raise RuntimeError(
+                f"Could not load styles from {CHART_CONFIG_DIR / style_file}: {e}"
+            )
 
     def __del__(self):
         """Cleanup when object is deleted."""

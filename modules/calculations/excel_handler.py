@@ -2,8 +2,7 @@ import os
 import sys
 
 # Add 'libs' path to sys.path
-base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.append(base_path)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from libs.utils.config_variables import SEP_FORMAT
 from libs.utils.config_logger import get_logger

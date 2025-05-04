@@ -1,5 +1,9 @@
-import tomli
-from pathlib import Path
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from reportlab.lib.pagesizes import landscape, portrait, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
 from reportlab.lib.styles import ParagraphStyle
@@ -7,6 +11,9 @@ from reportlab.lib import colors
 from svglib.svglib import svg2rlg
 import itertools
 import reportlab.lib.pagesizes
+
+from libs.utils.config_loader import load_toml
+from libs.utils.config_variables import REPORT_CONFIG_DIR
 
 def load_svg(svg_path, scale):
     """Carga un archivo SVG y ajusta su escala.
@@ -48,8 +55,8 @@ class ReportBuilder:
             theme_color_font: Color de fuente del tema.
             **kwargs: Atributos adicionales para el reporte.
         """
-        config_path = Path(__file__).parent / "data" / "reports" / f"{sample}.toml"
-        self.sample = self.load_config(config_path)
+
+        self.sample = load_toml(REPORT_CONFIG_DIR, sample)
         self.theme_color = theme_color
         self.theme_color_font = theme_color_font
         self.width_font_scale = self.sample["settings"]["width_font_scale"]
@@ -61,19 +68,6 @@ class ReportBuilder:
         self.set_attributes(kwargs)
         self.adjust_font_size(["project_code", "project_name", "num_item"])
         self.wrap_text_attributes(["project_name", "chart_title"])
-
-    @staticmethod
-    def load_config(config_path):
-        """Carga la configuración desde un archivo TOML.
-
-        Args:
-            config_path (Path): Ruta del archivo TOML.
-
-        Returns:
-            dict: Configuración cargada.
-        """
-        with config_path.open("rb") as fp:
-            return tomli.load(fp)
 
     def update_theme_colors(self, attributes, values):
         """Actualiza los colores del tema en la configuración de la tabla.

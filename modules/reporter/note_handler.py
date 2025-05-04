@@ -1,7 +1,14 @@
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from reportlab.platypus import Paragraph, ListFlowable, ListItem
 from reportlab.lib.styles import getSampleStyleSheet
-from pathlib import Path
-import toml
+
+from libs.utils.config_loader import load_toml
+from libs.utils.config_variables import NOTE_CONFIG_DIR
 
 class NotesHandler:
     def __init__(self, style_name="default"):
@@ -11,17 +18,7 @@ class NotesHandler:
         """
         self.styles = getSampleStyleSheet()
         self.style_name = style_name
-        self.style_config = self._load_style_config()
-    
-    def _load_style_config(self):
-        """Carga la configuración de estilo desde un archivo TOML"""
-        config_dir = Path(__file__).parent / "data" / "notes"
-        config_path = config_dir / f"{self.style_name}.toml"
-        
-        if not config_path.exists():
-            raise FileNotFoundError(f"Style config not found: {config_path}")
-        
-        return toml.load(str(config_path))
+        self.style_config = load_toml(NOTE_CONFIG_DIR, style_name)
     
     def create_notes(self, sections, title_style=None, list_style=None):
         """Crea bloques de notas con formato configurable"""

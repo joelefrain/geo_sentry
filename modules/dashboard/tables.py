@@ -1,5 +1,10 @@
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 import pandas as pd
-import toml
 from pathlib import Path
 from abc import ABC
 from bokeh.layouts import column
@@ -14,6 +19,9 @@ from bokeh.models import (
     CustomJS,
 )
 
+from libs.utils.config_loader import load_toml
+from libs.utils.config_variables import CALC_CONFIG_DIR
+
 
 class BaseTable(ABC):
     def __init__(
@@ -25,8 +33,7 @@ class BaseTable(ABC):
         self.df = df
         self.height = height
         self.instrument = instrument
-        self.instrument_config_path = Path(__file__).parent.parent / f"calculations/data/{self.instrument}.toml"
-        self.config = toml.load(self.instrument_config_path)
+        self.config = load_toml(CALC_CONFIG_DIR, instrument)
         self.spanish_names = self.config["names"]["es"]
         
         self.source = ColumnDataSource(data=self.df)
