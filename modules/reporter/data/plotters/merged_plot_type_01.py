@@ -230,10 +230,10 @@ def create_ts_cell_1(
     )
 
     len_series = len(series)
-    if len(series) >= 6:
-        ncol = len_series
+    if len_series >= 6:
+        ncol = 6
     else:
-        ncol = len_series / 2
+        ncol = max(1, len_series / 2)
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
@@ -316,10 +316,10 @@ def create_ts_cell_2(
     )
 
     len_series = len(series)
-    if len(series) >= 6:
-        ncol = len_series
+    if len_series >= 6:
+        ncol = 6
     else:
-        ncol = len_series / 2
+        ncol = max(1, len_series / 2)
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,

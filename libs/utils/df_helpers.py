@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 
 from libs.utils.config_variables import SEP_FORMAT
 
+import numpy as np
 import pandas as pd
 from pathlib import Path
 

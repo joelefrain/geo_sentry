@@ -20,6 +20,7 @@ from libs.utils.config_variables import (
 
 logger = get_logger("scripts.sensor_plotter")
 
+
 def get_sensor_config(config, sensor_type):
     """Get the configuration for a specific sensor type from TOML file."""
     return config["sensors"].get(sensor_type.lower(), {})
@@ -73,7 +74,9 @@ def generate_structure_plots(
         # Get sensor configuration
         sensor_config = get_sensor_config(config, sensor_type)
         if not sensor_config:
-            logger.error(f"  Error: Configuration for sensor type '{sensor_type}' not found.")
+            logger.error(
+                f"  Error: Configuration for sensor type '{sensor_type}' not found."
+            )
             continue
 
         # Filter operativity data for this structure and sensor type
@@ -107,6 +110,7 @@ def generate_structure_plots(
 
         # Process each group
         for group, df_group in sensor_df.groupby("group"):
+
             # Generate lists for data_sensors
             names = df_group["code"].tolist()
             east = df_group["east"].tolist()
@@ -151,7 +155,9 @@ def generate_structure_plots(
             }
 
             # Generate report
-            logger.info(f"  [{structure_code} - {sensor_type} - {group}] Generating PDF...")
+            logger.info(
+                f"  [{structure_code} - {sensor_type} - {group}] Generating PDF..."
+            )
 
             # Ensure output directory exists
             os.makedirs(
@@ -181,6 +187,7 @@ def generate_structure_plots(
             start_item += n_pdf
 
     return start_item
+
 
 @log_execution_time(module="scripts.sensor_plotter")
 def exec_plotter(
@@ -254,6 +261,7 @@ if __name__ == "__main__":
         "appendix_chapter": "5",
         "revsion": "B",
         "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
+        # "sensors": ["PCT"],
     }
 
     exec_plotter(**plotter_params)
