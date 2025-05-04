@@ -7,21 +7,28 @@ from pathlib import Path
 # ---------------------------------------------------------------
 SEP_FORMAT = ";"
 
+# Font for the report
+DEFAULT_FONT = "sans-serif"
+
 # Constants for number formats
 DECIMAL_CHAR = ","
 THOUSAND_CHAR = " "
+DATE_FORMAT = "%d-%m-%y"
+
+# Language settings
+LANG_DEFAULT = "es"  # Default language for the application
 
 # Defaults for the report
 # ---------------------------------------------------------------
 DOC_TITLE = "SIG-AND"
 THEME_COLOR = "#0069AA"
 THEME_COLOR_FONT = "white"
-COLOR_PALETTE = "RdYlGn"
 
 # Paths to data files
 # ---------------------------------------------------------------
 LOGO_SVG = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main_anddes.svg"
 LOGO_PDF = Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main_anddes.pdf"
+DATA_CONFIG = Path(__file__).parent.parent.parent / "data" / "config"
 
 # Paths to configuration directories
 # ---------------------------------------------------------------
@@ -30,7 +37,6 @@ REPORT_CONFIG_DIR = Path(__file__).parent.parent.parent / "modules" / "reporter"
 
 OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
 PROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "process"
-PREPROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "preprocess"
 DASHBOARD_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "dashboard"
 ANALYSIS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "analysis"
 

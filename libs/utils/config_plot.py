@@ -1,23 +1,23 @@
+from .config_variables import DECIMAL_CHAR, THOUSAND_CHAR, DEFAULT_FONT, DATE_FORMAT
+
 import matplotlib.pyplot as plt
-from babel import Locale
-import locale
 
 
 class PlotConfig:
     """Class to configure global matplotlib parameters."""
 
     @classmethod
-    def setup_matplotlib(cls, ts_serie=True, ymargin=0.20, lang="fr"):
+    def setup_matplotlib(cls, ts_serie=True, ymargin=0.20):
+
         """Configure global matplotlib parameters."""
-        # Set system locale for number formatting
+        # Set system locale
         plt.rcParams["axes.formatter.use_locale"] = True
-        # locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
         # Disable interactive mode and set backend to Agg for non-interactive plotting
         plt.rcParams["backend"] = "Agg"
 
         # Set font family
-        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.family"] = DEFAULT_FONT
         plt.rcParams["font.size"] = 8
 
         # Configure figure appearance
@@ -48,9 +48,9 @@ class PlotConfig:
         plt.rcParams["axes.titlelocation"] = "center"
 
         # Configure date formatting
-        plt.rcParams["date.autoformatter.day"] = "%d-%m-%y"
-        plt.rcParams["date.autoformatter.month"] = "%d-%m-%y"
-        plt.rcParams["date.autoformatter.year"] = "%d-%m-%y"
+        plt.rcParams["date.autoformatter.day"] = DATE_FORMAT
+        plt.rcParams["date.autoformatter.month"] = DATE_FORMAT
+        plt.rcParams["date.autoformatter.year"] = DATE_FORMAT
 
         # Configure ticks
         plt.rcParams["ytick.minor.visible"] = True

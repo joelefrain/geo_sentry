@@ -1,0 +1,97 @@
+[project]
+project_code = "1410.28.0054-0000"
+company_name = "Shahuindo SAC"
+project_name = "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur"
+
+[structures]
+PAD_1A = "Pad 1A"
+PAD_2A = "Pad 2A"
+PAD_2B_2C = "Pad 2B-2C"
+DME_SUR = "DME Sur"
+DME_CHO = "DME Choloque"
+
+[sensors.pcv]
+plot_template = "ts_plot_type_01"
+[sensors.pcv.column_config]
+target_column = "hydraulic_load_kpa"
+unit_target = "kPa"
+serie_x = "time"
+sensor_type_name = "piezómetro de cuerda vibrante"
+sensor_aka = "El piezómetro"
+
+[sensors.pta]
+plot_template = "ts_plot_type_02"
+[sensors.pta.column_config]
+target_column = "piezometric_level"
+unit_target = "m s. n. m."
+primary_column = "piezometric_level"
+primary_title_y = "Elevación (m s. n. m.)"
+secondary_column = "water_height"
+top_reference_column = "terrain_level"
+bottom_reference_column = "bottom_well_elevation"
+serie_x = "time"
+sensor_type_name = "piezómetro de tubo abierto"
+sensor_aka = "El piezómetro"
+
+[sensors.pct]
+plot_template = "merged_plot_type_01"
+[sensors.pct.column_config]
+sensor_type_name = "punto de control topográfico"
+[[sensors.pct.column_config.plots]]
+target_column = "diff_horz_abs"
+unit_target = "cm"
+ts_serie_flag = true
+series_x = "time"
+[[sensors.pct.column_config.plots]]
+target_column = "diff_vert_abs"
+unit_target = "cm"
+ts_serie_flag = true
+series_x = "time"
+[[sensors.pct.column_config.plots]]
+target_column = "diff_disp_total_abs"
+unit_target = "cm"
+ts_serie_flag = true
+series_x = "time"
+[[sensors.pct.column_config.plots]]
+target_column = "mean_vel_rel"
+unit_target = "cm/día"
+ts_serie_flag = true
+series_x = "time"
+[[sensors.pct.column_config.plots]]
+target_column = "inv_mean_vel_rel"
+unit_target = "día/cm"
+ts_serie_flag = true
+series_x = "time"
+[[sensors.pct.column_config.plots]]
+target_column = "north"
+ts_serie_flag = false
+series_x = "east"
+serie_aka = "Trayectoria"
+
+[sensors.sacv]
+plot_template = "ts_plot_type_02"
+[sensors.sacv.column_config]
+target_column = "settlement_m"
+unit_target = "m"
+primary_column = ""
+primary_title_y = "Elevación (m s. n. m.)"
+secondary_column = "settlement_m"
+top_reference_column = "terrain_level"
+bottom_reference_column = "sensor_level"
+serie_x = "time"
+sensor_type_name = "celda de asentamiento"
+sensor_aka = "La celda de asentamiento"
+
+[sensors.cpcv]
+plot_template = "ts_plot_type_02"
+[sensors.cpcv.column_config]
+target_column = "pressure_kpa"
+unit_target = "kPa"
+primary_column = ""
+primary_title_y = "Elevación (m s. n. m.)"
+secondary_column = "pressure_kpa"
+top_reference_column = "terrain_level"
+bottom_reference_column = "sensor_level"
+serie_x = "time"
+sensor_type_name = "celda de presión"
+sensor_aka = "La celda de presión"

@@ -3,16 +3,15 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from matplotlib import colormaps
-from matplotlib.colors import rgb2hex
+
 import pandas as pd
-import numpy as np
 
 # Add 'libs' path to sys.path
 
 from modules.reporter.plot_builder import PlotMerger, PlotBuilder
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.note_handler import NotesHandler
+from libs.utils.plot_helpers import get_unique_marker_convo
 from libs.utils.config_loader import load_toml
 from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
@@ -20,45 +19,7 @@ from libs.utils.config_variables import (
     CALC_CONFIG_DIR,
 )
 
-COLOR_PALETTE = "hsv"
-
-
-def get_unique_combination(df_index, used_combinations, total_dfs):
-    """
-    Generate a unique combination of color and marker for a given dataframe index.
-    Ensures consistency across series.
-    """
-    from itertools import cycle
-
-    # Define unique styles for markers
-    unique_styles = {"markers": ["o", "s", "D", "v", "^", "<", ">", "p", "h"]}
-
-    # Generate random colors from the colormap
-    colormap = colormaps[COLOR_PALETTE]
-    if total_dfs == 1:
-        color = rgb2hex(
-            colormap(0.5)
-        )  # Use a fixed value if there's only one dataframe
-    else:
-        # Calculate equidistant position based on df_index
-        pos = df_index / (total_dfs - 1)
-        color = rgb2hex(colormap(pos))
-
-    # Cycle through markers to ensure consistency
-    marker_cycle = cycle(unique_styles["markers"])
-    for _ in range(df_index + 1):
-        marker = next(marker_cycle)
-
-    combination = (color, marker)
-    # while combination in used_combinations:
-    #     random_pos = np.random.random()
-    #     color = rgb2hex(colormap(random_pos))
-    #     marker = next(marker_cycle)
-    #     combination = (color, marker)
-
-    # used_combinations.add(combination)
-    return combination
-
+COLOR_PALETTE = "Spectral"
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
     """Calculate variables for notes based on multiple dataframes."""
@@ -70,9 +31,9 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         first_date = pd.to_datetime(df[serie_x].iloc[0])
         last_date = pd.to_datetime(df[serie_x].iloc[-1])
-        idx_max_abs = df[target_column].abs().idxmax()
-        max_value = df.loc[idx_max_abs, target_column]
-        max_date = pd.to_datetime(df.loc[idx_max_abs, serie_x])
+        idx_max = df[target_column].idxmax()
+        max_value = df.loc[idx_max, target_column]
+        max_date = pd.to_datetime(df.loc[idx_max, serie_x])
 
         total_records = len(df)
         mean_freq = (
@@ -94,7 +55,7 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
     return all_vars
 
 
-def create_note(
+def get_note_content(
     group_args,
     data_sensors,
     target_column,
@@ -171,12 +132,11 @@ def create_map(dxf_path, data_sensors):
         },
     }
 
-    used_combinations = set()
     total_dfs = len(data_sensors["df"])
 
     series = []
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        color, marker = get_unique_combination(i, used_combinations, total_dfs)
+        color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
         series.append(
             {
                 "x": df["east"].tolist(),
@@ -215,10 +175,7 @@ def create_ts_cell_1(
     primary_title_y,
     sensor_type_name,
 ):
-    plotter = PlotBuilder()
-
-    # Keep track of used combinations
-    used_combinations = set()
+    plotter = PlotBuilder(ts_serie=True)
 
     # Series style definitions
     series_styles = {
@@ -247,7 +204,7 @@ def create_ts_cell_1(
     total_dfs = len(data_sensors["df"])
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
         if target_column in df.columns:
-            color, marker = get_unique_combination(i, used_combinations, total_dfs)
+            color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
             label = name
 
             series.append(
@@ -272,10 +229,11 @@ def create_ts_cell_1(
         show_legend=plot_format["show_legend"],
     )
 
+    len_series = len(series)
     if len(series) >= 6:
-        ncol = 6
+        ncol = len_series
     else:
-        ncol = len(series) / 2
+        ncol = len_series / 2
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
@@ -287,10 +245,7 @@ def create_ts_cell_1(
 def create_ts_cell_2(
     data_sensors, start_query, end_query, series_names, target_column, serie_x
 ):
-    plotter = PlotBuilder()
-
-    # Keep track of used combinations
-    used_combinations = set()
+    plotter = PlotBuilder(ts_serie=True)
 
     # Series style definitions
     series_styles = {
@@ -331,9 +286,7 @@ def create_ts_cell_2(
         for column, style in series_styles.items():
             if column in filtered_df.columns:
                 if column == unique_serie:
-                    color, marker = get_unique_combination(
-                        i, used_combinations, total_dfs
-                    )
+                    color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
                 else:
                     color = style["color"]
                     marker = style["marker"]
@@ -362,10 +315,11 @@ def create_ts_cell_2(
         show_legend=plot_format["show_legend"],
     )
 
+    len_series = len(series)
     if len(series) >= 6:
-        ncol = 6
+        ncol = len_series
     else:
-        ncol = len(series) / 2
+        ncol = len_series / 2
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
@@ -385,9 +339,6 @@ def create_non_ts_cell_1(
     name,
 ):
     plotter = PlotBuilder(ts_serie=False)
-
-    # Keep track of used combinations
-    used_combinations = set()
 
     # Series style definitions
     series_styles = {
@@ -434,7 +385,7 @@ def create_non_ts_cell_1(
         zip(data_sensors["df"], data_sensors["names"])
     ):
         if target_column in df.columns:
-            color, marker = get_unique_combination(i, used_combinations, total_dfs)
+            color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
             label = series_name
 
             # Add the main series
@@ -576,7 +527,7 @@ def generate_report(
             target_column_name = series_names[target_column].lower().split("(")[0]
 
             # Create report components
-            upper_cell = create_note(
+            upper_cell = get_note_content(
                 group_args,
                 data_sensors,
                 target_column,

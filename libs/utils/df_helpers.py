@@ -7,15 +7,37 @@ sys.path.append(base_path)
 
 from libs.utils.config_variables import SEP_FORMAT
 
+import numpy as np
 import pandas as pd
 from pathlib import Path
 
 
-def read_df_on_time_from_csv(path: Path, set_index: bool = True) -> pd.DataFrame:
+def read_df_on_time_from_csv(
+    path: Path,
+    set_index: bool = True,
+    auto_convert: bool = False,
+    num_decimals: int = 4,
+) -> pd.DataFrame:
+    """Lee un DataFrame desde un archivo CSV y configura la columna de tiempo."""
+
     # Leer CSV desde una ruta
     df = read_df_from_csv(path)
+
     # Convertir la columna time a datetime preservando milisegundos
     df = config_time_df(df, set_index)
+
+    # Conversión automática de tipos de datos
+    if auto_convert:
+        # Convertir columnas
+        df = df.convert_dtypes()
+
+        # Reemplazar pd.NA con np.nan para evitar errores en gráficos
+        df = df.apply(lambda col: col.astype(float) if col.dtype.name == 'Float64' else col)
+
+        # Redondear columnas de tipo float a num_decimals
+        float_cols = df.select_dtypes(include=["floating"]).columns
+        df[float_cols] = df[float_cols].round(num_decimals)
+
     return df
 
 
@@ -29,7 +51,7 @@ def config_time_df(df: pd.DataFrame, set_index: bool = True) -> pd.DataFrame:
     # Convertir la columna time a datetime y establecer como índice
     df["time"] = pd.to_datetime(df["time"], format="mixed", errors="raise")
     if set_index:
-        df = df.set_index('time')
+        df = df.set_index("time")
     return df
 
 
@@ -56,10 +78,8 @@ def merge_new_records(df1, df2, match_columns=["time"], match_type="all"):
     # Crear máscara de coincidencia según el tipo de comparación
     if match_type.lower() == "all":
         # Todos los valores deben coincidir
-        mask = (
-            ~df2[match_columns]
-            .apply(tuple, axis=1)
-            .isin(df1[match_columns].apply(tuple, axis=1))
+        mask = ~df2[match_columns].apply(tuple, axis=1).isin(
+            df1[match_columns].apply(tuple, axis=1)
         )
     elif match_type.lower() == "any":
         # Al menos un valor debe coincidir

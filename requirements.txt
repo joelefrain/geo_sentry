@@ -1,6 +1,5 @@
 pandas
 tomli
-toml
 openpyxl
 seaborn
 matplotlib
