@@ -12,7 +12,7 @@ from bokeh.plotting import figure, save, output_file
 from bokeh.models import ColumnDataSource, Label
 from bokeh.models.glyphs import Scatter
 
-from libs.utils.config_variables import SENSOR_VISUAL_CONFIG
+from libs.utils.config_variables import SENSOR_CONFIG
 
 class SectionPlotter:
     def __init__(self, line_start_utm, line_end_utm, base_elevation, dxf_path):
@@ -137,7 +137,7 @@ class SectionPlotter:
             y_section = sensor['elevation']
 
             # Obtener configuración visual del diccionario global
-            config = SENSOR_VISUAL_CONFIG[sensor['sensor_type']]
+            config = SENSOR_CONFIG[sensor['sensor_type']]
 
             # Crear glyph para el sensor
             source = ColumnDataSource(data={

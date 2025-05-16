@@ -8,7 +8,7 @@ import pandas as pd
 
 from modules.calculations.excel_processor import ExcelProcessor
 from modules.calculations.data_processor import DataProcessor
-from libs.utils.config_variables import CALC_CONFIG_DIR, BASE_DIR
+from libs.utils.config_variables import CALC_CONFIG_DIR, BASE_DIR, DATA_CONFIG
 from libs.utils.config_loader import load_toml
 from libs.utils.config_logger import get_logger, log_execution_time
 from libs.utils.df_helpers import (
@@ -23,7 +23,7 @@ from libs.utils.df_helpers import (
 logger = get_logger("scripts.sensor_processor")
 
 
-def get_work_path(company_code, project_code):
+def get_work_path(client_code, project_code):
     """Obtiene la ruta de trabajo para un corte específico.
 
     Args:
@@ -33,7 +33,7 @@ def get_work_path(company_code, project_code):
     Returns:
         Ruta de trabajo para el corte especificado.
     """
-    return os.path.join(BASE_DIR, "var", company_code, project_code)
+    return os.path.join(BASE_DIR, "var", client_code, project_code)
 
 
 def iter_path_names(base_path, external_path, internal_path):
@@ -56,12 +56,12 @@ def iter_path_names(base_path, external_path, internal_path):
     }
 
 
-def setup_seed_paths(cut_off, company_code, project_code, sensor_names):
+def setup_seed_paths(cut_off, client_code, project_code, sensor_names):
     """Configura las rutas necesarias para el preprocesamiento.
 
     Args:
         cut_off: Fecha de corte para el procesamiento.
-        company_code: Código de la compañía.
+        client_code: Código de la compañía.
         project_code: Código del proyecto.
         sensor_names: Diccionario con nombres de sensores.
 
@@ -69,12 +69,12 @@ def setup_seed_paths(cut_off, company_code, project_code, sensor_names):
         tuple: (seed_base_path, config_sensor_path)
     """
     seed_base_path = os.path.abspath(
-        os.path.join(BASE_DIR, f"seed/{company_code}/{project_code}/{cut_off}/")
+        os.path.join(BASE_DIR, f"seed/{client_code}/{project_code}/{cut_off}/")
     )
     config_sensor_path = {
         key: os.path.join(
-            BASE_DIR,
-            f"data/config/{company_code}/{project_code}/excel_format/{key.lower()}.toml",
+            DATA_CONFIG,
+            f"{client_code}/{project_code}/excel_format/{key.lower()}.toml",
         )
         for key in sensor_names
     }
@@ -99,7 +99,7 @@ def preprocess_sensors(
     cut_off,
     exclude_sheets,
     custom_functions,
-    order_sensors,
+    sensor_codes,
     order_structure,
     work_path,
 ):
@@ -115,8 +115,8 @@ def preprocess_sensors(
         order_structure: Orden de procesamiento de estructuras.
         work_path: Ruta de trabajo.
     """
-    for sensor_type in order_sensors:
-        toml_path = config_sensor_path[sensor_type]
+    for sensor_code in sensor_codes:
+        toml_path = config_sensor_path[sensor_code]
         if not os.path.exists(toml_path):
             logger.info(f"Config file not found: {toml_path}")
             continue
@@ -124,14 +124,14 @@ def preprocess_sensors(
         processor = ExcelProcessor(toml_path)
 
         for structure in order_structure:
-            input_folder = sensor_data_paths[sensor_type][structure]
+            input_folder = sensor_data_paths[sensor_code][structure]
             if os.path.exists(input_folder):
                 output_folder_base = os.path.join(work_path, cut_off)
                 custom_functions_for_sensor = custom_functions.copy()
                 processor.process_excel_directory(
                     input_folder=input_folder,
                     output_folder_base=output_folder_base,
-                    sensor_type=sensor_type,
+                    sensor_type=sensor_code,
                     code=structure,
                     exclude_sheets=exclude_sheets,
                     data_config=processor.config,
@@ -145,13 +145,10 @@ def exec_preprocess(
     cut_off,
     sensor_raw_name,
     exclude_sheets,
-    custom_functions,
-    company_code,
+    client_code,
     project_code,
     structure_names,
-    sensor_names,
-    order_structure,
-    order_sensors,
+    sensor_codes,
     work_path,
 ):
     """Ejecuta el preprocesamiento de datos de sensores desde archivos Excel.
@@ -161,7 +158,7 @@ def exec_preprocess(
         sensor_raw_name: Diccionario con nombres de hojas para cada tipo de sensor.
         exclude_sheets: Lista de nombres de hojas a excluir.
         custom_functions: Diccionario de funciones personalizadas para el procesamiento.
-        company_code: Código de la compañía.
+        client_code: Código de la compañía.
         project_code: Código del proyecto.
         structure_names: Diccionario con nombres de estructuras.
         sensor_names: Diccionario con nombres de sensores.
@@ -169,8 +166,11 @@ def exec_preprocess(
         order_sensors: Orden de procesamiento de sensores.
         work_path: Ruta de trabajo.
     """
+    custom_functions = {"base_line": lambda row: False}
+    order_structure = structure_names.keys()
+
     seed_base_path, config_sensor_path = setup_seed_paths(
-        cut_off, company_code, project_code, sensor_names
+        cut_off, client_code, project_code, sensor_codes
     )
 
     sensor_data_paths = iter_path_names(
@@ -186,7 +186,7 @@ def exec_preprocess(
         cut_off,
         exclude_sheets,
         custom_functions,
-        order_sensors,
+        sensor_codes,
         order_structure,
         work_path,
     )
@@ -244,7 +244,7 @@ def read_or_create_df(file_path: str, default_columns: list) -> pd.DataFrame:
         return pd.DataFrame(columns=default_columns)
 
 
-def get_operativity(cut_off, location_data_folder_base, work_path, sensor_names):
+def get_operativity(cut_off, location_data_folder_base, work_path, sensor_codes):
     """Procesa y actualiza los datos de operatividad de los sensores.
 
     Args:
@@ -265,11 +265,11 @@ def get_operativity(cut_off, location_data_folder_base, work_path, sensor_names)
 
     # Procesar nuevos datos de ubicación
     all_locations = []
-    for sensor_type in sensor_names.keys():
-        location_path = os.path.join(location_data_folder_base, sensor_type)
+    for sensor_code in sensor_codes:
+        location_path = os.path.join(location_data_folder_base, sensor_code)
         if os.path.exists(location_path):
             sensor_locations = process_sensor_files(
-                sensor_type, location_path, None, process_location_file
+                sensor_code, location_path, None, process_location_file
             )
             all_locations.extend(sensor_locations)
 
@@ -332,7 +332,7 @@ def get_operativity(cut_off, location_data_folder_base, work_path, sensor_names)
 
 
 def get_processed_data(
-    cut_off, preprocessed_data_folder_base, processed_data_folder_base, sensor_names
+    cut_off, preprocessed_data_folder_base, processed_data_folder_base, sensor_codes
 ):
     """Procesa los datos de los sensores y guarda los resultados.
 
@@ -363,10 +363,10 @@ def get_processed_data(
         df = processor.process_raw_data(df)
         save_df_to_csv(df, processed_csv_path)
 
-    for sensor_type in sensor_names.keys():
-        preprocessed_path = os.path.join(preprocessed_data_folder_base, sensor_type)
+    for sensor_code in sensor_codes:
+        preprocessed_path = os.path.join(preprocessed_data_folder_base, sensor_code)
         process_sensor_files(
-            sensor_type,
+            sensor_code,
             preprocessed_path,
             processed_data_folder_base,
             process_data_file,
@@ -393,7 +393,7 @@ def exec_process(cut_off, work_path, sensor_names):
     )
 
 
-def get_main_records(work_path, sensor_names):
+def get_main_records(work_path, sensor_codes):
     """Actualiza los primeros, últimos y máximos registros de cada instrumento."""
     logger.info("Actualizando registros en operativity.csv")
 
@@ -402,15 +402,15 @@ def get_main_records(work_path, sensor_names):
 
     operativity_df = read_df_from_csv(operativity_path)
 
-    for sensor_type in sensor_names.keys():
+    for sensor_code in sensor_codes:
         try:
-            config = load_toml(CALC_CONFIG_DIR, f"{sensor_type.lower()}")
+            config = load_toml(CALC_CONFIG_DIR, f"{sensor_code.lower()}")
             target_column = config.get("target", {}).get("column")
         except Exception as e:
-            logger.warning(f"Error leyendo TOML para {sensor_type}: {e}")
+            logger.warning(f"Error leyendo TOML para {sensor_code}: {e}")
             continue
 
-        sensor_folder = os.path.join(processed_data_folder, sensor_type)
+        sensor_folder = os.path.join(processed_data_folder, sensor_code)
         if not os.path.exists(sensor_folder):
             continue
 
@@ -451,7 +451,7 @@ def get_main_records(work_path, sensor_names):
 
                     mask = (
                         (operativity_df["structure"] == structure)
-                        & (operativity_df["sensor_type"] == sensor_type)
+                        & (operativity_df["sensor_type"] == sensor_code)
                         & (operativity_df["code"] == code)
                     )
 
@@ -469,63 +469,54 @@ def get_main_records(work_path, sensor_names):
     logger.info("Actualización de registros completada")
 
 
+def exec_processor(
+    client_code,
+    project_code,
+    cut_off,
+    engineering_code,
+    sensor_codes,
+    methods,
+):
+    """Ejecuta el procesamiento de datos de sensores desde archivos Excel."""
+    # Load configuration from TOML
+    config_dir = DATA_CONFIG / client_code / project_code / "processor"
+    config = load_toml(config_dir, engineering_code)
+
+    structure_names = config["structures"]
+    sensor_raw_name = config["sensors"]["raw_names"]
+    exclude_sheets = config["process"]["exclude_sheets"]
+
+    work_path = get_work_path(client_code, project_code)
+
+    if "preprocess" in methods:
+        for cut in cut_off:
+            exec_preprocess(
+                cut,
+                sensor_raw_name,
+                exclude_sheets,
+                client_code,
+                project_code,
+                structure_names,
+                sensor_codes,
+                work_path,
+            )
+
+    if "process" in methods:
+        for cut in cut_off:
+            exec_process(cut, work_path, sensor_codes)
+
+    if "main_records" in methods:
+        get_main_records(work_path, sensor_codes)
+
+
 if __name__ == "__main__":
-    client_keys = {
-        "names": ["sample_client", "sample_project"],
-        "codes": ["sample_client", "sample_project"],
+    processor_params = {
+        "client_code": "sample_client",
+        "project_code": "sample_project",
+        "engineering_code": "eor_2025",
+        "cut_off": ["250430_Abril"],
+        "methods": ["preprocess", "process", "main_records"],
+        "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
     }
 
-    company_code = client_keys["codes"][0]
-    project_code = client_keys["codes"][1]
-
-    structure_names = {
-        "PAD_1A": "Pad 1A",
-        "PAD_2A": "Pad 2A",
-        "PAD_2B_2C": "Pad 2B-2C",
-        "DME_SUR": "DME Sur",
-        "DME_CHO": "DME Choloque",
-    }
-
-    sensor_names = {
-        "PCV": "Piezómetro de cuerda vibrante",
-        "PTA": "Piezómetro de tubo abierto",
-        "PCT": "Punto de control topográfico",
-        "SACV": "Celda de asentamiento de cuerda vibrante",
-        "CPCV": "Celda de presión de cuerda vibrante",
-    }
-
-    order_structure = structure_names.keys()
-    order_sensors = sensor_names.keys()
-
-    cut_off = "250430_Abril"
-
-    sensor_raw_name = {
-        "PCV": "PZ CUERDA VIBRANTE",
-        "PTA": "PZ CASAGRANDE",
-        "PCT": "PRISMAS",
-        "SACV": "CELDAS DE ASENTAMIENTO",
-        "CPCV": "CELDAS DE PRESIÓN",
-    }
-
-    exclude_sheets = ["Hoja", "Kangatang", "X", "Planta", "Hoja 1", "Hoja 2"]
-    custom_functions = {"base_line": lambda row: False}
-
-    work_path = get_work_path(company_code, project_code)
-
-    exec_preprocess(
-        cut_off,
-        sensor_raw_name,
-        exclude_sheets,
-        custom_functions,
-        company_code,
-        project_code,
-        structure_names,
-        sensor_names,
-        order_structure,
-        order_sensors,
-        work_path,
-    )
-
-    exec_process(cut_off, work_path, sensor_names)
-
-    get_main_records(work_path, sensor_names)
+    exec_processor(**processor_params)

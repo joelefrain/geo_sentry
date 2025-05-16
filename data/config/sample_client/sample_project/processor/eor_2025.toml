@@ -1,0 +1,17 @@
+[structures]
+PAD_1A = "Pad 1A"
+PAD_2A = "Pad 2A"
+PAD_2B_2C = "Pad 2B-2C"
+DME_SUR = "DME Sur"
+DME_CHO = "DME Choloque"
+
+[sensors]
+[sensors.raw_names]
+PCV = "PZ CUERDA VIBRANTE"
+PTA = "PZ CASAGRANDE"
+PCT = "PRISMAS"
+SACV = "CELDAS DE ASENTAMIENTO"
+CPCV = "CELDAS DE PRESIÓN"
+
+[process]
+exclude_sheets = ["Hoja", "Kangatang", "X", "Planta", "Hoja 1", "Hoja 2"]

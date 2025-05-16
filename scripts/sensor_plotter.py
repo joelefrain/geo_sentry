@@ -110,7 +110,6 @@ def generate_structure_plots(
 
         # Process each group
         for group, df_group in sensor_df.groupby("group"):
-
             # Generate lists for data_sensors
             names = df_group["code"].tolist()
             east = df_group["east"].tolist()
@@ -203,11 +202,12 @@ def exec_plotter(
     appendix_chapter,
     revsion,
     sensors,
-    output_dir=PROCESS_OUTPUT_DIR,
 ):
     # Load configuration from TOML
     config_dir = DATA_CONFIG / client_code / project_code / "plot_formats"
     config = load_toml(config_dir, engineering_code)
+
+    output_dir = PROCESS_OUTPUT_DIR / client_code / project_code
 
     # Extract structure names and project parameters
     structure_names = config["structures"]
@@ -261,7 +261,6 @@ if __name__ == "__main__":
         "appendix_chapter": "5",
         "revsion": "B",
         "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
-        # "sensors": ["PTA"],
     }
 
     exec_plotter(**plotter_params)
