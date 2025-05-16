@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from adjustText import adjust_text  # Importar adjustText para evitar solapamientos
 
 from pathlib import Path
 from typing import Tuple
@@ -33,7 +34,7 @@ locale.setlocale(locale.LC_ALL, "es_ES.UTF-8")
 @dataclass
 class Config:
     """Configuration settings"""
-    FORECAST_HORIZON: int = 3
+    FORECAST_HORIZON: int = 6  # Cambiar a 6 meses
     FORMAT_TYPE: str = "svg"
 
 
@@ -394,72 +395,83 @@ class TimeSeriesAnalyzer:
     def _forecast_series(self, df: pd.DataFrame, column: str) -> None:
         ts = df.set_index(self.date_col)[column]
 
-        # Perform stationarity test
-        is_stationary, adf_output = self._is_stationary(ts)
+        # Calcular rolling mean (ventana de 7)
+        rolling_window = 7
+        ts_rolling = ts.rolling(window=rolling_window, min_periods=1).mean()
 
-        # Forecast based on stationarity and generate combined report
-        if is_stationary:
-            self._forecast_sarima(ts, column, adf_output, is_stationary)
-        else:
-            self._forecast_sarima(ts, column, adf_output, is_stationary)
+        # Test de estacionariedad sobre el rolling mean
+        is_stationary, adf_output = self._is_stationary(ts_rolling)
+
+        # Forecast usando el rolling mean, pero graficando los datos observados
+        self._forecast_sarima(ts, ts_rolling, column, adf_output, is_stationary)
 
     def _forecast_sarima(
-        self, ts: pd.Series, column: str, adf_output: pd.Series, is_stationary: bool
+        self, ts_observed: pd.Series, ts_rolling: pd.Series, column: str, adf_output: pd.Series, is_stationary: bool
     ) -> None:
-        model = SARIMAX(ts, order=(1, 1, 1), seasonal_order=(1, 1, 1, 12))
+        # Ajustar modelo sobre el rolling mean
+        model = SARIMAX(ts_rolling, order=(1, 1, 1), seasonal_order=(1, 1, 1, 12))
         results = model.fit(disp=False)
 
-        # Generate historical predictions
-        historical_forecast = results.get_prediction(
-            start=ts.index[0], end=ts.index[-1]
+        # Predicción histórica y futura sobre el rolling mean
+        full_forecast = results.get_prediction(
+            start=ts_rolling.index[0], end=ts_rolling.index[-1]
         )
-        historical_pred_mean = historical_forecast.predicted_mean
+        full_pred_mean = full_forecast.predicted_mean
 
-        # Generate future dates for the forecast
+        # Fechas futuras para el forecast
         future_dates = pd.date_range(
-            start=ts.index[-1], periods=Config.FORECAST_HORIZON + 1, freq="M"
-        )[1:]
+            start=ts_rolling.index[-1] + pd.Timedelta(days=1), periods=Config.FORECAST_HORIZON, freq="M"
+        )
         forecast = results.get_forecast(steps=Config.FORECAST_HORIZON)
-        pred_mean = forecast.predicted_mean
-        pred_ci = forecast.conf_int()
+        future_pred_mean = pd.Series(forecast.predicted_mean.values, index=future_dates)
+        future_pred_ci = forecast.conf_int()
+        future_pred_ci.index = future_dates
 
-        # Calculate the maximum value considering the prediction range
-        max_forecast_value = max(pred_ci.iloc[:, 1].max(), pred_mean.max())
+        # Concatenar predicciones históricas y futuras
+        pred_mean = pd.concat([full_pred_mean, future_pred_mean])
 
-        # Generate and save combined HTML report
+        # Calcular valores para la nota
+        max_forecast_value = future_pred_mean.iloc[-1]
+        max_forecast_date = future_pred_mean.index[-1]
+
+        # Generar y guardar reporte SVG combinado
         combined_svg = SVGReportGenerator.generate_combined_report(
             column, adf_output, is_stationary, max_forecast_value, "SARIMA"
         )
         self.result_saver.save_result(f"analysis_{column}.svg", combined_svg)
 
-        # Plot forecast
+        # Graficar: mostrar datos observados, rolling mean y forecast
         plt.figure(figsize=(8, 6))
-        plt.plot(ts.index, ts, color="blue", label="Datos históricos")
+        plt.plot(ts_observed.index, ts_observed, color="blue", label="Datos observados")
         plt.plot(
-            ts.index,
-            historical_pred_mean,
-            color="gray",
-            linestyle="--",
-            label="Ajuste de modelo SARIMA",
-        )
-        plt.plot(
-            future_dates,
-            pred_mean,
+            pred_mean.index,
+            pred_mean.values,
             color="red",
             linestyle="--",
             label="Predicción SARIMA",
         )
+        # Mostrar intervalo de confianza solo en las predicciones futuras
         plt.fill_between(
-            future_dates,
-            pred_ci.iloc[:, 0],
-            pred_ci.iloc[:, 1],
+            future_pred_ci.index,
+            future_pred_ci.iloc[:, 0],
+            future_pred_ci.iloc[:, 1],
             color="red",
             alpha=0.1,
             label="Intervalo de confianza 95%",
         )
-        description, unit = self.get_column_description(
-            column
-        )  # Usar el método estático
+
+        # Crear nota estilizada para el último pronóstico
+        plt.text(
+            max_forecast_date,
+            max_forecast_value,
+            f"{max_forecast_value:.2f} cm\n{max_forecast_date.strftime('%d-%m-%y')}".replace('.', ','),
+            fontsize=10,
+            color="black",
+            ha="center",
+            bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3"),
+        )
+
+        description, unit = self.get_column_description(column)
         plt.title(f"Pronóstico SARIMA (p,d,q)=(1,1,1) - {description} ({unit})")
         plt.xlabel("Fecha de registro")
         plt.ylabel(f"{description} ({unit})")
@@ -507,92 +519,87 @@ def process_pct_data(structure: str, num_item: int = 1) -> int:
     structure_display_name = structure_names[structure]
     
     initial_num_item = num_item  # Store initial value to calculate PDFs created
-    appendix = "F"
+    appendix = "6"
 
-    # Process each group in structure
-    for group, df_group in df_structure.groupby("group"):
-        # Get sensor information
-        names = df_group["code"].tolist()
+    # Process each sensor
+    for code in sorted(df_structure["code"].tolist()):  # Asegurar orden alfabético
+        csv_path = f"var/sample_client/sample_project/processed_data/PCT/{structure}.{code}.csv"
+        df_temp = pd.read_csv(csv_path, sep=";")
+        num_min = 30
+        if len(df_temp) >= num_min:
+            print(
+                f"Advertencia: Serie '{code}' tiene menos de {num_min} observaciones. Análisis omitido."
+            )
 
-        # Process each sensor
-        for code in names:
-            csv_path = f"var/sample_client/sample_project/filtered_data/PCT/{structure}.{code}.csv"
-            df_temp = pd.read_csv(csv_path, sep=";")
-            num_min = 30
-            if len(df_temp) >= num_min:
-                print(
-                    f"Advertencia: Serie '{code}' tiene menos de {num_min} observaciones. Análisis omitido."
+            data = TimeSeriesData(
+                csv_path,
+                date_col="time",
+                target_col="diff_disp_total_abs",
+            )
+            analyzer.analyze(data)
+
+            # Generate PDF report
+            decomp_files = sorted(
+                glob.glob(os.path.join(output_dir, "decomposition_*.svg"))
+            )
+            for decomp_file in decomp_files:
+                base_name = Path(decomp_file).stem.split("_", 1)[1]
+                forecast_file = os.path.join(
+                    output_dir, f"forecast_{base_name}.svg"
                 )
+                report_file = os.path.join(reports_dir, f"analysis_{base_name}.svg")
 
-                data = TimeSeriesData(
-                    csv_path,
-                    date_col="time",
-                    target_col="diff_disp_total_abs",
-                )
-                analyzer.analyze(data)
+                if os.path.exists(forecast_file) and os.path.exists(report_file):
+                    # Load SVGs
+                    decomposition_draw = load_svg(decomp_file, 1)
+                    forecast_draw = load_svg(forecast_file, 1)
+                    report_draw = load_svg(report_file, 1)
 
-                # Generate PDF report
-                decomp_files = sorted(
-                    glob.glob(os.path.join(output_dir, "decomposition_*.svg"))
-                )
-                for decomp_file in decomp_files:
-                    base_name = Path(decomp_file).stem.split("_", 1)[1]
-                    forecast_file = os.path.join(
-                        output_dir, f"forecast_{base_name}.svg"
+                    # Create grid
+                    grid = PlotMerger(fig_size=(6, 8))
+                    grid.create_grid(
+                        2, 2, row_ratios=[0.55, 0.45], col_ratios=[0.7, 0.3]
                     )
-                    report_file = os.path.join(reports_dir, f"analysis_{base_name}.svg")
 
-                    if os.path.exists(forecast_file) and os.path.exists(report_file):
-                        # Load SVGs
-                        decomposition_draw = load_svg(decomp_file, 1)
-                        forecast_draw = load_svg(forecast_file, 1)
-                        report_draw = load_svg(report_file, 1)
+                    # Add objects
+                    grid.add_object(decomposition_draw, (0, 0))
+                    grid.add_object(report_draw, (0, 1))
+                    grid.add_object(forecast_draw, (1, 0), span=(1, 2))
 
-                        # Create grid
-                        grid = PlotMerger(fig_size=(6, 8))
-                        grid.create_grid(
-                            2, 2, row_ratios=[0.55, 0.45], col_ratios=[0.7, 0.3]
-                        )
+                    # Build final svg2rlg object
+                    chart_svg = grid.build(color_border="white", cell_spacing=5)
 
-                        # Add objects
-                        grid.add_object(decomposition_draw, (0, 0))
-                        grid.add_object(report_draw, (0, 1))
-                        grid.add_object(forecast_draw, (1, 0), span=(1, 2))
+                    # PDF generation parameters
+                    params = {
+                        "sample": "chart_portrait_a4_type_02",
+                        "project_code": "1410.28.0054-0000",
+                        "company_name": "Shahuindo SAC",
+                        "project_name": "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur",
+                        "date": "15-05-25",
+                        "revision": "B",
+                        "elaborated_by": "J.A.",
+                        "approved_by": "R.L.",
+                        "doc_title": "SIG-AND",
+                        "chart_title": f"Análisis estadístico de desplazamiento total absoluto - {code} / {structure_display_name}",
+                        "theme_color": "#0069AA",
+                        "theme_color_font": "white",
+                        "num_item": f"{appendix}.{num_item}",
+                    }
 
-                        # Build final svg2rlg object
-                        chart_svg = grid.build(color_border="white", cell_spacing=5)
+                    # Load logo
+                    logo_path = "data/logo/logo_main_anddes.svg"
+                    logo_cell = load_svg(logo_path, 0.65)
 
-                        # PDF generation parameters
-                        params = {
-                            "sample": "chart_portrait_a4_type_02",
-                            "project_code": "1410.28.0054-0000",
-                            "company_name": "Shahuindo SAC",
-                            "project_name": "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur",
-                            "date": "09-04-25",
-                            "revision": "B",
-                            "elaborated_by": "J.A.",
-                            "approved_by": "R.L.",
-                            "doc_title": "SIG-AND",
-                            "chart_title": f"Análisis estadístico de desplazamiento total absoluto - {code} / {structure_display_name}",
-                            "theme_color": "#0069AA",
-                            "theme_color_font": "white",
-                            "num_item": f"{appendix}.{num_item}",
-                        }
+                    # Generate PDF
+                    pdf_generator = ReportBuilder(
+                        logo_cell=logo_cell, chart_cell=chart_svg, **params
+                    )
 
-                        # Load logo
-                        logo_path = "data/logo/logo_main_anddes.svg"
-                        logo_cell = load_svg(logo_path, 0.65)
-
-                        # Generate PDF
-                        pdf_generator = ReportBuilder(
-                            logo_cell=logo_cell, chart_cell=chart_svg, **params
-                        )
-
-                        output_filename = f"{appendix}_{num_item}_{code}.pdf"
-                        pdf_generator.generate_pdf(
-                            pdf_path=os.path.join(pdf_dir, output_filename)
-                        )
-                        num_item += 1
+                    output_filename = f"{appendix}_{num_item:03d}_{code}.pdf"
+                    pdf_generator.generate_pdf(
+                        pdf_path=os.path.join(pdf_dir, output_filename)
+                    )
+                    num_item += 1
     
     # Return the number of PDFs created (difference between final and initial num_item)
     return num_item - initial_num_item
@@ -600,9 +607,9 @@ def process_pct_data(structure: str, num_item: int = 1) -> int:
 if __name__ == "__main__":
     
     structure_names = {
-        "PAD_1A": "Pad 1A",
-        "PAD_2A": "Pad 2A",
-        "PAD_2B_2C": "Pad 2B-2C",
+        # "PAD_1A": "Pad 1A",
+        # "PAD_2A": "Pad 2A",
+        # "PAD_2B_2C": "Pad 2B-2C",
         "DME_SUR": "DME Sur",
         "DME_CHO": "DME Choloque",
     }

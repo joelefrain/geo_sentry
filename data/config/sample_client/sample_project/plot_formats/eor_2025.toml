@@ -69,7 +69,7 @@ series_x = "east"
 serie_aka = "Trayectoria"
 
 [sensors.sacv]
-plot_template = "ts_plot_type_02"
+plot_template = "ts_plot_type_03"
 [sensors.sacv.column_config]
 target_column = "settlement_m"
 unit_target = "m"

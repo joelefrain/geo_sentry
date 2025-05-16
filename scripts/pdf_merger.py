@@ -41,8 +41,8 @@ def merge_pdfs(pdf_files: list, output_path: str) -> None:
 def main():
 
     # Convertir rutas a absolutas
-    input_dir = "/home/joelefrain/Desktop/_workspace/geo_sentry/outputs/process/sample_client/sample_project"
-    output_file = "/home/joelefrain/Desktop/_workspace/geo_sentry/outputs/appendix/sample_client/sample_project/processed_data.pdf"
+    input_dir = "outputs/process"
+    output_file = "outputs/appendix/processed_data.pdf"
     
     if not os.path.isdir(input_dir):
         print(f"Error: El directorio de entrada '{input_dir}' no existe")

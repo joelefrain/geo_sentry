@@ -482,8 +482,8 @@ if __name__ == "__main__":
         "PAD_1A": "Pad 1A",
         "PAD_2A": "Pad 2A",
         "PAD_2B_2C": "Pad 2B-2C",
-        "DME_SUR": "DME-Sur",
-        "DME_CHO": "DME-Choloque",
+        "DME_SUR": "DME Sur",
+        "DME_CHO": "DME Choloque",
     }
 
     sensor_names = {
@@ -497,7 +497,7 @@ if __name__ == "__main__":
     order_structure = structure_names.keys()
     order_sensors = sensor_names.keys()
 
-    cut_off = "250331_Marzo"
+    cut_off = "250430_Abril"
 
     sensor_raw_name = {
         "PCV": "PZ CUERDA VIBRANTE",
