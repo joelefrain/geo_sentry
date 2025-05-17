@@ -3,7 +3,7 @@ name = "geo_sentry"
 version = "0.1.0"
 description = "A project for geospatial data analysis and visualization."
 authors = ["Joel Efrain <etalarconjoel@gmail.com>"]
-license = "MIT"
+license = "BSL 1.1"
 readme = "README.md"
 packages = [{include = "geo_sentry"}]
 
