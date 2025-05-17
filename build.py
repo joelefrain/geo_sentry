@@ -1,3 +1,8 @@
+# -------------------------------------------------------
+# ESTE SCRIPT ESTA EN PROCESO DE DESARROLLO
+# -------------------------------------------------------
+
+
 import os
 import sqlite3
 from sqlite3 import Error
@@ -56,7 +61,6 @@ def execute_query(conn, sql_query, parameters=None):
 
 
 def init_database(db_path, query_path):
-
     # Leer consulta SQL desde archivo
     sql_query = read_sql_file(query_path)
     if not sql_query:
