@@ -25,7 +25,7 @@ class ExcelProcessor:
         self.config = ConfigHandler.load_config(config_name)
         self.data_transformer = DataTransformer()
 
-    def process_excel_directory(
+    def preprocess_excel_directory(
         self,
         input_folder: str,
         output_folder_base: str,
@@ -47,7 +47,7 @@ class ExcelProcessor:
             base_path=Path(output_folder_base), sensor_type=sensor_type
         )
 
-        self._process_data_files(
+        self._preprocess_data_files(
             input_folder,
             output_paths["process"],
             data_config,
@@ -57,11 +57,11 @@ class ExcelProcessor:
             selected_attr,
         )
 
-        self._process_location_files(
+        self._preprocess_location_files(
             input_folder, output_paths["location"], data_config, code, exclude_sheets
         )
 
-    def _process_data_files(
+    def _preprocess_data_files(
         self,
         input_folder: str,
         output_folder: str,
@@ -113,7 +113,7 @@ class ExcelProcessor:
             except Exception as e:
                 logger.warning(f"❌ Error procesando {excel_file.name}: {e}")
 
-    def _process_location_files(
+    def _preprocess_location_files(
         self,
         input_folder: str,
         output_folder: str,

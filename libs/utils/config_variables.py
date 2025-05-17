@@ -54,6 +54,7 @@ OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
 PROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "process"
 DASHBOARD_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "dashboard"
 ANALYSIS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "analysis"
+APPENDIX_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "appendix"
 
 # Configuration for sensors
 # ---------------------------------------------------------------

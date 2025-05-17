@@ -128,7 +128,7 @@ def preprocess_sensors(
             if os.path.exists(input_folder):
                 output_folder_base = os.path.join(work_path, cut_off)
                 custom_functions_for_sensor = custom_functions.copy()
-                processor.process_excel_directory(
+                processor.preprocess_excel_directory(
                     input_folder=input_folder,
                     output_folder_base=output_folder_base,
                     sensor_type=sensor_code,
@@ -469,54 +469,135 @@ def get_main_records(work_path, sensor_codes):
     logger.info("Actualización de registros completada")
 
 
+@log_execution_time(module="scripts.sensor_processor")
 def exec_processor(
-    client_code,
-    project_code,
-    cut_off,
-    engineering_code,
-    sensor_codes,
-    methods,
-):
-    """Ejecuta el procesamiento de datos de sensores desde archivos Excel."""
-    # Load configuration from TOML
-    config_dir = DATA_CONFIG / client_code / project_code / "processor"
-    config = load_toml(config_dir, engineering_code)
+    client_code: str,
+    project_code: str,
+    cut_off: list,
+    engineering_code: str,
+    sensor_codes: list,
+    methods: list,
+) -> None:
+    """Execute sensor data processing from Excel files.
 
-    structure_names = config["structures"]
-    sensor_raw_name = config["sensors"]["raw_names"]
-    exclude_sheets = config["process"]["exclude_sheets"]
+    This function coordinates the entire processing workflow including preprocessing,
+    main processing, and record maintenance for sensor data.
 
-    work_path = get_work_path(client_code, project_code)
+    Args:
+        client_code (str): Client identification code
+        project_code (str): Project identification code
+        cut_off (list): List of processing cutoff dates
+        engineering_code (str): Engineering configuration code
+        sensor_codes (list): List of sensor types to process
+        methods (list): List of processing methods to execute
 
-    if "preprocess" in methods:
-        for cut in cut_off:
-            exec_preprocess(
-                cut,
-                sensor_raw_name,
-                exclude_sheets,
+    Raises:
+        ValueError: If required parameters are missing or invalid
+        FileNotFoundError: If configuration files cannot be found
+    """
+    logger.info(f"Starting processing workflow for {project_code}")
+
+    try:
+        # Validate input parameters
+        if not all(
+            [
                 client_code,
                 project_code,
-                structure_names,
+                cut_off,
+                engineering_code,
                 sensor_codes,
-                work_path,
-            )
+                methods,
+            ]
+        ):
+            raise ValueError("Missing required parameters")
 
-    if "process" in methods:
-        for cut in cut_off:
-            exec_process(cut, work_path, sensor_codes)
+        if not isinstance(cut_off, list) or not isinstance(methods, list):
+            raise ValueError("cut_off and methods must be lists")
 
-    if "main_records" in methods:
-        get_main_records(work_path, sensor_codes)
+        # Load configuration
+        config_dir = DATA_CONFIG / client_code / project_code / "processor"
+        try:
+            config = load_toml(config_dir, engineering_code)
+            logger.debug(f"Configuration loaded from {config_dir}/{engineering_code}")
+        except Exception as e:
+            logger.error(f"Failed to load configuration: {e}")
+            raise FileNotFoundError(f"Configuration not found: {engineering_code}")
+
+        # Extract configuration
+        structure_names = config.get("structures")
+        sensor_raw_name = config.get("sensors", {}).get("raw_names")
+        exclude_sheets = config.get("process", {}).get("exclude_sheets", [])
+
+        if not all([structure_names, sensor_raw_name]):
+            raise ValueError("Invalid configuration structure")
+
+        # Set up work path
+        work_path = get_work_path(client_code, project_code)
+        logger.info(f"Work path set to: {work_path}")
+
+        # Execute requested methods
+        for method in methods:
+            logger.info(f"Executing method: {method}")
+
+            if method == "preprocess":
+                for cut in cut_off:
+                    try:
+                        logger.info(f"Preprocessing data for cutoff: {cut}")
+                        exec_preprocess(
+                            cut,
+                            sensor_raw_name,
+                            exclude_sheets,
+                            client_code,
+                            project_code,
+                            structure_names,
+                            sensor_codes,
+                            work_path,
+                        )
+                    except Exception as e:
+                        logger.error(f"Preprocessing failed for {cut}: {e}")
+
+            elif method == "process":
+                for cut in cut_off:
+                    try:
+                        logger.info(f"Processing data for cutoff: {cut}")
+                        exec_process(cut, work_path, sensor_codes)
+                    except Exception as e:
+                        logger.error(f"Processing failed for {cut}: {e}")
+
+            elif method == "main_records":
+                try:
+                    logger.info("Updating main records")
+                    get_main_records(work_path, sensor_codes)
+                except Exception as e:
+                    logger.error(f"Main records update failed: {e}")
+
+            else:
+                logger.warning(f"Unknown method: {method}")
+
+        logger.info("Processing workflow completed successfully")
+
+    except Exception as e:
+        logger.error(f"Processing workflow failed: {e}")
+        raise
 
 
 if __name__ == "__main__":
-    processor_params = {
-        "client_code": "sample_client",
-        "project_code": "sample_project",
-        "engineering_code": "eor_2025",
-        "cut_off": ["250430_Abril"],
-        "methods": ["preprocess", "process", "main_records"],
-        "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
-    }
+    try:
+        processor_params = {
+            "client_code": "sample_client",
+            "project_code": "sample_project",
+            "engineering_code": "eor_2025",
+            "cut_off": ["250430_Abril"],
+            "methods": ["preprocess", "process", "main_records"],
+            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
+        }
 
-    exec_processor(**processor_params)
+        logger.info(
+            "Starting sensor processor with parameters:", extra=processor_params
+        )
+        exec_processor(**processor_params)
+        logger.info("Sensor processor completed successfully")
+
+    except Exception as e:
+        logger.error(f"Sensor processor failed: {e}")
+        sys.exit(1)

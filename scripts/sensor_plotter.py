@@ -10,12 +10,14 @@ import pandas as pd
 from libs.utils.config_loader import load_toml
 from libs.utils.config_logger import get_logger, log_execution_time
 from libs.utils.df_helpers import read_df_on_time_from_csv
+from libs.helpers.pdf_merger import find_pdf_files, merge_pdfs
 from libs.utils.config_variables import (
     DOC_TITLE,
     THEME_COLOR,
     THEME_COLOR_FONT,
     DATA_CONFIG,
     PROCESS_OUTPUT_DIR,
+    APPENDIX_OUTPUT_DIR,
 )
 
 logger = get_logger("scripts.sensor_plotter")
@@ -188,6 +190,31 @@ def generate_structure_plots(
     return start_item
 
 
+def merge_outputs(client_code, project_code, output_dir):
+    output_file = (
+        APPENDIX_OUTPUT_DIR / client_code / project_code / "processed_data.pdf"
+    )
+
+    if not os.path.isdir(output_dir):
+        logger.error(f"Error: El directorio de entrada '{output_dir}' no existe")
+        return
+
+    # Encontrar todos los archivos PDF
+    pdf_files = find_pdf_files(output_dir)
+
+    if not pdf_files:
+        logger.warning(f"No se encontraron archivos PDF en '{output_dir}'")
+        return
+
+    logger.info(f"Se encontraron {len(pdf_files)} archivos PDF")
+
+    try:
+        merge_pdfs(pdf_files, output_file)
+        logger.info(f"Los PDFs se han fusionado exitosamente en '{output_file}'")
+    except Exception as e:
+        logger.error(f"Error al fusionar los PDFs: {str(e)}")
+
+
 @log_execution_time(module="scripts.sensor_plotter")
 def exec_plotter(
     client_code,
@@ -243,24 +270,33 @@ def exec_plotter(
         )
 
     logger.info(
-        f"\nAll structures and sensors processed. Final item number: {start_item - 1}"
+        f"All structures and sensors processed. Final item number: {start_item - 1}"
     )
+
+    merge_outputs(client_code, project_code, output_dir)
 
 
 if __name__ == "__main__":
-    plotter_params = {
-        "client_code": "sample_client",
-        "project_code": "sample_project",
-        "engineering_code": "eor_2025",
-        "elaborated_by": "J.A.",
-        "approved_by": "R.L.",
-        "start_date": "2024-05-01 00:00:00",
-        "end_date": "2025-03-23 00:00:00",
-        "report_date": "15-04-25",
-        "start_item": 1,
-        "appendix_chapter": "5",
-        "revsion": "B",
-        "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
-    }
+    try:
+        plotter_params = {
+            "client_code": "sample_client",
+            "project_code": "sample_project",
+            "engineering_code": "eor_2025",
+            "elaborated_by": "J.A.",
+            "approved_by": "R.L.",
+            "start_date": "2024-05-01 00:00:00",
+            "end_date": "2025-05-15 00:00:00",
+            "report_date": "15-05-25",
+            "start_item": 1,
+            "appendix_chapter": "5",
+            "revsion": "B",
+            "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
+        }
 
-    exec_plotter(**plotter_params)
+        logger.info("Starting sensor processor with parameters:", extra=plotter_params)
+        exec_plotter(**plotter_params)
+        logger.info("Sensor processor completed successfully")
+
+    except Exception as e:
+        logger.error(f"Sensor processor failed: {e}")
+        sys.exit(1)
