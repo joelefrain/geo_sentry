@@ -1,0 +1,43 @@
+[base]
+base_line_column = "base_line"
+base_columns = ["FLEVEL_0", "A+_0", "A-_0", "B+_0", "B-_0"]
+
+[abs_on_column]
+L = "lambda df: (df['FLEVEL'] != 0) * 0.5"
+diff_A = "lambda df: (df['A+'] - df['A-']) / 2"
+diff_B = "lambda df: (df['B+'] - df['B-']) / 2"
+check_A = "lambda df: (df['A+'] + df['A-']) / 2"
+check_B = "lambda df: (df['B+'] + df['B-']) / 2"
+A_cm = "lambda df: df['L'] * df['diff_A'] * BK1"
+B_cm = "lambda df: df['L'] * df['diff_B'] * BJ2"
+A_deflection_raw = "lambda df: df['A_cm'][::-1].cumsum()[::-1]"
+B_deflection_raw = "lambda df: df['B_cm'][::-1].cumsum()[::-1]"
+A_displacement = "lambda df: df['A_deflection_raw'] * np.cos(azimuth) - df['B_deflection_raw'] * np.sin(azimuth)"
+B_displacement = "lambda df: df['A_deflection_raw'] * np.sin(azimuth) + df['B_deflection_raw'] * np.cos(azimuth)"
+A_deflection = "lambda df, base: df['A_displacement'] - base['A_displacement_0']"
+B_deflection = "lambda df, base: df['B_displacement'] - base['B_displacement_0']"
+
+[names.es]
+L = "Longitud de tubería inclinométrica (m)"
+diff_A = "Diferencia A/2"
+diff_B = "Diferencia B/2"
+check_A = "Verificación A"
+check_B = "Verificación B"
+A_cm = "A (cm)"
+B_cm = "B (cm)"
+A_deflection_raw = "A Deflexión (cm) Sin corregir"
+B_deflection_raw = "B Deflexión (cm) Sin corregir"
+A_displacement = "A desplazamiento (cm)"
+B_displacement = "B desplazamiento (cm)"
+A_deflection = "A deflexión (cm)"
+B_deflection = "B deflexión (cm)"
+
+[target]
+column = "A_deflection"
+unit = "cm"
+
+[inline.es]
+target_phrase = "deflexión"
+
+[process_config]
+match_columns = ["time", "FLEVEL", "A+", "A-", "B+", "B-"]

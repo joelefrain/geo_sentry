@@ -32,3 +32,7 @@ unit = "kPa"
 
 [inline.es]
 target_phrase = "carga hidráulica"
+
+
+[process_config]
+match_columns = ["time"]

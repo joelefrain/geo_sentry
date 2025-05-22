@@ -29,3 +29,6 @@ unit = "kPa"
 
 [inline.es]
 target_phrase = "presión"
+
+[process_config]
+match_columns = ["time"]

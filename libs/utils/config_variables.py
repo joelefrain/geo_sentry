@@ -84,4 +84,9 @@ SENSOR_CONFIG = {
         "color": "pink",
         "name": {"es": "Celda de presión de cuerda vibrante"},
     },
+    "INC": {
+        "marker": "square",
+        "color": "green",
+        "name": {"es": "Inclinómetro vertical"},
+    },
 }

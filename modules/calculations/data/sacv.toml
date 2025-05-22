@@ -34,3 +34,6 @@ unit = "cm"
 
 [inline.es]
 target_phrase = "asentamiento"
+
+[process_config]
+match_columns = ["time"]
