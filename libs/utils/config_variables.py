@@ -8,7 +8,7 @@ from pathlib import Path
 SEP_FORMAT = ";"
 
 # Font for the report
-DEFAULT_FONT = "sans-serif"
+DEFAULT_FONT = "Arial"
 
 # Constants for number formats
 DECIMAL_CHAR = ","
@@ -26,35 +26,24 @@ THEME_COLOR_FONT = "white"
 
 # Paths to data files
 # ---------------------------------------------------------------
-LOGO_SVG = (
-    Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main_anddes.svg"
-)
-LOGO_PDF = (
-    Path(__file__).parent.parent.parent / "data" / "logo" / "logo_main_anddes.pdf"
-)
-DATA_CONFIG = Path(__file__).parent.parent.parent / "data" / "config"
+BASE_DIR = Path(__file__).parent.parent.parent
+
+LOGO_SVG = BASE_DIR / "data" / "logo" / "logo_main_anddes.svg"
+LOGO_PDF = BASE_DIR / "data" / "logo" / "logo_main_anddes.pdf"
+DATA_CONFIG = BASE_DIR / "data" / "config"
 
 # Paths to configuration directories
 # ---------------------------------------------------------------
-BASE_DIR = Path(__file__).parent.parent.parent
-CALC_CONFIG_DIR = (
-    Path(__file__).parent.parent.parent / "modules" / "calculations" / "data"
-)
-REPORT_CONFIG_DIR = (
-    Path(__file__).parent.parent.parent / "modules" / "reporter" / "data" / "reports"
-)
-CHART_CONFIG_DIR = (
-    Path(__file__).parent.parent.parent / "modules" / "reporter" / "data" / "charts"
-)
-NOTE_CONFIG_DIR = (
-    Path(__file__).parent.parent.parent / "modules" / "reporter" / "data" / "notes"
-)
+CALC_CONFIG_DIR = BASE_DIR / "modules" / "calculations" / "data"
+REPORT_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "reports"
+CHART_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "charts"
+NOTE_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "notes"
 
-OUTPUTS_DIR = Path(__file__).parent.parent.parent / "outputs"
-PROCESS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "process"
-DASHBOARD_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "dashboard"
-ANALYSIS_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "analysis"
-APPENDIX_OUTPUT_DIR = Path(__file__).parent.parent.parent / "outputs" / "appendix"
+OUTPUTS_DIR = BASE_DIR / "outputs"
+PROCESS_OUTPUT_DIR = BASE_DIR / "outputs" / "process"
+DASHBOARD_OUTPUT_DIR = BASE_DIR / "outputs" / "dashboard"
+ANALYSIS_OUTPUT_DIR = BASE_DIR / "outputs" / "analysis"
+APPENDIX_OUTPUT_DIR = BASE_DIR / "outputs" / "appendix"
 
 # Configuration for sensors
 # ---------------------------------------------------------------
