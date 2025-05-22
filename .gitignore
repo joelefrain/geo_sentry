@@ -8,6 +8,13 @@
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+.sh_debug/
+
+# Python bytecode
+__pycache__/
+.py_debug/
+.pytest_cache/
+
 # Logs
 *.log
 
@@ -16,7 +23,6 @@
 Thumbs.db
 
 # Test files and caches
-__pycache__/
 *.pyc
 test_*/
 tests/
@@ -58,6 +64,9 @@ __pycache__/
 *.txt
 *.pdf
 *.xlsx
+*.xls
+*.xlsm
 *.svg
 *.gkn
+*.dxf
 !requirements.txt
