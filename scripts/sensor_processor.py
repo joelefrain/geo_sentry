@@ -345,6 +345,10 @@ def get_processed_data(
     logger.info(f"Iniciando procesamiento de datos para {cut_off}")
 
     def process_data_file(preprocessed_csv_path, structure, code, sensor_type):
+        processor = DataProcessor(sensor_type.lower())
+        config = processor.config
+        match_columns = config["process_config"]["match_columns"]
+
         processed_path = os.path.join(processed_data_folder_base, sensor_type)
         processed_csv_path = os.path.join(processed_path, f"{structure}.{code}.csv")
         os.makedirs(processed_path, exist_ok=True)
@@ -354,11 +358,14 @@ def get_processed_data(
         create_empty_file(processed_csv_path)
 
         preprocess_df = read_df_on_time_from_csv(preprocessed_csv_path, set_index=False)
-        process_df = read_or_create_df(processed_csv_path, default_columns=["time"])
+        process_df = read_or_create_df(
+            processed_csv_path, default_columns=match_columns
+        )
         process_df = config_time_df(process_df, set_index=False)
-        temp_df = merge_new_records(process_df, preprocess_df, match_columns=["time"])
+        temp_df = merge_new_records(
+            process_df, preprocess_df, match_columns=match_columns, match_type="all"
+        )
 
-        processor = DataProcessor(sensor_type.lower())
         df = processor.clean_data(temp_df)
         df = processor.process_raw_data(df)
         save_df_to_csv(df, processed_csv_path)
