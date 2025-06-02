@@ -9,6 +9,8 @@ from libs.utils.config_variables import CALC_CONFIG_DIR
 from libs.utils.df_helpers import read_df_on_time_from_csv
 from libs.utils.config_logger import get_logger
 
+from .matrix_processor import process_self_operations, process_base_operations
+
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -20,7 +22,7 @@ class DataProcessor:
     def __init__(self, config_name: str):
         self.config = load_toml(CALC_CONFIG_DIR, config_name)
 
-    def load_data(self, csv_path: str) -> pd.DataFrame:
+    def load_data(self, csv_path: str, set_index: bool = False) -> pd.DataFrame:
         """
         Load data from a CSV file with date parsing using pandas to_datetime.
 
@@ -30,11 +32,11 @@ class DataProcessor:
         Returns:
             pd.DataFrame with the loaded data.
         """
-        df = read_df_on_time_from_csv(csv_path)
+        df = read_df_on_time_from_csv(csv_path, set_index)
 
         return df
 
-    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+    def clean_data(self, df: pd.DataFrame, match_columns) -> pd.DataFrame:
         """
         Remove duplicate and future records based on the 'time' column.
 
@@ -46,13 +48,13 @@ class DataProcessor:
         """
 
         # Sort by time
-        df.sort_values("time", ignore_index=True)
+        df.sort_values(match_columns, ignore_index=True)
 
         # Remove any rows where time parsing failed
-        df = df.dropna(subset=["time"])
+        df = df.dropna(subset=match_columns)
 
         # Remove duplicates, keeping the first occurrence
-        df = df.drop_duplicates(subset="time", keep="first")
+        df = df.drop_duplicates(subset=match_columns, keep="first")
 
         # Remove records with 'time' after the current date
         current_time = datetime.now()
@@ -132,15 +134,7 @@ class DataProcessor:
         return df
 
     def process_raw_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Process deformation data using configurations from a TOML file.
-
-        Args:
-            df: DataFrame with the data.
-
-        Returns:
-            pd.DataFrame with the processed data.
-        """
+        """Process data using configurations from a TOML file."""
         config = self.config
 
         # Process absolute values
@@ -150,5 +144,13 @@ class DataProcessor:
         # Process relative values
         if "rel" in config:
             df = self.process_relative_values(df)
+
+        # Process self operations in matrix data
+        if "self_operations" in config:
+            df = process_self_operations(df, self.config)
+
+        # Process base operations in matrix data
+        if "base_operations" in config:
+            df = process_base_operations(df, self.config)
 
         return df

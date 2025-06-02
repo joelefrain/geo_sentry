@@ -74,7 +74,7 @@ def setup_seed_paths(cut_off, client_code, project_code, sensor_names):
     config_sensor_path = {
         key: os.path.join(
             DATA_CONFIG,
-            f"{client_code}/{project_code}/excel_format/{key.lower()}.toml",
+            f"{client_code}/{project_code}/reader_format/{key.lower()}.toml",
         )
         for key in sensor_names
     }
@@ -366,7 +366,7 @@ def get_processed_data(
             process_df, preprocess_df, match_columns=match_columns, match_type="all"
         )
 
-        df = processor.clean_data(temp_df)
+        df = processor.clean_data(temp_df, match_columns)
         df = processor.process_raw_data(df)
         save_df_to_csv(df, processed_csv_path)
 
@@ -596,7 +596,7 @@ if __name__ == "__main__":
             "engineering_code": "eor_2025",
             "cut_off": ["250430_Abril"],
             "methods": ["preprocess", "process", "main_records"],
-            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
+            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
         }
 
         logger.info(

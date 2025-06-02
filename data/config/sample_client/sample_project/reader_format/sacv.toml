@@ -1,3 +1,5 @@
+type = "excel_processor"
+
 [process]
 start_row = 17
 columns = [1, 2, 3, 4, 12]

@@ -1,21 +1,22 @@
 [base]
 base_line_column = "base_line"
-base_columns = ["FLEVEL_0", "A+_0", "A-_0", "B+_0", "B-_0"]
 
-[abs_on_column]
+[self_operations]
 L = "lambda df: (df['FLEVEL'] != 0) * 0.5"
 diff_A = "lambda df: (df['A+'] - df['A-']) / 2"
 diff_B = "lambda df: (df['B+'] - df['B-']) / 2"
 check_A = "lambda df: (df['A+'] + df['A-']) / 2"
 check_B = "lambda df: (df['B+'] + df['B-']) / 2"
-A_cm = "lambda df: df['L'] * df['diff_A'] * a_axis_scale"
-B_cm = "lambda df: df['L'] * df['diff_B'] * b_axis_scale"
+A_cm = "lambda df: df['L'] * df['diff_A'] * df['a_axis_scale']"
+B_cm = "lambda df: df['L'] * df['diff_B'] * df['b_axis_scale']"
 A_deflection_raw = "lambda df: df['A_cm'][::-1].cumsum()[::-1]"
 B_deflection_raw = "lambda df: df['B_cm'][::-1].cumsum()[::-1]"
-A_displacement = "lambda df: df['A_deflection_raw'] * np.cos(azimuth_rad) - df['B_deflection_raw'] * np.sin(azimuth_rad-enbankment_slope_rad)"
-B_displacement = "lambda df: df['A_deflection_raw'] * np.sin(azimuth_rad) + df['B_deflection_raw'] * np.cos(azimuth_rad-enbankment_slope_rad)"
-A_deflection = "lambda df, base: df['A_displacement'] - base['A_displacement_0']"
-B_deflection = "lambda df, base: df['B_displacement'] - base['B_displacement_0']"
+A_displacement = "lambda df: df['A_deflection_raw'] * np.cos(df['azimuth_rad']) - df['B_deflection_raw'] * np.sin(df['azimuth_rad'] - df['enbankment_slope_rad'])"
+B_displacement = "lambda df: df['A_deflection_raw'] * np.sin(df['azimuth_rad']) + df['B_deflection_raw'] * np.cos(df['azimuth_rad'] - df['enbankment_slope_rad'])"
+
+[base_operations]
+A_deflection = "lambda df, base: df['A_displacement'] - base['A_displacement']"
+B_deflection = "lambda df, base: df['B_displacement'] - base['B_displacement']"
 
 [names.es]
 L = "Longitud de tubería inclinométrica (m)"
@@ -40,4 +41,4 @@ unit = "cm"
 target_phrase = "deflexión"
 
 [process_config]
-match_columns = ["time", "FLEVEL", "A+", "A-", "B+", "B-"]
+match_columns = ["time", "FLEVEL"]
