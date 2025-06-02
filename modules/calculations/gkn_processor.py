@@ -59,7 +59,7 @@ def parse_gkn_file(filepath, match_columns, **kwargs):
         return df
 
 
-def process_all_gkn_files(folder, match_columns, **kwargs):
+def gkn_folder_to_csv(folder, match_columns, **kwargs):
     all_dfs = [
         parse_gkn_file(os.path.join(folder, f), match_columns, **kwargs)
         for f in os.listdir(folder)

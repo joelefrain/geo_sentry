@@ -8,3 +8,6 @@ azimuth_rad = 0.0
 enbankment_slope_rad = 0.0
 a_axis_scale = 0.005
 b_axis_scale = 0.005
+
+[process_config]
+match_columns = ["time", "FLEVEL"]

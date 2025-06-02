@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from .excel_handler import ExcelReader
 from .data_transformer import DataTransformer
-from .config_handler import ConfigHandler
 from .path_handler import PathHandler
 
 logger = get_logger("modules.calculations")
@@ -21,8 +20,8 @@ logger = get_logger("modules.calculations")
 class ExcelProcessor:
     """Clase principal para procesar archivos Excel y generar archivos CSV."""
 
-    def __init__(self, config_name: str):
-        self.config = ConfigHandler.load_config(config_name)
+    def __init__(self, config: dict):
+        self.config = config
         self.data_transformer = DataTransformer()
 
     def preprocess_excel_directory(

@@ -5,9 +5,11 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 import pandas as pd
+from pathlib import Path
 
 from modules.calculations.excel_processor import ExcelProcessor
 from modules.calculations.data_processor import DataProcessor
+from modules.calculations.gkn_processor import gkn_folder_to_csv
 from libs.utils.config_variables import CALC_CONFIG_DIR, BASE_DIR, DATA_CONFIG
 from libs.utils.config_loader import load_toml
 from libs.utils.config_logger import get_logger, log_execution_time
@@ -68,16 +70,13 @@ def setup_seed_paths(cut_off, client_code, project_code, sensor_names):
     Returns:
         tuple: (seed_base_path, config_sensor_path)
     """
-    seed_base_path = os.path.abspath(
-        os.path.join(BASE_DIR, f"seed/{client_code}/{project_code}/{cut_off}/")
+    seed_base_path = os.path.join(
+        BASE_DIR, f"seed/{client_code}/{project_code}/{cut_off}/"
     )
-    config_sensor_path = {
-        key: os.path.join(
-            DATA_CONFIG,
-            f"{client_code}/{project_code}/reader*7_format/{key.lower()}.toml",
-        )
-        for key in sensor_names
-    }
+    config_sensor_path = os.path.join(
+        DATA_CONFIG,
+        f"{client_code}/{project_code}/reader_format",
+    )
     return seed_base_path, config_sensor_path
 
 
@@ -116,29 +115,71 @@ def preprocess_sensors(
         work_path: Ruta de trabajo.
     """
     for sensor_code in sensor_codes:
-        toml_path = config_sensor_path[sensor_code]
-        if not os.path.exists(toml_path):
-            logger.info(f"Config file not found: {toml_path}")
+        try:
+            reader_config = load_toml(data_dir=config_sensor_path, toml_name=sensor_code.lower())
+            logger.info(
+                f"Configuración cargada para {sensor_code} desde {config_sensor_path}"
+            )
+        except Exception as e:
+            logger.error(f"Error al cargar configuración para {sensor_code}: {e}")
             continue
 
-        processor = ExcelProcessor(toml_path)
+        type_reader = reader_config["type"]
+            
+        if type_reader == "excel_processor":
+            
+            # Procesar archivos Excel
+            processor = ExcelProcessor(reader_config)
 
-        for structure in order_structure:
-            input_folder = sensor_data_paths[sensor_code][structure]
-            if os.path.exists(input_folder):
-                output_folder_base = os.path.join(work_path, cut_off)
-                custom_functions_for_sensor = custom_functions.copy()
-                processor.preprocess_excel_directory(
-                    input_folder=input_folder,
-                    output_folder_base=output_folder_base,
-                    sensor_type=sensor_code,
-                    code=structure,
-                    exclude_sheets=exclude_sheets,
-                    data_config=processor.config,
-                    custom_functions=custom_functions_for_sensor,
-                    selected_attr=processor.config["process"].get("selected_attr"),
-                )
+            for structure in order_structure:
+                input_folder = sensor_data_paths[sensor_code][structure]
+                if os.path.exists(input_folder):
+                    output_folder_base = os.path.join(work_path, cut_off)
+                    custom_functions_for_sensor = custom_functions.copy()
+                    processor.preprocess_excel_directory(
+                        input_folder=input_folder,
+                        output_folder_base=output_folder_base,
+                        sensor_type=sensor_code,
+                        code=structure,
+                        exclude_sheets=exclude_sheets,
+                        data_config=processor.config,
+                        custom_functions=custom_functions_for_sensor,
+                        selected_attr=processor.config["process"].get("selected_attr"),
+                    )
+        
 
+        if type_reader == "gkn_processor":
+            match_columns = reader_config["process_config"]["match_columns"]
+
+            for structure in order_structure:
+                try:
+                    input_folder = sensor_data_paths[sensor_code][structure]
+                except KeyError:
+                    logger.error(f"No se encontró la ruta para '{structure}' en '{sensor_code}'")
+                    continue
+
+                if not os.path.exists(input_folder):
+                    logger.error(f"Carpeta no encontrada: {input_folder}")
+                    continue
+
+                output_folder_base = os.path.join(work_path, cut_off, "preprocess", sensor_code)
+                os.makedirs(output_folder_base, exist_ok=True)
+
+                for subfolder_name in os.listdir(input_folder):
+                    subfolder = os.path.join(input_folder, subfolder_name)
+                    if os.path.isdir(subfolder):
+                        sensor_name = subfolder_name
+
+                        # Obtiene parámetros específicos o los por defecto
+                        if sensor_name in reader_config.get(structure, {}):
+                            params = reader_config[structure][sensor_name]
+                        else:
+                            params = reader_config["default_params"]
+
+                        df = gkn_folder_to_csv(subfolder, match_columns, **params)
+
+                        file_path = os.path.join(output_folder_base, f"{structure}.{sensor_name}.csv")
+                        save_df_to_csv(df=df, file_path=file_path)
 
 @log_execution_time(module="scripts.sensor_processor")
 def exec_preprocess(
@@ -192,13 +233,12 @@ def exec_preprocess(
     )
 
 
-def process_sensor_files(sensor_type, data_path, output_path, process_func):
+def process_sensor_files(sensor_type, data_path, process_func):
     """Procesa los archivos de un tipo de sensor específico.
 
     Args:
         sensor_type: Tipo de sensor a procesar.
         data_path: Ruta del directorio con los archivos a procesar.
-        output_path: Ruta del directorio de salida.
         process_func: Función de procesamiento a aplicar.
 
     Returns:
@@ -269,7 +309,7 @@ def get_operativity(cut_off, location_data_folder_base, work_path, sensor_codes)
         location_path = os.path.join(location_data_folder_base, sensor_code)
         if os.path.exists(location_path):
             sensor_locations = process_sensor_files(
-                sensor_code, location_path, None, process_location_file
+                sensor_code, location_path, process_location_file
             )
             all_locations.extend(sensor_locations)
 
@@ -372,10 +412,13 @@ def get_processed_data(
 
     for sensor_code in sensor_codes:
         preprocessed_path = os.path.join(preprocessed_data_folder_base, sensor_code)
+        logger.info(f"Procesando datos para el sensor: {sensor_code}")
+        print("-----------------------------------------------------")
+        print(f"Procesando datos para el sensor: {sensor_code}")
+        print(f"Ruta de datos preprocesados: {preprocessed_path}")
         process_sensor_files(
             sensor_code,
             preprocessed_path,
-            processed_data_folder_base,
             process_data_file,
         )
 
@@ -596,7 +639,9 @@ if __name__ == "__main__":
             "engineering_code": "eor_2025",
             "cut_off": ["250430_Abril"],
             "methods": ["preprocess", "process", "main_records"],
-            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            "sensor_codes": ["PTA", "INC"],
+
         }
 
         logger.info(
