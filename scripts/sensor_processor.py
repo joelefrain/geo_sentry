@@ -74,7 +74,7 @@ def setup_seed_paths(cut_off, client_code, project_code, sensor_names):
     config_sensor_path = {
         key: os.path.join(
             DATA_CONFIG,
-            f"{client_code}/{project_code}/reader_format/{key.lower()}.toml",
+            f"{client_code}/{project_code}/reader*7_format/{key.lower()}.toml",
         )
         for key in sensor_names
     }

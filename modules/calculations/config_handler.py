@@ -7,7 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 from typing import Dict, Any, List
 
 from libs.utils.config_loader import load_toml
-from libs.utils.config_variables import CALC_CONFIG_DIR
 
 class ConfigHandler:
     """Clase para manejar la configuración y validación de datos."""
@@ -25,7 +24,7 @@ class ConfigHandler:
         Raises:
             ValueError: Si el archivo de configuración no existe.
         """
-        return load_toml(CALC_CONFIG_DIR, config_name)
+        return load_toml(data_dir="", toml_name=config_name)
     
     @staticmethod
     def validate_config(config: Dict[str, Any], required_sections: List[str]) -> bool:
