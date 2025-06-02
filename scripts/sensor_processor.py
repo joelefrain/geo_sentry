@@ -413,9 +413,6 @@ def get_processed_data(
     for sensor_code in sensor_codes:
         preprocessed_path = os.path.join(preprocessed_data_folder_base, sensor_code)
         logger.info(f"Procesando datos para el sensor: {sensor_code}")
-        print("-----------------------------------------------------")
-        print(f"Procesando datos para el sensor: {sensor_code}")
-        print(f"Ruta de datos preprocesados: {preprocessed_path}")
         process_sensor_files(
             sensor_code,
             preprocessed_path,
