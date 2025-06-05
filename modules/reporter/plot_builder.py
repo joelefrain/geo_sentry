@@ -177,6 +177,10 @@ class PlotBuilder:
             Y-axis limits (min, max)
         invert_y : bool, optional
             Invert Y-axis if True (default: False)
+        dxf_params : dict, optional
+            Additional parameters for DXF plotting
+        format_params : dict, optional
+            Formatting parameters for the plot
 
         Examples
         --------
@@ -423,6 +427,76 @@ class PlotBuilder:
             )
 
         return self._create_legend_drawing(box_width, box_height, ncol)
+
+    def get_colorbar(
+        self, 
+        box_width: int = 4, 
+        box_height: int = 0.5, 
+        label: str = "", 
+        vmin: float = None, 
+        vmax: float = None,
+        colors: list = None,
+        cmap: str = "cool"
+    ) -> "Drawing":
+        """Create a horizontal colorbar with continuous color mapping.
+
+        Parameters
+        ----------
+        box_width : int
+            Width of the colorbar box
+        box_height : int
+            Height of the colorbar box
+        label : str
+            Label for the colorbar
+        vmin : float, optional
+            Minimum value for colorbar scale
+        vmax : float, optional
+            Maximum value for colorbar scale
+        colors : list, optional
+            List of colors to create custom colormap
+        cmap : str, optional
+            Name of matplotlib colormap to use if colors not provided (default: 'cool')
+        """
+        if self.fig is None:
+            raise RuntimeError("Primary plot must be created before getting the colorbar")
+
+        # Create a new figure for the colorbar
+        fig_cbar = plt.figure(figsize=(box_width, box_height))
+        ax_cbar = fig_cbar.add_axes([0.05, 0.5, 0.9, 0.3])
+        
+        # Create colormap from colors if provided, otherwise use named cmap
+        if colors:
+            import matplotlib.colors as mcolors
+            cmap = mcolors.LinearSegmentedColormap.from_list("custom", colors)
+        else:
+            cmap = plt.get_cmap(cmap)
+
+        # Create a scalar mappable
+        if vmin is None or vmax is None:
+            all_ys = []
+            for line in self.ax1.get_lines():
+                all_ys.extend(line.get_ydata())
+            vmin = min(all_ys) if all_ys else 0
+            vmax = max(all_ys) if all_ys else 1
+
+        norm = plt.Normalize(vmin=vmin, vmax=vmax)
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+
+        # Create colorbar
+        cbar = plt.colorbar(
+            sm,
+            cax=ax_cbar,
+            orientation='horizontal',
+            label=label
+        )
+
+        # Save to buffer and convert to Drawing
+        buffer = BytesIO()
+        fig_cbar.savefig(buffer, format="svg", bbox_inches="tight", pad_inches=0)
+        plt.close(fig_cbar)
+        buffer.seek(0)
+        return svg2rlg(buffer)
 
     def get_drawing(self) -> "Drawing":
         """

@@ -95,7 +95,6 @@ def generate_structure_plots(
 
         # Drop sensors with missing records
         sensor_df.dropna(subset=["first_record", "last_record"], inplace=True)
-
         # Import plotter module
         plot_template = sensor_config["plot_template"]
         try:
@@ -290,7 +289,9 @@ if __name__ == "__main__":
             "start_item": 1,
             "appendix_chapter": "5",
             "revsion": "B",
-            "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV"],
+            # "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            "sensors": ["INC"],
+
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)

@@ -124,7 +124,7 @@ def create_map(dxf_path, data_sensors):
         "title_x": "",
         "title_y": "",
         "title_chart": "",
-        "show_legend": False,
+        "show_legend": True,
         "dxf_params": {"color": "black", "linestyle": "-", "linewidth": 0.02},
         "format_params": {
             "show_grid": False,
@@ -133,30 +133,28 @@ def create_map(dxf_path, data_sensors):
         },
     }
 
-    total_dfs = len(data_sensors["df"])
+    series_data = []
 
-    series = []
-    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        color, marker = get_unique_marker_convo(
-            i, total_dfs, color_palette=COLOR_PALETTE
-        )
-        series.append(
+    # Generate unique color combinations for each sensor
+    for i, name in enumerate(data_sensors["names"]):
+        color, _ = get_unique_marker_convo(i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
+        series_data.append(
             {
-                "x": df["east"].tolist(),
-                "y": df["north"].tolist(),
+                "x": data_sensors["east"][i],
+                "y": data_sensors["north"][i],
                 "color": color,
-                "linestyle": "",
+                "linetype": "",
                 "lineweight": 0,
-                "marker": marker,
-                "markersize": 2,
-                "label": name,
+                "marker": "o",
+                "markersize": 10,
+                "label": "",
                 "note": name,
                 "fontsize": 6,
             }
         )
 
     plotter.plot_series(
-        data=series,
+        data=series_data,
         dxf_path=map_args["dxf_path"],
         size=map_args["size"],
         title_x=map_args["title_x"],

@@ -12,14 +12,27 @@ DEFAULT_INC_PARAMS = {
     "b_axis_scale": 0.005,
 }
 
+def extract_non_time_suffix(text_line):
+    """Devuelve el texto que sigue al primer ':' de la línea, sin incluir el ':'."""
+    if ':' in text_line:
+        return text_line.split(':', 1)[1].strip()
+    return ''
 
 def parse_datetime(date_str, time_str, date_format):
-    for dt_str in (f"{date_str} {time_str}", date_str):
-        try:
-            return datetime.strptime(dt_str, date_format)
-        except ValueError:
-            continue
-    return pd.NaT
+    """
+    Intenta convertir 'date_str' y 'time_str' según 'date_format'.
+    Si 'time_str' está vacío, intenta solo con la fecha.
+    Si solo hay hora o ambos fallan, devuelve pd.NaT.
+    """
+    if time_str:
+        datetime_str = f"{date_str} {time_str}"
+    else:
+        datetime_str = date_str
+
+    try:
+        return datetime.strptime(datetime_str, date_format)
+    except ValueError:
+        return pd.NaT
 
 
 def parse_gkn_file(filepath, match_columns, **kwargs):
@@ -32,8 +45,8 @@ def parse_gkn_file(filepath, match_columns, **kwargs):
         time_line = lines[params["date_lines"][1]].strip()
         data_lines_start = params["data_lines_start"]
 
-        date_str = date_line.split(":")[-1].strip()
-        time_str = time_line.split(":")[-1].strip()
+        date_str = extract_non_time_suffix(date_line)
+        time_str = extract_non_time_suffix(time_line)
 
         dt = parse_datetime(date_str, time_str, params["date_format"])
 
@@ -53,9 +66,7 @@ def parse_gkn_file(filepath, match_columns, **kwargs):
             "b_axis_scale",
         ]:
             df[key] = params[key]
-
         df.dropna(subset=match_columns, inplace=True)
-
         return df
 
 

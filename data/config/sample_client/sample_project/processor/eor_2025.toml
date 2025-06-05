@@ -12,7 +12,7 @@ PTA = "PZ CASAGRANDE"
 PCT = "PRISMAS"
 SACV = "CELDAS DE ASENTAMIENTO"
 CPCV = "CELDAS DE PRESIÓN"
-INC = "INCLINOMETRO"
+INC = "INCLINOMETROS"
 
 [process]
 exclude_sheets = ["Hoja", "Kangatang", "X", "Planta", "Hoja 1", "Hoja 2"]

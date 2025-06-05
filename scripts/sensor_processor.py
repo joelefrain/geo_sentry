@@ -284,16 +284,15 @@ def read_or_create_df(file_path: str, default_columns: list) -> pd.DataFrame:
         return pd.DataFrame(columns=default_columns)
 
 
-def get_operativity(cut_off, location_data_folder_base, work_path, sensor_codes):
+def get_operativity(location_data_folder_base, work_path, sensor_codes):
     """Procesa y actualiza los datos de operatividad de los sensores.
 
     Args:
-        cut_off: Fecha de corte para el procesamiento.
         location_data_folder_base: Ruta base del directorio con datos de ubicación.
         work_path: Ruta de trabajo.
         sensor_names: Diccionario con nombres de sensores.
     """
-    logger.info(f"Iniciando procesamiento de operatividad para {cut_off}")
+    logger.info("Iniciando procesamiento de operatividad")
 
     def process_location_file(file_path, structure, code, sensor_type):
         location_csv_df = read_df_from_csv(file_path)
@@ -434,7 +433,7 @@ def exec_process(cut_off, work_path, sensor_names):
     preprocessed_data_folder_base = os.path.join(work_path, cut_off, "preprocess")
     location_data_folder_base = os.path.join(work_path, cut_off, "location")
 
-    get_operativity(cut_off, location_data_folder_base, work_path, sensor_names)
+    get_operativity(location_data_folder_base, work_path, sensor_names)
     get_processed_data(
         cut_off, preprocessed_data_folder_base, processed_data_folder_base, sensor_names
     )
@@ -637,7 +636,7 @@ if __name__ == "__main__":
             "cut_off": ["250430_Abril"],
             "methods": ["preprocess", "process", "main_records"],
             # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensor_codes": ["PTA", "INC"],
+            "sensor_codes": ["INC"],
 
         }
 

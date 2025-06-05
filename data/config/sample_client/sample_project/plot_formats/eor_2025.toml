@@ -95,3 +95,20 @@ bottom_reference_column = "sensor_level"
 serie_x = "time"
 sensor_type_name = "celda de presión"
 sensor_aka = "La celda de presión"
+
+[sensors.inc]
+plot_template = "merged_plot_type_02"
+[sensors.inc.column_config]
+sensor_type_name = "inclinómetro vertical"
+[[sensors.inc.column_config.plots]]
+target_column = "A_deflection"
+unit_target = "cm"
+ts_serie_flag = true
+series_x = "time"
+series_y = "FLEVEL"
+[[sensors.inc.column_config.plots]]
+target_column = "B_deflection"
+unit_target = "cm"
+ts_serie_flag = true
+series_x = "time"
+series_y = "FLEVEL"
