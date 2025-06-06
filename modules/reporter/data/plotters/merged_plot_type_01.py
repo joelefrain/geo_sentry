@@ -1,23 +1,23 @@
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-
-import pandas as pd
-
-# Add 'libs' path to sys.path
-
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.note_handler import NotesHandler
-from libs.utils.plot_helpers import get_unique_marker_convo
-from libs.utils.config_loader import load_toml
-from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+from libs.utils.config_loader import load_toml
+from libs.utils.plot_helpers import get_unique_marker_convo
+from modules.reporter.note_handler import NotesHandler
+from modules.reporter.report_builder import ReportBuilder, load_svg
+from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+import pandas as pd
+import os
+import sys
+
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../")))
+
+
+# Add 'libs' path to sys.path
+
 
 COLOR_PALETTE = "Spectral"
 
@@ -38,7 +38,8 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days / total_records if total_records > 0 else 0
+            (last_date - first_date).days /
+            total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -137,7 +138,8 @@ def create_map(dxf_path, data_sensors):
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
-        color, _ = get_unique_marker_convo(i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
+        color, _ = get_unique_marker_convo(
+            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
         series_data.append(
             {
                 "x": data_sensors["east"][i],
@@ -488,7 +490,8 @@ def generate_report(
 
     for plot in plots:
         target_column = plot["target_column"]
-        unit_target = plot.get("unit_target", None)  # Optional for ts_serie=False
+        # Optional for ts_serie=False
+        unit_target = plot.get("unit_target", None)
         ts_serie = plot["ts_serie_flag"]
         serie_x = plot["series_x"]
         serie_aka = plot.get(
@@ -515,11 +518,8 @@ def generate_report(
             )
 
             # Define mask for filtering data if start_query and end_query are provided
-            mask = None
-            if start_query and end_query:
-                mask = lambda df: (df[serie_x] >= start_query) & (
-                    df[serie_x] <= end_query
-                )
+            mask = (lambda df: (df[serie_x] >= start_query) & (
+                df[serie_x] <= end_query)) if start_query and end_query else None
 
             # Create and configure plot grid
             plot_grid = PlotMerger(fig_size=(7.5, 5.5))
@@ -531,7 +531,8 @@ def generate_report(
 
             chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
 
-            target_column_name = series_names[target_column].lower().split("(")[0]
+            target_column_name = series_names[target_column].lower().split("(")[
+                0]
 
             # Create report components
             upper_cell = get_note_content(
@@ -582,7 +583,8 @@ def generate_report(
                 zip(data_sensors["df"], data_sensors["names"])
             ):
                 chart_cell1 = create_non_ts_cell_1(
-                    {"df": [df], "names": [name]},  # Pass only the current series
+                    # Pass only the current series
+                    {"df": [df], "names": [name]},
                     series_names,
                     target_column,
                     serie_x,
@@ -597,7 +599,8 @@ def generate_report(
                 plot_grid.create_grid(1, 1, row_ratios=[1])
                 plot_grid.add_object(chart_cell1, (0, 0))
 
-                chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
+                chart_cell = plot_grid.build(
+                    color_border="white", cell_spacing=0)
 
                 chart_title_elements = [
                     f"{serie_aka} de {sensor_type_name}",

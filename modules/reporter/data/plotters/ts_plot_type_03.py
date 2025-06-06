@@ -10,7 +10,7 @@ from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.note_handler import NotesHandler
 from libs.utils.plot_helpers import get_unique_marker_convo
 from libs.utils.config_loader import load_toml
-from libs.utils.calculations import round_decimal, format_date_long, format_date_short
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
@@ -387,9 +387,8 @@ def generate_report(
     )
 
     # Define mask for filtering data if start_query and end_query are provided
-    mask = None
-    if start_query and end_query:
-        mask = lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
+    mask = (lambda df: (df[serie_x] >= start_query) & (
+        df[serie_x] <= end_query)) if start_query and end_query else None
 
     # Create and configure plot grid
     plot_grid = PlotMerger(fig_size=(7.5, 5.5))

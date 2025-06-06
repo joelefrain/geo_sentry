@@ -1,20 +1,20 @@
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-import pandas as pd
-
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.note_handler import NotesHandler
-from libs.utils.plot_helpers import get_unique_marker_convo
-from libs.utils.config_loader import load_toml
-from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+from libs.utils.config_loader import load_toml
+from libs.utils.plot_helpers import get_unique_marker_convo
+from modules.reporter.note_handler import NotesHandler
+from modules.reporter.report_builder import ReportBuilder, load_svg
+from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+import pandas as pd
+import os
+import sys
+
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../")))
+
 
 COLOR_PALETTE = "cool"
 
@@ -35,7 +35,8 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days / total_records if total_records > 0 else 0
+            (last_date - first_date).days /
+            total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -394,9 +395,8 @@ def generate_report(
     )
 
     # Define mask for filtering data if start_query and end_query are provided
-    mask = None
-    if start_query and end_query:
-        mask = lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
+    mask = (lambda df: (df[serie_x] >= start_query) & (
+        df[serie_x] <= end_query)) if start_query and end_query else None
 
     # Create and configure plot grid
     plot_grid = PlotMerger(fig_size=(7.5, 5.5))

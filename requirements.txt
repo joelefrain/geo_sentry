@@ -6,3 +6,4 @@ PyPDF2
 ezdxf
 svglib
 babel
+tomli

@@ -635,7 +635,7 @@ if __name__ == "__main__":
             "cut_off": ["250430_Abril"],
             "methods": ["preprocess", "process", "main_records"],
             # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensor_codes": ["INC"],
+            "sensor_codes": ["CPCV"],
 
         }
 

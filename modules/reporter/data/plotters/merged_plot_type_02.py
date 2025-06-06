@@ -1,25 +1,25 @@
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-
-import pandas as pd
-
-# Add 'libs' path to sys.path
-
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.note_handler import NotesHandler
-from libs.utils.calculations import get_percentile_value, round_upper
-from libs.utils.plot_helpers import get_unique_marker_convo
-from libs.utils.text_helpers import to_sentence_format
-from libs.utils.config_loader import load_toml
-from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+from libs.utils.config_loader import load_toml
+from libs.utils.text_helpers import to_sentence_format
+from libs.utils.plot_helpers import get_unique_marker_convo
+from libs.utils.calc_helpers import get_symetric_range
+from modules.reporter.note_handler import NotesHandler
+from modules.reporter.report_builder import ReportBuilder, load_svg
+from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+import pandas as pd
+import os
+import sys
+
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../")))
+
+
+# Add 'libs' path to sys.path
+
 
 COLOR_PALETTE_1 = "Spectral"
 COLOR_PALETTE_2 = "PiYG"
@@ -41,7 +41,8 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days / total_records if total_records > 0 else 0
+            (last_date - first_date).days /
+            total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -67,10 +68,12 @@ def get_note_content(
     series_names,
     serie_x,
     serie_y,
+    limit,
     mask=None,
 ):
     # Initialize NotesHandler
-    note_handler = NotesHandler()
+    note_handler = NotesHandler(style_name="small")
+    
     target_column_name = to_sentence_format(
         series_names[target_column], mode="decapitalize"
     ).split("(")[0]
@@ -79,27 +82,63 @@ def get_note_content(
         "("
     )[0]
     y_unit = (
-        serie_y_name[serie_y_name.find("(") + 1 : serie_y_name.find(")")].strip()
+        serie_y_name[serie_y_name.find(
+            "(") + 1: serie_y_name.find(")")].strip()
         if "(" in serie_y_name and ")" in serie_y_name
         else None
     )
 
+    # Get historical maximum (without mask but with limit)
+    historical_combined_df = pd.concat([df for df in data_sensors["df"]], ignore_index=True)
+    if limit:
+        # Group by date and check if all values are within limits
+        date_groups = historical_combined_df.groupby(serie_x)
+        valid_dates = [
+            date for date, group in date_groups 
+            if all(
+                group[target_column].isna() | 
+                group[target_column].between(limit[0], limit[1])
+            )
+        ]
+        historical_combined_df = historical_combined_df[historical_combined_df[serie_x].isin(valid_dates)]
+    
     # Apply mask and calculate combined statistics
     dfs = [df[mask(df)] if mask else df for df in data_sensors["df"]]
     combined_df = pd.concat(dfs, ignore_index=True)
+    
+    # Filter by limit before any analysis
+    if limit:
+        # Group by date and check if all values are within limits
+        date_groups = combined_df.groupby(serie_x)
+        valid_dates = [
+            date for date, group in date_groups 
+            if all(
+                group[target_column].isna() | 
+                group[target_column].between(limit[0], limit[1])
+            )
+        ]
+        combined_df = combined_df[combined_df[serie_x].isin(valid_dates)]
 
+    # Get statistics from filtered data
     first_date = pd.to_datetime(combined_df[serie_x].iloc[0])
     last_date = pd.to_datetime(combined_df[serie_x].iloc[-1])
 
-    # Get max value and corresponding serie_y
+    # Get max value from filtered data
     idx_max = combined_df[target_column].abs().idxmax()
     max_value = combined_df.loc[idx_max, target_column]
     max_date = pd.to_datetime(combined_df.loc[idx_max, serie_x])
     max_serie_y = combined_df.loc[idx_max, serie_y]
 
+    # Get historical maximum from filtered data
+    hist_idx_max = historical_combined_df[target_column].abs().idxmax()
+    hist_max_value = historical_combined_df.loc[hist_idx_max, target_column]
+    hist_max_date = pd.to_datetime(historical_combined_df.loc[hist_idx_max, serie_x])
+    hist_max_serie_y = historical_combined_df.loc[hist_idx_max, serie_y]
+
     # Get last date's maximum value
     last_date = pd.to_datetime(combined_df[serie_x]).max()
-    last_date_df = combined_df[pd.to_datetime(combined_df[serie_x]) == last_date]
+    last_date_df = combined_df[pd.to_datetime(
+        combined_df[serie_x]) == last_date]
 
     if not last_date_df.empty:
         last_idx = last_date_df[target_column].abs().idxmax()
@@ -110,6 +149,10 @@ def get_note_content(
         last_date = None
         last_serie_y = None
 
+    # Filter values by limit if provided
+    if limit:
+        combined_df = combined_df[combined_df[target_column].abs() <= limit[1]]
+        
     # Define sections with separated notes
     sections = [
         {
@@ -120,6 +163,9 @@ def get_note_content(
         {
             "title": "Notas:",
             "content": [
+                f"Históricamente, el valor máximo registrado de {target_column_name} fue de {round_decimal(hist_max_value, 2)} {unit_target} "
+                f"a {round_decimal(hist_max_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
+                f"el día {format_date_short(hist_max_date)}.",
                 f"En el periodo entre {format_date_long(first_date)} y {format_date_long(last_date)}, "
                 f"se registró un valor máximo de {target_column_name} de {round_decimal(max_value, 2)} {unit_target} "
                 f"a {round_decimal(max_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
@@ -241,9 +287,8 @@ def create_non_ts_cell_1(
                     }
                 )
 
-    # Calculate x-axis limits based on 90th percentile of absolute maximum values
-    percentile = get_percentile_value(max_abs_values, 90.0)
-    limit = round_upper(abs(percentile * 1.5))
+    # Calculate limits based on percentile of absolute maximum values
+    limit = get_symetric_range(max_abs_values, percentile=95, scale=1.5)
 
     plotter.plot_series(
         data=series,
@@ -253,7 +298,7 @@ def create_non_ts_cell_1(
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
         invert_y=True,
-        xlim=(-limit, limit),  # Symmetric limits based on percentile
+        xlim=limit,  # Symmetric limits based on percentile
     )
 
     return limit, plotter.get_drawing(), plotter.get_legend(
@@ -275,7 +320,8 @@ def create_ts_cell_2(
     target_column_name = to_sentence_format(
         series_names[target_column], mode="decapitalize"
     )
-    serie_y_name = to_sentence_format(series_names[serie_y], mode="decapitalize")
+    serie_y_name = to_sentence_format(
+        series_names[serie_y], mode="decapitalize")
 
     # Plot formatting
     plot_format = {
@@ -323,7 +369,7 @@ def create_ts_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        ylim=(-limit, limit),
+        ylim=limit,
     )
 
     # Get colors from series for colorbar
@@ -395,9 +441,8 @@ def generate_report(
         )
 
         # Define mask for filtering data
-        mask = None
-        if start_query and end_query:
-            mask = lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
+        mask = (lambda df: (df[serie_x] >= start_query) & (
+            df[serie_x] <= end_query)) if start_query and end_query else None
 
         # Create and configure plot grid
         plot_grid = PlotMerger(fig_size=(5, 8))
@@ -427,6 +472,7 @@ def generate_report(
             series_names,
             serie_x,
             serie_y,
+            limit,  # Add this parameter
             mask,
         )
         lower_cell = create_map(dxf_path, data_sensors)

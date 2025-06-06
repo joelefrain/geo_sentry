@@ -290,7 +290,7 @@ if __name__ == "__main__":
             "appendix_chapter": "5",
             "revsion": "B",
             # "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensors": ["INC"],
+            "sensors": ["PCV"],
 
         }
 

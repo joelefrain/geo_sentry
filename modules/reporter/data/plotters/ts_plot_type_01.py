@@ -1,20 +1,20 @@
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-import pandas as pd
-
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.note_handler import NotesHandler
-from libs.utils.plot_helpers import get_unique_marker_convo
-from libs.utils.config_loader import load_toml
-from libs.utils.calculations import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short, get_typical_range
+from libs.utils.config_loader import load_toml
+from libs.utils.plot_helpers import get_unique_marker_convo
+from modules.reporter.note_handler import NotesHandler
+from modules.reporter.report_builder import ReportBuilder, load_svg
+from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+import pandas as pd
+import os
+import sys
+
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../")))
+
 
 COLOR_PALETTE = "cool"
 
@@ -35,7 +35,8 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days / total_records if total_records > 0 else 0
+            (last_date - first_date).days /
+            total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -61,6 +62,7 @@ def get_note_content(
     series_names,
     serie_x,
     sensor_aka,
+    limit,
     mask=None,
 ):
     # Initialize NotesHandler
@@ -68,9 +70,21 @@ def get_note_content(
 
     target_column_name = series_names[target_column].lower().split("(")[0]
 
-    # Calculate variables for all sensors
+    # Filter dataframes by limit before analysis
+    filtered_dfs = []
+    for df in data_sensors["df"]:          
+        # Apply value limits mask
+        if limit:
+            mask_limit = (
+                df[target_column].isna() |
+                df[target_column].between(limit[0], limit[1])
+            )
+            df = df[mask_limit]
+        filtered_dfs.append(df)
+
+    # Calculate variables for filtered data
     calc_vars = calculate_note_variables(
-        data_sensors["df"], data_sensors["names"], serie_x, target_column, mask
+        filtered_dfs, data_sensors["names"], serie_x, target_column, mask
     )
 
     # Define sections with narrative style for each sensor
@@ -123,7 +137,8 @@ def create_map(dxf_path, data_sensors):
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
-        color, _ = get_unique_marker_convo(i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
+        color, _ = get_unique_marker_convo(
+            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
         series_data.append(
             {
                 "x": data_sensors["east"][i],
@@ -187,10 +202,13 @@ def create_cell_1(
     }
 
     series = []
+    all_values = []  # List to collect all values for limit calculation
     total_dfs = len(data_sensors["df"])
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
         if target_column in df.columns:
-            color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
+            all_values.extend(df[target_column].dropna().tolist())
+            color, marker = get_unique_marker_convo(
+                i, total_dfs, color_palette=COLOR_PALETTE)
 
             series.append(
                 {
@@ -205,6 +223,9 @@ def create_cell_1(
                 }
             )
 
+    # Calculate typical range limits
+    limit = get_typical_range(all_values, percentile=99, scale=2.5)
+
     plotter.plot_series(
         data=series,
         size=plot_format["size"],
@@ -212,8 +233,10 @@ def create_cell_1(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
+        ylim=limit,  # Apply the calculated limits
     )
-    return plotter.get_drawing(), plotter.get_legend(
+    
+    return limit, plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
         box_height=0.5,
         ncol=plotter.get_num_labels(),
@@ -221,7 +244,7 @@ def create_cell_1(
 
 
 def create_cell_2(
-    data_sensors, start_query, end_query, series_names, target_column, serie_x
+    data_sensors, start_query, end_query, series_names, target_column, serie_x, limit,
 ):
     plotter = PlotBuilder()
 
@@ -260,7 +283,8 @@ def create_cell_2(
         filtered_df = df[mask]
 
         if target_column in filtered_df.columns:
-            color, marker = get_unique_marker_convo(i, total_dfs, color_palette=COLOR_PALETTE)
+            color, marker = get_unique_marker_convo(
+                i, total_dfs, color_palette=COLOR_PALETTE)
 
             series.append(
                 {
@@ -282,6 +306,7 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
+        ylim=limit,  # Apply the calculated limits
     )
 
     return plotter.get_drawing(), plotter.get_legend(
@@ -323,7 +348,7 @@ def generate_report(
     series_names = calc_config["names"]["es"]
 
     # Generate chart components
-    chart_cell1, legend1 = create_cell_1(
+    limit, chart_cell1, legend1 = create_cell_1(
         data_sensors,
         series_names,
         target_column,
@@ -331,13 +356,12 @@ def generate_report(
         sensor_type_name,
     )
     chart_cell2, legend2 = create_cell_2(
-        data_sensors, start_query, end_query, series_names, target_column, serie_x
+        data_sensors, start_query, end_query, series_names, target_column, serie_x, limit,
     )
 
     # Define mask for filtering data if start_query and end_query are provided
-    mask = None
-    if start_query and end_query:
-        mask = lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
+    mask = (lambda df: (df[serie_x] >= start_query) & (
+        df[serie_x] <= end_query)) if start_query and end_query else None
 
     # Create and configure plot grid
     plot_grid = PlotMerger(fig_size=(7.5, 5.5))
@@ -359,6 +383,7 @@ def generate_report(
         series_names,
         serie_x,
         sensor_aka,
+        limit,
         mask,
     )
     lower_cell = create_map(dxf_path, data_sensors)
