@@ -5,7 +5,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 import pandas as pd
-from pathlib import Path
 
 from modules.calculations.excel_processor import ExcelProcessor
 from modules.calculations.data_processor import DataProcessor

@@ -11,6 +11,7 @@ import pandas as pd
 from modules.reporter.plot_builder import PlotMerger, PlotBuilder
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.note_handler import NotesHandler
+from libs.utils.calculations import get_percentile_value, round_upper
 from libs.utils.plot_helpers import get_unique_marker_convo
 from libs.utils.text_helpers import to_sentence_format
 from libs.utils.config_loader import load_toml
@@ -70,20 +71,28 @@ def get_note_content(
 ):
     # Initialize NotesHandler
     note_handler = NotesHandler()
-    target_column_name = to_sentence_format(series_names[target_column], mode="decapitalize").split("(")[0]
+    target_column_name = to_sentence_format(
+        series_names[target_column], mode="decapitalize"
+    ).split("(")[0]
     serie_y_name = series_names[serie_y]
-    serie_y_name_decap = to_sentence_format(serie_y_name, mode="decapitalize").split("(")[0]
-    y_unit = serie_y_name[serie_y_name.find('(')+1:serie_y_name.find(')')].strip() if '(' in serie_y_name and ')' in serie_y_name else None
-    
+    serie_y_name_decap = to_sentence_format(serie_y_name, mode="decapitalize").split(
+        "("
+    )[0]
+    y_unit = (
+        serie_y_name[serie_y_name.find("(") + 1 : serie_y_name.find(")")].strip()
+        if "(" in serie_y_name and ")" in serie_y_name
+        else None
+    )
+
     # Apply mask and calculate combined statistics
     dfs = [df[mask(df)] if mask else df for df in data_sensors["df"]]
     combined_df = pd.concat(dfs, ignore_index=True)
 
     first_date = pd.to_datetime(combined_df[serie_x].iloc[0])
     last_date = pd.to_datetime(combined_df[serie_x].iloc[-1])
-    
+
     # Get max value and corresponding serie_y
-    idx_max = combined_df[target_column].idxmax()
+    idx_max = combined_df[target_column].abs().idxmax()
     max_value = combined_df.loc[idx_max, target_column]
     max_date = pd.to_datetime(combined_df.loc[idx_max, serie_x])
     max_serie_y = combined_df.loc[idx_max, serie_y]
@@ -91,9 +100,9 @@ def get_note_content(
     # Get last date's maximum value
     last_date = pd.to_datetime(combined_df[serie_x]).max()
     last_date_df = combined_df[pd.to_datetime(combined_df[serie_x]) == last_date]
-    
+
     if not last_date_df.empty:
-        last_idx = last_date_df[target_column].idxmax()
+        last_idx = last_date_df[target_column].abs().idxmax()
         last_value = last_date_df.loc[last_idx, target_column]
         last_serie_y = last_date_df.loc[last_idx, serie_y]
     else:
@@ -115,7 +124,6 @@ def get_note_content(
                 f"se registró un valor máximo de {target_column_name} de {round_decimal(max_value, 2)} {unit_target} "
                 f"a {round_decimal(max_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
                 f"el día {format_date_short(max_date)}.",
-                
                 f"El último valor registrado de {target_column_name} fue de {round_decimal(last_value, 2)} {unit_target} "
                 f"a {round_decimal(last_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
                 f"el día {format_date_short(last_date)}.",
@@ -202,6 +210,8 @@ def create_non_ts_cell_1(
     }
 
     series = []
+    max_abs_values = []  # Lista para almacenar valores máximos absolutos
+
     for df, name in zip(data_sensors["df"], data_sensors["names"]):
         if target_column in df.columns and serie_y in df.columns:
             # Get unique dates
@@ -213,10 +223,15 @@ def create_non_ts_cell_1(
                     i, len(unique_dates), color_palette=COLOR_PALETTE_1
                 )
 
+                # Get absolute maximum value for this series
+                abs_values = date_df[target_column].abs()
+                if not abs_values.empty:
+                    max_abs_values.append(abs_values.max())
+
                 series.append(
                     {
-                        "x": date_df[target_column].tolist(),  # target_column on x-axis
-                        "y": date_df[serie_y].tolist(),  # FLEVEL on y-axis
+                        "x": date_df[target_column].tolist(),
+                        "y": date_df[serie_y].tolist(),
                         "label": format_date_short(date),
                         "color": color,
                         "linestyle": "-",
@@ -226,6 +241,10 @@ def create_non_ts_cell_1(
                     }
                 )
 
+    # Calculate x-axis limits based on 90th percentile of absolute maximum values
+    percentile = get_percentile_value(max_abs_values, 90.0)
+    limit = round_upper(abs(percentile * 1.5))
+
     plotter.plot_series(
         data=series,
         size=plot_format["size"],
@@ -234,10 +253,10 @@ def create_non_ts_cell_1(
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
         invert_y=True,
-        xlim=(-20, 20),
+        xlim=(-limit, limit),  # Symmetric limits based on percentile
     )
 
-    return plotter.get_drawing(), plotter.get_legend(
+    return limit, plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
         box_height=1.0,
         ncol=2,
@@ -250,6 +269,7 @@ def create_ts_cell_2(
     target_column,
     serie_x,
     serie_y,
+    limit,
 ):
     plotter = PlotBuilder(ts_serie=True)
     target_column_name = to_sentence_format(
@@ -274,14 +294,14 @@ def create_ts_cell_2(
 
     for df, name in zip(data_sensors["df"], data_sensors["names"]):
         if target_column in df.columns and serie_y in df.columns:
-            unique_flevels = sorted(df[serie_y].unique())
-            all_y_value.extend(unique_flevels)
+            unique_group = sorted(df[serie_y].unique())
+            all_y_value.extend(unique_group)
             all_values.extend(df[target_column].dropna().tolist())
 
-            for i, y_value in enumerate(unique_flevels):
+            for i, y_value in enumerate(unique_group):
                 y_value_df = df[df[serie_y] == y_value]
                 color, marker = get_unique_marker_convo(
-                    i, len(unique_flevels), color_palette=COLOR_PALETTE_2
+                    i, len(unique_group), color_palette=COLOR_PALETTE_2
                 )
                 series.append(
                     {
@@ -303,7 +323,7 @@ def create_ts_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        # ylim=(-20, 20),
+        ylim=(-limit, limit),
     )
 
     # Get colors from series for colorbar
@@ -357,7 +377,7 @@ def generate_report(
         serie_y = plot["series_y"]
 
         # Generate chart components
-        chart_cell1, legend1 = create_non_ts_cell_1(
+        limit, chart_cell1, legend1 = create_non_ts_cell_1(
             data_sensors,
             series_names,
             target_column,
@@ -371,6 +391,7 @@ def generate_report(
             target_column,
             serie_x,
             serie_y,
+            limit,
         )
 
         # Define mask for filtering data

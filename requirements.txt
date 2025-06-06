@@ -1,0 +1,8 @@
+pandas
+matplotlib
+adjustText
+openpyxl
+PyPDF2
+ezdxf
+svglib
+babel

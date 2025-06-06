@@ -63,3 +63,22 @@ def format_date_long(date, lang='es'):
 def format_date_short(date):
     """Convert date to 'dd-mm-yy' format."""
     return date.strftime("%d-%m-%y")
+
+def get_percentile_value(data: list, percentile: float = 90.0) -> float:
+    """
+    Calculate the value at a specified percentile from a list of numbers.
+
+    Parameters
+    ----------
+    data : list
+        List of numeric values.
+    percentile : float, optional
+        Percentile to calculate (0-100), by default 90.0
+
+    Returns
+    -------
+    float
+        Value at the specified percentile.
+    """
+    data_arr = np.asarray(data)
+    return float(np.nanpercentile(data_arr, percentile))
