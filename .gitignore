@@ -70,3 +70,11 @@ __pycache__/
 *.gkn
 *.dxf
 !requirements.txt
+
+# Data exceptions - Required directories
+!data/logo/
+!data/config/sample_client/sample_project/
+
+# Custom exclusions and formats - Track all files inside required directories
+!data/logo/**/*
+!data/config/sample_client/sample_project/**/*
