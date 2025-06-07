@@ -243,7 +243,6 @@ def create_non_ts_cell_1(
     serie_y,
 ):
     plotter = PlotBuilder(ts_serie=False, ymargin=0.0)
-
     # Plot formatting
     plot_format = {
         "size": (8.5, 10),

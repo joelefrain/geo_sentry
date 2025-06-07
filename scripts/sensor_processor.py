@@ -8,7 +8,7 @@ import pandas as pd
 
 from modules.calculations.excel_processor import ExcelProcessor
 from modules.calculations.data_processor import DataProcessor
-from modules.calculations.gkn_processor import gkn_folder_to_csv
+from modules.calculations.text_processor import text_folder_to_csv
 from libs.utils.config_variables import CALC_CONFIG_DIR, BASE_DIR, DATA_CONFIG
 from libs.utils.config_loader import load_toml
 from libs.utils.config_logger import get_logger, log_execution_time
@@ -18,6 +18,7 @@ from libs.utils.df_helpers import (
     config_time_df,
     save_df_to_csv,
     merge_new_records,
+    assign_params,
 )
 
 
@@ -115,7 +116,9 @@ def preprocess_sensors(
     """
     for sensor_code in sensor_codes:
         try:
-            reader_config = load_toml(data_dir=config_sensor_path, toml_name=sensor_code.lower())
+            reader_config = load_toml(
+                data_dir=config_sensor_path, toml_name=sensor_code.lower()
+            )
             logger.info(
                 f"Configuración cargada para {sensor_code} desde {config_sensor_path}"
             )
@@ -124,9 +127,8 @@ def preprocess_sensors(
             continue
 
         type_reader = reader_config["type"]
-            
+
         if type_reader == "excel_processor":
-            
             # Procesar archivos Excel
             processor = ExcelProcessor(reader_config)
 
@@ -145,23 +147,26 @@ def preprocess_sensors(
                         custom_functions=custom_functions_for_sensor,
                         selected_attr=processor.config["process"].get("selected_attr"),
                     )
-        
 
-        if type_reader == "gkn_processor":
+        if type_reader == "text_processor":
             match_columns = reader_config["process_config"]["match_columns"]
 
             for structure in order_structure:
                 try:
                     input_folder = sensor_data_paths[sensor_code][structure]
                 except KeyError:
-                    logger.error(f"No se encontró la ruta para '{structure}' en '{sensor_code}'")
+                    logger.error(
+                        f"No se encontró la ruta para '{structure}' en '{sensor_code}'"
+                    )
                     continue
 
                 if not os.path.exists(input_folder):
                     logger.error(f"Carpeta no encontrada: {input_folder}")
                     continue
 
-                output_folder_base = os.path.join(work_path, cut_off, "preprocess", sensor_code)
+                output_folder_base = os.path.join(
+                    work_path, cut_off, "preprocess", sensor_code
+                )
                 os.makedirs(output_folder_base, exist_ok=True)
 
                 for subfolder_name in os.listdir(input_folder):
@@ -175,10 +180,93 @@ def preprocess_sensors(
                         else:
                             params = reader_config["default_params"]
 
-                        df = gkn_folder_to_csv(subfolder, match_columns, **params)
+                        df = text_folder_to_csv(subfolder, match_columns, **params)
+                        df = assign_params(df, **params.get("processor", {}))
 
-                        file_path = os.path.join(output_folder_base, f"{structure}.{sensor_name}.csv")
+                        file_path = os.path.join(
+                            output_folder_base, f"{structure}.{sensor_name}.csv"
+                        )
                         save_df_to_csv(df=df, file_path=file_path)
+
+        if type_reader == "match_csv_processor":
+            match_columns = reader_config["process_config"]["match_columns"]
+
+            for structure in order_structure:
+                try:
+                    input_folder = sensor_data_paths[sensor_code][structure]
+                except KeyError:
+                    logger.error(
+                        f"No se encontró la ruta para '{structure}' en '{sensor_code}'"
+                    )
+                    continue
+
+                if not os.path.exists(input_folder):
+                    logger.error(f"Carpeta no encontrada: {input_folder}")
+                    continue
+
+                output_folder_base = os.path.join(
+                    work_path, cut_off, "preprocess", sensor_code
+                )
+                os.makedirs(output_folder_base, exist_ok=True)
+
+                for subfolder_name in os.listdir(input_folder):
+                    subfolder = os.path.join(input_folder, subfolder_name)
+                    if os.path.isdir(subfolder):
+                        try:
+                            sensor_name = subfolder_name
+
+                            # Obtiene parámetros específicos o los por defecto
+                            if sensor_name in reader_config.get(structure, {}):
+                                params = reader_config[structure][sensor_name]
+                            else:
+                                params = reader_config["default_params"]
+
+                            # Obtener lista de carpetas a procesar
+                            folders = params.get("folders", [])
+
+                            all_dfs = []
+
+                            # Procesar cada carpeta
+                            for folder in folders:
+                                folder_path = os.path.join(subfolder, folder)
+                                if not os.path.exists(folder_path):
+                                    logger.warning(
+                                        f"Carpeta no encontrada: {folder_path}"
+                                    )
+                                    continue
+
+                                # Procesar archivos CSV en la carpeta
+                                folder_reader_config = params["folder"][folder]
+                                df = text_folder_to_csv(
+                                    folder_path, match_columns, **folder_reader_config
+                                )
+
+                                all_dfs.append(df)
+
+                            if all_dfs:
+                                # Merge todos los DataFrames usando match_columns
+                                final_df = all_dfs[0]
+                                for df in all_dfs[1:]:
+                                    final_df = pd.merge(
+                                        final_df, df, on=match_columns, how="outer"
+                                    )
+
+                                final_df.dropna(inplace=True)
+
+                                final_df = assign_params(
+                                    final_df, **params.get("processor", {})
+                                )
+
+                                # Guardar resultado
+                                file_path = os.path.join(
+                                    output_folder_base, f"{structure}.{sensor_name}.csv"
+                                )
+                                save_df_to_csv(df=final_df, file_path=file_path)
+                                logger.info(f"Procesado exitosamente: {file_path}")
+
+                        except Exception as e:
+                            logger.error(f"Error procesando {subfolder_name}: {e}")
+
 
 @log_execution_time(module="scripts.sensor_processor")
 def exec_preprocess(
@@ -632,11 +720,10 @@ if __name__ == "__main__":
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
-            "cut_off": ["250430_Abril"],
+            "cut_off": ["250430 Data Monitoreo Anddes ABRIL"],
             "methods": ["preprocess", "process", "main_records"],
             # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensor_codes": ["CPCV"],
-
+            "sensor_codes": ["INC"],
         }
 
         logger.info(

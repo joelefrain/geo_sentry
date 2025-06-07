@@ -79,3 +79,11 @@ SENSOR_CONFIG = {
         "name": {"es": "Inclinómetro vertical"},
     },
 }
+
+# Extensions for file types
+# ---------------------------------------------------------------
+VALID_TEXT_EXTENSIONS = (".gkn", ".txt", ".csv")
+
+# Minimum records required for processing & plotting
+# ---------------------------------------------------------------
+MINIMUN_RECORDS = 2

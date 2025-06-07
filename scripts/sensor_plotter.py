@@ -18,6 +18,7 @@ from libs.utils.config_variables import (
     DATA_CONFIG,
     PROCESS_OUTPUT_DIR,
     APPENDIX_OUTPUT_DIR,
+    MINIMUN_RECORDS,
 )
 
 logger = get_logger("scripts.sensor_plotter")
@@ -129,7 +130,14 @@ def generate_structure_plots(
                     df_sensor = read_df_on_time_from_csv(
                         csv_path, set_index=False, auto_convert=True, num_decimals=3
                     )
-                    dfs.append(df_sensor)
+                    df_sensor = df_sensor[~df_sensor["base_line"]]
+
+                    if len(df_sensor) > MINIMUN_RECORDS:
+                        dfs.append(df_sensor)
+                    else:
+                        logger.warning(
+                            f"  Sensor {code} tiene menos de {MINIMUN_RECORDS + 1} registros. Skipping."
+                        )
                 except Exception as e:
                     logger.error(f"  Error reading data for sensor {code}: {e}")
                     continue
@@ -291,7 +299,6 @@ if __name__ == "__main__":
             "revsion": "B",
             # "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
             "sensors": ["INC"],
-
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)

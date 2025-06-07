@@ -31,7 +31,9 @@ def read_df_on_time_from_csv(
         df = df.convert_dtypes()
 
         # Reemplazar pd.NA con np.nan para evitar errores en gráficos
-        df = df.apply(lambda col: col.astype(float) if col.dtype.name == 'Float64' else col)
+        df = df.apply(
+            lambda col: col.astype(float) if col.dtype.name == "Float64" else col
+        )
 
         # Redondear columnas de tipo float a num_decimals
         float_cols = df.select_dtypes(include=["floating"]).columns
@@ -100,3 +102,18 @@ def merge_new_records(df1, df2, match_columns=["time"], match_type="all"):
     df1 = df1.drop_duplicates(subset=match_columns, keep="first")
 
     return df1
+
+
+def assign_params(df, **kwargs):
+    """Asigna parámetros adicionales al DataFrame.
+
+    Args:
+        df: DataFrame al que se le asignarán los parámetros
+        **kwargs: Parámetros a asignar como columnas en el DataFrame
+
+    Returns:
+        pd.DataFrame: DataFrame con los parámetros asignados
+    """
+    for key, value in kwargs.items():
+        df[key] = value
+    return df
