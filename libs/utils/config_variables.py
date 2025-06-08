@@ -84,6 +84,12 @@ SENSOR_CONFIG = {
 # ---------------------------------------------------------------
 VALID_TEXT_EXTENSIONS = (".gkn", ".txt", ".csv")
 
+# Allowed characters in formats
+# ---------------------------------------------------------------
+ALLOWED_TIME_CHARS = r"[^\d\s:/\-.]"
+ALLOWED_SEP_CHARS = r"[;,]"
+ALLOWD_HEADER_CHARS = r"[^\w()+\-]"
+
 # Minimum records required for processing & plotting
 # ---------------------------------------------------------------
 MINIMUN_RECORDS = 2

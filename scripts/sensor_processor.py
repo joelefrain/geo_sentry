@@ -720,7 +720,7 @@ if __name__ == "__main__":
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
-            "cut_off": ["250430 Data Monitoreo Anddes ABRIL"],
+            "cut_off": ["250530 Data Monitoreo Anddes MAYO"],
             "methods": ["preprocess", "process", "main_records"],
             # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
             "sensor_codes": ["INC"],
