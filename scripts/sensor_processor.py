@@ -721,9 +721,10 @@ if __name__ == "__main__":
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
             "cut_off": ["250530 Data Monitoreo Anddes MAYO"],
-            "methods": ["preprocess", "process", "main_records"],
-            # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensor_codes": ["INC"],
+            # "methods": ["preprocess", "process", "main_records"],
+            "methods": ["process", "main_records"],
+            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            # "sensor_codes": ["INC"],
         }
 
         logger.info(

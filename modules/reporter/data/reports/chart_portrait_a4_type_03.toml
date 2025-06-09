@@ -123,7 +123,7 @@ padding_bottom = [
 values = [35, 12, 12, 76, 15]
 
 [row_heights]
-values = [800.5, 103.75, 15.375, 15.375, 15.375, 15.375, 15.375]
+values = [900, 120, 15.375, 15.375, 15.375, 15.375, 15.375]
 
 [page]
 orientation = "portrait"

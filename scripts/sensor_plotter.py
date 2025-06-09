@@ -297,8 +297,8 @@ if __name__ == "__main__":
             "start_item": 1,
             "appendix_chapter": "5",
             "revsion": "B",
-            "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            # "sensors": ["INC"],
+            # "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            "sensors": ["INC"],
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)
