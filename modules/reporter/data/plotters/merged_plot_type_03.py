@@ -313,82 +313,6 @@ def create_non_ts_cell_1(
     )
 
 
-def create_ts_cell_2(
-    data_sensors,
-    series_names,
-    target_column,
-    serie_x,
-    serie_y,
-    limit,
-):
-    plotter = PlotBuilder(ts_serie=True)
-    target_column_name = to_sentence_format(
-        series_names[target_column], mode="decapitalize"
-    )
-    serie_y_name = to_sentence_format(series_names[serie_y], mode="decapitalize")
-
-    # Plot formatting
-    plot_format = {
-        "size": (8, 4),
-        "title_x": series_names[serie_x],
-        "title_y": series_names[target_column],
-        "title_chart": f"Registro histórico de {target_column_name.split('(')[0]} por {serie_y_name.split('(')[0]}",
-        "show_legend": False,
-        "legend_location": "upper right",
-        "grid": True,
-    }
-
-    series = []
-    all_y_value = []
-    all_values = []
-
-    for df, name in zip(data_sensors["df"], data_sensors["names"]):
-        if target_column in df.columns and serie_y in df.columns:
-            unique_group = sorted(df[serie_y].unique())
-            all_y_value.extend(unique_group)
-            all_values.extend(df[target_column].dropna().tolist())
-
-            for i, y_value in enumerate(unique_group):
-                y_value_df = df[df[serie_y] == y_value]
-                color, marker = get_unique_marker_convo(
-                    i, len(unique_group), color_palette=COLOR_PALETTE_2
-                )
-                series.append(
-                    {
-                        "x": y_value_df[serie_x].tolist(),
-                        "y": y_value_df[target_column].tolist(),
-                        "label": y_value,
-                        "color": color,
-                        "linestyle": "-",
-                        "lineweight": 1,
-                        "marker": marker,
-                        "markersize": 4,
-                    }
-                )
-
-    plotter.plot_series(
-        data=series,
-        size=plot_format["size"],
-        title_x=plot_format["title_x"],
-        title_y=plot_format["title_y"],
-        title_chart=plot_format["title_chart"],
-        show_legend=plot_format["show_legend"],
-        ylim=limit,
-    )
-
-    # Get colors from series for colorbar
-    colors = [series["color"] for series in series]
-
-    return plotter.get_drawing(), plotter.get_colorbar(
-        box_width=7.5,
-        box_height=0.5,
-        label=series_names[serie_y],
-        vmin=min(all_y_value),
-        vmax=max(all_y_value),
-        colors=colors,
-    )
-
-
 def generate_report(
     data_sensors,
     group_args,
@@ -435,15 +359,6 @@ def generate_report(
             serie_y,
         )
 
-        chart_cell2, legend2 = create_ts_cell_2(
-            data_sensors,
-            series_names,
-            target_column,
-            serie_x,
-            serie_y,
-            limit,
-        )
-
         # Define mask for filtering data
         mask = (
             (lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query))
@@ -453,10 +368,8 @@ def generate_report(
 
         # Create and configure plot grid
         plot_grid = PlotMerger(fig_size=(5, 8))
-        plot_grid.create_grid(3, 1, row_ratios=[0.03, 0.29, 0.68])
+        plot_grid.create_grid(1, 1, row_ratios=[1.0])
         plot_grid.add_object(chart_cell1, (0, 0))
-        plot_grid.add_object(chart_cell2, (1, 0))
-        plot_grid.add_object(legend2, (2, 0))
 
         chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
 

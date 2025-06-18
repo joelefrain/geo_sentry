@@ -1,20 +1,21 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
+import pandas as pd
+
+from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+from modules.reporter.report_builder import ReportBuilder, load_svg
+from modules.reporter.note_handler import NotesHandler
+from libs.utils.plot_helpers import get_unique_marker_convo
+from libs.utils.calc_helpers import get_typical_range
+from libs.utils.config_loader import load_toml
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
-from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
-from libs.utils.config_loader import load_toml
-from libs.utils.plot_helpers import get_unique_marker_convo
-from modules.reporter.note_handler import NotesHandler
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
-import pandas as pd
-import os
-import sys
-
-sys.path.append(os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../")))
-
 
 COLOR_PALETTE = "cool"
 
@@ -35,8 +36,7 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days /
-            total_records if total_records > 0 else 0
+            (last_date - first_date).days / total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -280,30 +280,23 @@ def create_cell_2(
 
     unique_serie = secondary_column
 
-    # Format start and end dates
-    start_date_formatted = format_date_long(pd.to_datetime(start_query))
-    end_date_formatted = format_date_long(pd.to_datetime(end_query))
-
-    # Plot formatting
     plot_format = {
         "size": (8, 3),
         "title_x": series_names[serie_x],
         "title_y": series_names[secondary_column],
-        "title_chart": f"Registro de {series_names[secondary_column].lower().split('(')[0]}entre {start_date_formatted} y {end_date_formatted}",
+        "title_chart": "",
         "show_legend": False,
         "legend_location": "upper right",
         "grid": True,
     }
 
     series = []
+    all_secondary_values = []
     total_dfs = len(data_sensors["df"])
-    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        # Aplicar máscara para filtrar datos según la consulta
-        mask = (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
-        filtered_df = df[mask]
 
+    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
         for column, style in series_styles.items():
-            if column in filtered_df.columns:
+            if column in df.columns:
                 if column == unique_serie:
                     color, marker = get_unique_marker_convo(
                         i, total_dfs, color_palette=COLOR_PALETTE
@@ -314,10 +307,13 @@ def create_cell_2(
 
                 label = name if column == unique_serie else style["label_prefix"]
 
+                x_vals = df[serie_x].tolist()
+                y_vals = df[column].tolist()
+
                 series.append(
                     {
-                        "x": filtered_df[serie_x].tolist(),
-                        "y": filtered_df[column].tolist(),
+                        "x": x_vals,
+                        "y": y_vals,
                         "label": label,
                         "color": color,
                         "linetype": style["linetype"],
@@ -327,6 +323,15 @@ def create_cell_2(
                     }
                 )
 
+                all_secondary_values.extend(y_vals)
+
+    # Calcular límites típicos solo si hay datos
+    if all_secondary_values:
+        lower_limit, upper_limit = get_typical_range(all_secondary_values, percentile=90, scale=1.5)
+        ylim = (lower_limit, upper_limit)
+    else:
+        ylim = None  # Dejar que el gráfico elija automáticamente
+
     plotter.plot_series(
         data=series,
         size=plot_format["size"],
@@ -334,6 +339,8 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
+        invert_y=False,
+        ylim=ylim,  # Usamos ylim ya que aplica al eje Y
     )
 
     return plotter.get_drawing(), plotter.get_legend(
@@ -395,8 +402,11 @@ def generate_report(
     )
 
     # Define mask for filtering data if start_query and end_query are provided
-    mask = (lambda df: (df[serie_x] >= start_query) & (
-        df[serie_x] <= end_query)) if start_query and end_query else None
+    mask = (
+        (lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query))
+        if start_query and end_query
+        else None
+    )
 
     # Create and configure plot grid
     plot_grid = PlotMerger(fig_size=(7.5, 5.5))

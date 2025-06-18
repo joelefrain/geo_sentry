@@ -224,7 +224,7 @@ def create_cell_1(
             )
 
     # Calculate typical range limits
-    limit = get_typical_range(all_values, percentile=99, scale=2.5)
+    limit = get_typical_range(all_values, percentile=95, scale=2.5)
 
     plotter.plot_series(
         data=series,
