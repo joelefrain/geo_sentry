@@ -20,16 +20,16 @@ LANG_DEFAULT = "es"  # Default language for the application
 
 # Defaults for the report
 # ---------------------------------------------------------------
-DOC_TITLE = "@joelefrain"
-THEME_COLOR = "#0d879c"
+DOC_TITLE = "SIG-AND"
+THEME_COLOR = "#0069AA"
 THEME_COLOR_FONT = "white"
 
 # Paths to data files
 # ---------------------------------------------------------------
 BASE_DIR = Path(__file__).parent.parent.parent
 
-LOGO_SVG = BASE_DIR / "data" / "logo" / "logo_main_109x50.svg"
-LOGO_PDF = BASE_DIR / "data" / "logo" / "logo_main_109x50.pdf"
+LOGO_SVG = BASE_DIR / "data" / "logo" / "logo_main_anddes.svg"
+LOGO_PDF = BASE_DIR / "data" / "logo" / "logo_main_anddes.pdf"
 DATA_CONFIG = BASE_DIR / "data" / "config"
 
 # Paths to configuration directories

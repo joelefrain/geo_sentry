@@ -1,5 +1,5 @@
 [project]
-project_code = "1410.28.0054-0000"
+project_code = "1408.10.0054-0000"
 company_name = "Shahuindo SAC"
 project_name = "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur"
 
@@ -20,7 +20,7 @@ sensor_type_name = "piezómetro de cuerda vibrante"
 sensor_aka = "El piezómetro"
 
 [sensors.pta]
-plot_template = "ts_plot_type_02"
+plot_template = "ts_plot_type_04"
 [sensors.pta.column_config]
 target_column = "piezometric_level"
 unit_target = "m s. n. m."
