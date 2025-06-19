@@ -519,7 +519,7 @@ def process_pct_data(structure: str, num_item: int = 1) -> int:
     structure_display_name = structure_names[structure]
     
     initial_num_item = num_item  # Store initial value to calculate PDFs created
-    appendix = "6"
+    appendix = "5"
 
     # Process each sensor
     for code in sorted(df_structure["code"].tolist()):  # Asegurar orden alfabético
@@ -572,7 +572,7 @@ def process_pct_data(structure: str, num_item: int = 1) -> int:
                     # PDF generation parameters
                     params = {
                         "sample": "chart_portrait_a4_type_02",
-                        "project_code": "1410.28.0054-0000",
+                        "project_code": "1408.10.0054-0000",
                         "company_name": "Shahuindo SAC",
                         "project_name": "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur",
                         "date": "15-05-25",
@@ -623,7 +623,7 @@ if __name__ == "__main__":
     }
     
     # Inicializar contador global de items para los PDFs
-    global_num_item = 1
+    global_num_item = 247
     
     # Process all structures or a specific one
     for structure_code in structure_names.keys():

@@ -22,3 +22,16 @@ sensor_aka = "El prisma"
 [sensors.pct.column_config.colorbar]
 thresholds = [5, 20, 50]
 colors = ["green", "yellow", "orange", "red"]
+
+[sensors.pcv]
+plot_template = "map_type_02"
+[sensors.pcv.column_config]
+target_column = "hydraulic_load_kpa"
+arrow_column = "hydraulic_load_kpa"
+unit_target = "kPa"
+serie_x = "time"
+sensor_type_name = "piezómetro de cuerda vibrante"
+sensor_aka = "El piezómetro"
+[sensors.pcv.column_config.colorbar]
+thresholds = [0, 10, 20]
+colors = ["green", "yellow", "orange", "red"]

@@ -420,6 +420,15 @@ def generate_report(
     pdf_filenames = []
     current_item = start_item
 
+    # Sort data_sensors by sensor name before processing
+    sorted_indices = sorted(range(len(data_sensors["names"])), key=lambda k: data_sensors["names"][k])
+    data_sensors = {
+        "df": [data_sensors["df"][i] for i in sorted_indices],
+        "names": [data_sensors["names"][i] for i in sorted_indices],
+        "east": [data_sensors["east"][i] for i in sorted_indices],
+        "north": [data_sensors["north"][i] for i in sorted_indices]
+    }
+
     for plot in plots:
         target_column = plot["target_column"]
         unit_target = plot.get("unit_target", None)

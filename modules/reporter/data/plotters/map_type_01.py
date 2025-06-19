@@ -77,17 +77,29 @@ def get_note_content(
 
     target_column_name = series_names[target_column].lower().split("(")[0]
 
-    # Calculate variables for all data
+    # Sort sensor data by the value of the last record of each sensor (descending)
+    last_values = [
+        df[target_column].iloc[-1] if not df.empty and target_column in df.columns else float('-inf')
+        for df in data_sensors["df"]
+    ]
+    sorted_indices = sorted(range(len(last_values)), key=lambda i: last_values[i], reverse=True)
+    sorted_dfs = [data_sensors["df"][i] for i in sorted_indices]
+    sorted_names = [data_sensors["names"][i] for i in sorted_indices]
+
+    # Calculate variables for all data (sorted)
     calc_vars = calculate_note_variables(
-        data_sensors["df"], data_sensors["names"], serie_x, target_column, mask
+        sorted_dfs, sorted_names, serie_x, target_column, mask
     )
 
-    # Find the maximum value across all series
-    max_var = max(calc_vars, key=lambda v: v["max_value"])
-    max_note = (
-        f"El valor máximo de {target_column_name} es {round_decimal(max_var['max_value'], 2)} {unit_target}, "
-        f"registrado en el sensor {max_var['sensor_name']} el día {format_date_short(max_var['max_date'])}."
-    )
+    # Find the maximum value among the last values of each sensor
+    if calc_vars:
+        max_var = max(calc_vars, key=lambda v: v["last_value"])
+        max_note = (
+            f"El valor máximo de {target_column_name} es {round_decimal(max_var['last_value'], 2)} {unit_target}, "
+            f"registrado en el sensor {max_var['sensor_name']} el día {format_date_short(max_var['last_date'])}."
+        )
+    else:
+        max_note = "No hay registros válidos para mostrar el valor máximo de los últimos registros."
 
     azimuth_note = (
         "Se muestra el vector azimut absoluto sobre cada prisma de control topográfico."
@@ -193,7 +205,7 @@ def create_map(
                     "lineweight": 0,
                     "marker": marker,
                     "markersize": 3.0,
-                    "label": f"{name} - {last_value_formatted} {unit_target}",
+                    "label": f"{name} ({last_value_formatted} {unit_target})",
                     "value": last_value,
                     "angle": angle,
                 }

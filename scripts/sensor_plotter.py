@@ -171,37 +171,32 @@ def generate_structure_plots(
                 "material": material,
             }
 
-            # Generate report
-            logger.info(
-                f"  [{structure_code} - {sensor_type} - {group}] Generating PDF..."
-            )
+            # Generate report, continue if error
+            try:
+                generated_pdf = generate_report(
+                    data_sensors=data_sensors,
+                    group_args=group_args,
+                    dxf_path=dxf_path,
+                    start_query=start_query,
+                    end_query=end_query,
+                    appendix=appendix_chapter,
+                    start_item=start_item,
+                    structure_code=structure_code,
+                    structure_name=structure_name,
+                    sensor_type=sensor_type.lower(),
+                    output_dir=f"{output_dir}/{structure_code}/{sensor_type.lower()}",
+                    static_report_params=static_report_params,
+                    column_config=sensor_config["column_config"],
+                )
 
-            # Ensure output directory exists
-            os.makedirs(
-                f"{output_dir}/{structure_code}/{sensor_type.lower()}", exist_ok=True
-            )
-
-            generated_pdf = generate_report(
-                data_sensors=data_sensors,
-                group_args=group_args,
-                dxf_path=dxf_path,
-                start_query=start_query,
-                end_query=end_query,
-                appendix=appendix_chapter,
-                start_item=start_item,
-                structure_code=structure_code,
-                structure_name=structure_name,
-                sensor_type=sensor_type.lower(),
-                output_dir=f"{output_dir}/{structure_code}/{sensor_type.lower()}",
-                static_report_params=static_report_params,
-                column_config=sensor_config["column_config"],
-            )
-
-            logger.info(
-                f"  [{structure_code} - {sensor_type} - {group}] Generated PDF: {generated_pdf}"
-            )
-            n_pdf = len(generated_pdf)
-            start_item += n_pdf
+                logger.info(
+                    f"  [{structure_code} - {sensor_type} - {group}] Generated PDF: {generated_pdf}"
+                )
+                n_pdf = len(generated_pdf)
+                start_item += n_pdf
+            except Exception as e:
+                logger.error(f"  Error generating PDF for group {group}: {e}")
+                continue
 
     return start_item
 
@@ -272,21 +267,25 @@ def exec_plotter(
 
     # Process each structure first, then each sensor type within the structure
     for structure_code, structure_name in structure_names.items():
-        start_item = generate_structure_plots(
-            config=config,
-            structure_code=structure_code,
-            structure_name=structure_name,
-            client_code=client_code,
-            project_code=project_code,
-            sensors=sensors,
-            start_item=start_item,
-            appendix_chapter=appendix_chapter,
-            output_dir=output_dir,
-            start_query=start_date,
-            end_query=end_date,
-            static_report_params=static_report_params,
-            agroup=agroup,
-        )
+        try:
+            start_item = generate_structure_plots(
+                config=config,
+                structure_code=structure_code,
+                structure_name=structure_name,
+                client_code=client_code,
+                project_code=project_code,
+                sensors=sensors,
+                start_item=start_item,
+                appendix_chapter=appendix_chapter,
+                output_dir=output_dir,
+                start_query=start_date,
+                end_query=end_date,
+                static_report_params=static_report_params,
+                agroup=agroup,
+            )
+        except Exception as e:
+            logger.error(f"Error procesando estructura {structure_code}: {e}")
+            continue
 
     logger.info(
         f"All structures and sensors processed. Final item number: {start_item - 1}"
@@ -307,8 +306,8 @@ if __name__ == "__main__":
             "start_date": "2024-12-01 00:00:00",
             "end_date": "2025-05-30 00:00:00",
             "report_date": "15-05-25",
-            "start_item": 1,
-            "appendix_chapter": "6",
+            "start_item": 240,
+            "appendix_chapter": "5",
             "revision": "B",
             "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
             # "sensors": ["INC"],

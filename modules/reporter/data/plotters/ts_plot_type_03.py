@@ -93,7 +93,7 @@ def get_note_content(
                 f"{format_date_long(v['last_date'])}, presenta {v['total_records']} registros. "
                 f"El valor máximo de {target_column_name} corresponde a {round_decimal(v['max_value'], 2)} {unit_target} registrado el día {format_date_short(v['max_date'])}. "
                 f"Su último registro corresponde a {round_decimal(v['last_value'], 2)} {unit_target} en el día {format_date_short(v['last_date'])}. "
-                f"La frecuencia de monitoreo promedio es de {v['mean_freq']} días."
+                f"La frecuencia de monitoreo promedio es de un registro cada {v['mean_freq']} días."
                 for v in calc_vars
             ],
             "format_type": "numbered",

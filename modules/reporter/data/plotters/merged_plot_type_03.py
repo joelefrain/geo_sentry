@@ -175,6 +175,9 @@ def get_note_content(
                 f"El último valor registrado de {target_column_name} fue de {round_decimal(last_value, 2)} {unit_target} "
                 f"a {round_decimal(last_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
                 f"el día {format_date_short(last_date)}.",
+                f"La frecuencia de monitoreo promedio es de un registro cada {round_decimal(combined_df[serie_x].drop_duplicates().sort_values().diff().dt.days.mean(), 2)} días."
+                if len(combined_df[serie_x].drop_duplicates()) > 1 else
+                "No es posible calcular la frecuencia de monitoreo promedio por falta de datos suficientes."
             ],
             "format_type": "numbered",
         },
@@ -343,6 +346,15 @@ def generate_report(
     os.makedirs(output_dir, exist_ok=True)
     pdf_filenames = []
     current_item = start_item
+
+    # Ordenar las series según el nombre del sensor antes de procesar
+    sorted_indices = sorted(range(len(data_sensors["names"])), key=lambda k: data_sensors["names"][k])
+    data_sensors = {
+        "df": [data_sensors["df"][i] for i in sorted_indices],
+        "names": [data_sensors["names"][i] for i in sorted_indices],
+        "east": [data_sensors["east"][i] for i in sorted_indices],
+        "north": [data_sensors["north"][i] for i in sorted_indices]
+    }
 
     for plot in plots:
         target_column = plot["target_column"]
