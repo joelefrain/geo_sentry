@@ -32,3 +32,4 @@ target_phrase = "presión"
 
 [process_config]
 match_columns = ["time"]
+overall_columns = ["digits", "temperature", "lineal_factor", "temperature_factor"]

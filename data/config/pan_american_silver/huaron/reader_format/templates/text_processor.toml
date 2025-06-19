@@ -1,0 +1,21 @@
+type = "text_processor"
+
+[default_params]
+columns = ["A+", "A-", "B+", "B-", "FLEVEL"]
+target_columns = ["A+", "A-", "B+", "B-", "FLEVEL"]
+date_format = ["%m/%d/%y", "%m/%d/%Y", "%d/%m/%y", "%d/%m/%Y"]
+time_format = ["%H:%M:%S"]
+date_line = 4
+time_line = 5
+head_line = 9
+data_lines_start = 10
+
+[default_params.processor]
+azimuth_rad = 0.0
+enbankment_slope_rad = 0.0
+a_axis_scale = 0.005
+b_axis_scale = 0.005
+base_line = false
+
+[process_config]
+match_columns = ["time", "FLEVEL"]

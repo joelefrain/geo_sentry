@@ -1,0 +1,24 @@
+[project]
+project_code = "1408.10.0054-0000"
+company_name = "Shahuindo SAC"
+project_name = "Ingeniero de Registro (EoR), Monitoreo y Análisis Geotécnico de los Pads 1&2 y DMEs Choloque y Sur"
+
+[structures]
+PAD_1A = "Pad 1A"
+PAD_2A = "Pad 2A"
+PAD_2B_2C = "Pad 2B-2C"
+DME_SUR = "DME Sur"
+DME_CHO = "DME Choloque"
+
+[sensors.pct]
+plot_template = "map_type_01"
+[sensors.pct.column_config]
+target_column = "diff_disp_total_abs"
+arrow_column = "horz_angle_abs_grad"
+unit_target = "cm"
+serie_x = "time"
+sensor_type_name = "punto de control topográfico"
+sensor_aka = "El prisma"
+[sensors.pct.column_config.colorbar]
+thresholds = [5, 20, 50]
+colors = ["green", "yellow", "orange", "red"]

@@ -77,3 +77,4 @@ target_phrase = "desplazamiento total absoluto"
 
 [process_config]
 match_columns = ["time"]
+overall_columns = []

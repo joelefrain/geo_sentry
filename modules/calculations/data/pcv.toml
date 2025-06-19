@@ -36,3 +36,4 @@ target_phrase = "carga hidráulica"
 
 [process_config]
 match_columns = ["time"]
+overall_columns = ["digits", "temperature", "barometric_load", "sensor_level", "lineal_factor", "temperature_factor"]

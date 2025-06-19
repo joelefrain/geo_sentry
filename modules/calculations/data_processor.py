@@ -36,21 +36,27 @@ class DataProcessor:
 
         return df
 
-    def clean_data(self, df: pd.DataFrame, match_columns) -> pd.DataFrame:
+
+    def prepare_data(
+        self, df: pd.DataFrame, match_columns, overall_columns
+    ) -> pd.DataFrame:
         """
-        Remove duplicate and future records based on the 'time' column.
+        Remove duplicate and future records based on the 'time' column, and fill missing
+        values in overall_columns with the previous record's values.
 
         Args:
             df: DataFrame with the data.
+            match_columns: List of columns to sort and identify duplicates.
+            overall_columns: List of columns to forward-fill if values are missing.
 
         Returns:
             pd.DataFrame with the cleaned data.
         """
 
-        # Sort by time
-        df.sort_values(match_columns, ignore_index=True)
+        # Sort by match_columns
+        df = df.sort_values(match_columns, ignore_index=True)
 
-        # Remove any rows where time parsing failed
+        # Remove rows with NaN in match_columns
         df = df.dropna(subset=match_columns)
 
         # Remove duplicates, keeping the first occurrence
@@ -60,7 +66,10 @@ class DataProcessor:
         current_time = datetime.now()
         df = df[df["time"] <= current_time]
 
-        # Aesgurar base line
+        # Forward-fill missing values in overall_columns
+        df[overall_columns] = df[overall_columns].ffill()
+
+        # Asegurar base_line
         df.loc[df.index[0], "base_line"] = True
 
         return df

@@ -96,9 +96,9 @@ class PlotBuilder:
 
         # Load default styles from TOML
         try:
-            self.default_styles = load_toml(CHART_CONFIG_DIR, style_file)
+            self.plot_style = load_toml(CHART_CONFIG_DIR, style_file)
         except Exception as e:
-            self.default_styles = {}
+            self.plot_style = {}
             raise RuntimeError(
                 f"Could not load styles from {CHART_CONFIG_DIR / style_file}: {e}"
             )
@@ -312,36 +312,6 @@ class PlotBuilder:
         if self.show_legend:
             self.ax1.legend()
 
-    def add_arrow(
-        self,
-        data: list,
-        position: str = "last",
-        angle: float = 0,
-        radius: float = 0.1,
-        color: str = "red",
-    ) -> None:
-        """
-        Add an arrow indicating a specific angle at the first or last point of the series.
-
-        Parameters
-        ----------
-        data : list
-            List of data series to add arrows to.
-        position : str, optional
-            Position of the arrow ('first' or 'last'), by default 'last'.
-        angle : float, optional
-            Angle of the arrow in degrees, by default 0.
-        radius : float, optional
-            Length of the arrow, by default 0.1.
-        color : str, optional
-            Color of the arrow, by default 'red'.
-        """
-        if self.fig is None or self.ax1 is None:
-            raise RuntimeError("Primary plot must be created before adding arrows.")
-
-        for series in data:
-            self._add_single_arrow(series, position, angle, radius, color)
-
     def plot_dxf(
         self,
         dxf_path,
@@ -429,67 +399,103 @@ class PlotBuilder:
         return self._create_legend_drawing(box_width, box_height, ncol)
 
     def get_colorbar(
-        self, 
-        box_width: int = 4, 
-        box_height: int = 0.5, 
-        label: str = "", 
-        vmin: float = None, 
+        self,
+        box_width: int = 4,
+        box_height: int = 0.5,
+        label: str = "",
+        vmin: float = None,
         vmax: float = None,
         colors: list = None,
-        cmap: str = "cool"
+        thresholds: list = None,
+        cmap: str = "cool",
+        type_colorbar: str = "continuous",
     ) -> "Drawing":
-        """Create a horizontal colorbar with continuous color mapping.
+        """
+        Create a horizontal colorbar with continuous or discrete color mapping.
 
         Parameters
         ----------
         box_width : int
-            Width of the colorbar box
+            Width of the colorbar box.
         box_height : int
-            Height of the colorbar box
+            Height of the colorbar box.
         label : str
-            Label for the colorbar
+            Label for the colorbar.
         vmin : float, optional
-            Minimum value for colorbar scale
+            Minimum value for colorbar scale.
         vmax : float, optional
-            Maximum value for colorbar scale
+            Maximum value for colorbar scale.
         colors : list, optional
-            List of colors to create custom colormap
+            List of colors to create custom colormap.
+        thresholds : list, optional
+            List of thresholds for discrete colorbar.
         cmap : str, optional
-            Name of matplotlib colormap to use if colors not provided (default: 'cool')
+            Name of matplotlib colormap to use if colors not provided (default: 'cool').
+        type_colorbar : str, optional
+            Type of colorbar: "continuous" (default) or "discrete".
+
+        Returns
+        -------
+        Drawing
+            RLG Drawing object containing the colorbar.
         """
         if self.fig is None:
-            raise RuntimeError("Primary plot must be created before getting the colorbar")
+            raise RuntimeError(
+                "Primary plot must be created before getting the colorbar."
+            )
 
         # Create a new figure for the colorbar
         fig_cbar = plt.figure(figsize=(box_width, box_height))
         ax_cbar = fig_cbar.add_axes([0.05, 0.5, 0.9, 0.3])
-        
-        # Create colormap from colors if provided, otherwise use named cmap
-        if colors:
+
+        if type_colorbar == "continuous":
+            # Create colormap from colors if provided, otherwise use named cmap
+            if colors:
+                import matplotlib.colors as mcolors
+
+                cmap = mcolors.LinearSegmentedColormap.from_list("custom", colors)
+            else:
+                cmap = plt.get_cmap(cmap)
+
+            # Create a scalar mappable
+            norm = plt.Normalize(vmin=vmin, vmax=vmax)
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+
+            # Create continuous colorbar
+            plt.colorbar(sm, cax=ax_cbar, orientation="horizontal", label=label)
+
+        elif type_colorbar == "discrete":
+            if thresholds is None or colors is None:
+                raise ValueError(
+                    "For discrete colorbar, both 'thresholds' and 'colors' must be provided."
+                )
+            if len(colors) != len(thresholds) + 1:
+                raise ValueError(
+                    "The number of colors must be one more than the number of thresholds."
+                )
+
+            # Create a discrete colormap
             import matplotlib.colors as mcolors
-            cmap = mcolors.LinearSegmentedColormap.from_list("custom", colors)
-        else:
-            cmap = plt.get_cmap(cmap)
 
-        # Create a scalar mappable
-        if vmin is None or vmax is None:
-            all_ys = []
-            for line in self.ax1.get_lines():
-                all_ys.extend(line.get_ydata())
-            vmin = min(all_ys) if all_ys else 0
-            vmax = max(all_ys) if all_ys else 1
+            cmap = mcolors.ListedColormap(colors)
+            bounds = [vmin] + thresholds + [vmax]
+            bounds = sorted(bounds)
+            norm = mcolors.BoundaryNorm(bounds, cmap.N)
 
-        norm = plt.Normalize(vmin=vmin, vmax=vmax)
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])
+            # Create discrete colorbar
+            from matplotlib.colorbar import ColorbarBase
 
-        # Create colorbar
-        cbar = plt.colorbar(
-            sm,
-            cax=ax_cbar,
-            orientation='horizontal',
-            label=label
-        )
+            cb = ColorbarBase(
+                ax_cbar,
+                cmap=cmap,
+                norm=norm,
+                boundaries=bounds,
+                orientation="horizontal",
+                label=label,
+            )
+            cb.set_ticks(bounds)
+            cb.set_ticklabels([f"{b:.2f}" for b in bounds])
 
         # Save to buffer and convert to Drawing
         buffer = BytesIO()
@@ -721,148 +727,6 @@ class PlotBuilder:
             label=name_band[index],
         )
 
-    def add_notes(
-        self, x_point: float, y_point: float, dx: float, dy: float, series: dict
-    ) -> None:
-        """
-        Add text annotations to the plot with automatic positioning.
-
-        Handles single or multiple text annotations with customizable appearance
-        and automatic collision avoidance using adjustText.
-
-        Parameters
-        ----------
-        x_point : float
-            X-coordinate of anchor point.
-        y_point : float
-            Y-coordinate of anchor point.
-        dx : float
-            X-offset from anchor point.
-        dy : float
-            Y-offset from anchor point.
-        series : dict
-            Configuration dictionary containing:
-            - note : str or list
-                Text to display. Single string or list of strings.
-            - note_style : dict, optional
-                Style parameters:
-                - fontsize : int
-                - bbox : dict
-                - other matplotlib text properties
-            - adjust_text_params : dict, optional
-                Parameters for adjustText algorithm
-
-        Notes
-        -----
-        - Uses path effects for better text visibility
-        - Automatically handles multiple notes spacing
-        - Falls back to default styles if not specified
-        - Single notes skip adjustment for better performance
-        """
-        notes = series.get("note")
-        if not notes:
-            return
-
-        # Convert single note to list
-        if isinstance(notes, str):
-            notes = [notes]
-
-        # Get fontsize from data or use default
-        fontsize = series.get(
-            "fontsize", self.default_styles.get("note_style", {}).get("fontsize", 10)
-        )
-
-        # Get default styles from TOML
-        default_note_style = self.default_styles.get("note_style", {})
-        default_adjust_params = self.default_styles.get("adjust_text_params", {})
-
-        # Create note style with path effects
-        note_style = {
-            "fontsize": fontsize,
-            "bbox": default_note_style.get("bbox", {}),
-            "path_effects": [
-                path_effects.withStroke(
-                    linewidth=default_note_style.get("linewidth", 0.5),
-                    foreground=default_note_style.get("foreground", "white"),
-                )
-            ],
-        }
-
-        # Override with user provided styles
-        if "note_style" in series:
-            note_style.update(series["note_style"])
-
-        # Get adjust text parameters
-        adjust_text_params = default_adjust_params.copy()
-        if "adjust_text_params" in series:
-            adjust_text_params.update(series["adjust_text_params"])
-
-        texts = []
-        base_x = x_point + dx * 1.2
-        base_y = y_point + dy * 1.2
-
-        for note in notes:
-            text = self.ax1.text(base_x, base_y, note, **note_style)
-            texts.append(text)
-
-        # Special handling for single text to avoid adjust_text issues
-        if len(texts) == 1:
-            return
-
-        # Only use adjust_text for multiple texts
-        adjust_text(
-            texts,
-            x=[base_x] * len(texts),
-            y=[base_y] * len(texts),
-            **adjust_text_params,
-        )
-
-    def _add_single_arrow(
-        self,
-        series: dict,
-        position: str,
-        angle: float,
-        radius: float,
-        color: str,
-    ) -> None:
-        """
-        Add a single arrow to the plot.
-
-        Parameters
-        ----------
-        series : dict
-            Data series to add the arrow to.
-        position : str
-            Position of the arrow ('first' or 'last').
-        angle : float
-            Angle of the arrow in degrees.
-        radius : float
-            Length of the arrow.
-        color : str
-            Color of the arrow.
-        """
-        x = series["x"]
-        y = series["y"]
-        angle = series.get("angle", angle)
-
-        if position == "first":
-            x_point, y_point = x[0], y[0]
-        elif position == "last":
-            x_point, y_point = x[-1], y[-1]
-        else:
-            raise ValueError("Invalid position value. Use 'first' or 'last'.")
-
-        dx = radius * np.cos(np.radians(angle))
-        dy = radius * np.sin(np.radians(angle))
-        arrow = patches.FancyArrowPatch(
-            (x_point, y_point),
-            (x_point + dx, y_point + dy),
-            color=color,
-            arrowstyle="->",
-            mutation_scale=5,
-        )
-        self.ax1.add_patch(arrow)
-
     def _create_legend_drawing(
         self, box_width: int, box_height: int, ncol: int = 1
     ) -> "Drawing":
@@ -920,6 +784,171 @@ class PlotBuilder:
         import textwrap
 
         return "\n".join(textwrap.wrap(text, width=max_width))
+
+    def add_arrow(
+        self,
+        data: list,
+        position: str = "last",
+        radius: float = 0.1,
+    ) -> None:
+        """
+        Add arrows to the plot based on the data series.
+
+        Parameters
+        ----------
+        data : list
+            List of data series to add arrows to.
+        position : str, optional
+            Position of the arrow ('first' or 'last'), by default 'last'.
+        radius : float, optional
+            Length of the arrow, by default 0.1.
+        """
+        if self.fig is None or self.ax1 is None:
+            raise RuntimeError("Primary plot must be created before adding arrows.")
+
+        # Load arrow parameters from TOML configuration
+        arrow_params = self.plot_style.get("arrow_params", {})
+        arrowprops = arrow_params.get("arrowprops", {})
+        lw = arrow_params.get("lw", 0.5)
+
+        for series in data:
+            x = series["x"]
+            y = series["y"]
+            angle = series["angle"]
+
+            if position == "first":
+                x_point, y_point = x[0], y[0]
+            elif position == "last":
+                x_point, y_point = x[-1], y[-1]
+            else:
+                raise ValueError("Invalid position value. Use 'first' or 'last'.")
+
+            dx = radius * np.cos(np.radians(angle))
+            dy = radius * np.sin(np.radians(angle))
+
+            arrow = patches.FancyArrowPatch(
+                (x_point, y_point),
+                (x_point + dx, y_point + dy),
+                color=series["color"],
+                lw=lw,
+                mutation_scale=10,
+                arrowstyle=arrowprops.get("arrowstyle", "->"),
+                alpha=arrowprops.get("alpha", 0.8),
+                connectionstyle=arrowprops.get("connection_style", "arc3,rad=0.5"),
+            )
+            self.ax1.add_patch(arrow)
+
+    def add_notes(
+        self,
+        x_point: float,
+        y_point: float,
+        dx: float,
+        dy: float,
+        note: str,
+    ) -> None:
+        """
+        Add a single note to the plot.
+
+        Parameters
+        ----------
+        x_point : float
+            X-coordinate of the anchor point.
+        y_point : float
+            Y-coordinate of the anchor point.
+        dx : float
+            X-offset from the anchor point.
+        dy : float
+            Y-offset from the anchor point.
+        note : str
+            Text to display as the note.
+        """
+        if self.fig is None or self.ax1 is None:
+            raise RuntimeError("Primary plot must be created before adding notes.")
+
+        # Load note style from TOML configuration
+        note_style = self.plot_style.get("note_style", {})
+        fontsize = note_style.get("fontsize", 10)
+        bbox = note_style.get("bbox", {})
+        path_effects_config = note_style.get("path_effects", [])
+
+        # Apply path effects if configured
+        path_effects_list = [
+            path_effects.withStroke(**effect) for effect in path_effects_config
+        ]
+
+        # Add the note to the plot
+        self.ax1.text(
+            x_point + dx,
+            y_point + dy,
+            note,
+            fontsize=fontsize,
+            bbox=bbox,
+            path_effects=path_effects_list,
+        )
+
+    def add_triangulation(
+        self,
+        data: list,
+        colorbar: dict,
+        alpha: float = 0.8,
+    ) -> None:
+        """
+        Add a triangulated colormap to the plot based on the data series.
+
+        Parameters
+        ----------
+        data : list
+            List of data series to triangulate.
+        colorbar : dict
+            A dictionary with two keys:
+            - "thresholds": A list of thresholds (e.g., [5, 20, 50]).
+            - "colors": A list of corresponding colors (e.g., ["green", "yellow", "orange", "red"]).
+        alpha : float, optional
+            Transparency of the triangulated regions, by default 0.8.
+        """
+        import matplotlib.tri as tri
+
+        if self.fig is None or self.ax1 is None:
+            raise RuntimeError(
+                "Primary plot must be created before adding triangulation."
+            )
+
+        thresholds = colorbar["thresholds"]
+        colors = colorbar["colors"]
+
+        # Ensure the number of colors matches the number of thresholds + 1
+        if len(colors) != len(thresholds) + 1:
+            raise ValueError(
+                "The number of colors must be one more than the number of thresholds."
+            )
+
+        # Extract points and values for triangulation
+        points = [(series["x"][0], series["y"][0]) for series in data]
+        values = [series["value"] for series in data]
+
+        # Perform triangulation
+        triang = tri.Triangulation([p[0] for p in points], [p[1] for p in points])
+
+        # Map values to colors
+        for triangle in triang.triangles:
+            triangle_values = [float(values[triangle[j]]) for j in range(3)]
+            avg_value = sum(triangle_values) / 3
+
+            # Determine the color based on thresholds
+            color = colors[-1]  # Default to the last color
+            for t, c in zip(thresholds, colors):
+                if avg_value <= t:
+                    color = c
+                    break
+
+            # Plot the triangle
+            polygon = patches.Polygon(
+                [points[triangle[j]] for j in range(3)],
+                closed=True,
+                color=color,
+                alpha=alpha,
+            )
+            self.ax1.add_patch(polygon)
 
 
 class PlotMerger:

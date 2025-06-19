@@ -32,3 +32,4 @@ target_phrase = "nivel piezométrico"
 
 [process_config]
 match_columns = ["time"]
+overall_columns = []

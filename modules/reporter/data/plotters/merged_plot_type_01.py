@@ -12,14 +12,14 @@ import pandas as pd
 import os
 import sys
 
-sys.path.append(os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
 # Add 'libs' path to sys.path
 
 
 COLOR_PALETTE = "Spectral"
+MAX_COL_LEN_LEGEND = 5 # número de columnas
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -38,8 +38,7 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days /
-            total_records if total_records > 0 else 0
+            (last_date - first_date).days / total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -139,7 +138,8 @@ def create_map(dxf_path, data_sensors):
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
         color, _ = get_unique_marker_convo(
-            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
+            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE
+        )
         series_data.append(
             {
                 "x": data_sensors["east"][i],
@@ -235,8 +235,9 @@ def create_ts_cell_1(
     )
 
     len_series = len(series)
-    if len_series >= 6:
-        ncol = 6
+    max_len = MAX_COL_LEN_LEGEND
+    if len_series >= max_len:
+        ncol = max_len
     else:
         ncol = max(1, len_series / 2)
 
@@ -323,8 +324,9 @@ def create_ts_cell_2(
     )
 
     len_series = len(series)
-    if len_series >= 6:
-        ncol = 6
+    max_len = MAX_COL_LEN_LEGEND
+    if len_series >= max_len:
+        ncol = max_len
     else:
         ncol = max(1, len_series / 2)
 
@@ -518,8 +520,11 @@ def generate_report(
             )
 
             # Define mask for filtering data if start_query and end_query are provided
-            mask = (lambda df: (df[serie_x] >= start_query) & (
-                df[serie_x] <= end_query)) if start_query and end_query else None
+            mask = (
+                (lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query))
+                if start_query and end_query
+                else None
+            )
 
             # Create and configure plot grid
             plot_grid = PlotMerger(fig_size=(7.5, 5.5))
@@ -531,8 +536,7 @@ def generate_report(
 
             chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
 
-            target_column_name = series_names[target_column].lower().split("(")[
-                0]
+            target_column_name = series_names[target_column].lower().split("(")[0]
 
             # Create report components
             upper_cell = get_note_content(
@@ -599,8 +603,7 @@ def generate_report(
                 plot_grid.create_grid(1, 1, row_ratios=[1])
                 plot_grid.add_object(chart_cell1, (0, 0))
 
-                chart_cell = plot_grid.build(
-                    color_border="white", cell_spacing=0)
+                chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
 
                 chart_title_elements = [
                     f"{serie_aka} de {sensor_type_name}",

@@ -1,0 +1,15 @@
+type = "excel_processor"
+
+[process]
+start_row = 17
+columns = [0, 2, 5, 1, 3, 4]
+column_names = ["time", "terrain_level", "measure", "stick_up", "bottom_well_elevation", "depth"]
+
+[process.attributes]
+
+[process.custom_functions]
+
+[location.attributes]
+east = "K10"
+north = "K11"
+elevation = "C17"

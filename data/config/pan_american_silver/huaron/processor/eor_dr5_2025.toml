@@ -1,0 +1,14 @@
+[structures]
+DR5 = "Depósito de Relaves N°5"
+
+[sensors]
+[sensors.raw_names]
+PCV = "PCV"
+PTA = "PTA"
+INC = "INC"
+PCT = "PCT"
+SACV = "SACV"
+CPCV = "CPCV"
+
+[process]
+exclude_sheets = ["Template", "Crear", "Resumen", "RSM", "Gráficas", "z Gráficas"]

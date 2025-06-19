@@ -262,75 +262,78 @@ def create_cell_1(
 
 
 def create_cell_2(
-    data_sensors, start_query, end_query, series_names, secondary_column, serie_x
+    data_sensors, start_query, end_query, series_names, target_column, serie_x
 ):
+    import pandas as pd
+
     plotter = PlotBuilder()
 
     # Series style definitions
     series_styles = {
-        secondary_column: {
+        target_column: {
             "color": "blue",
             "linetype": "-",
             "lineweight": 1,
             "marker": "o",
             "markersize": 4,
-            "label_prefix": series_names[secondary_column],
+            "label_prefix": series_names[target_column],
         },
     }
 
-    unique_serie = secondary_column
+    # Format start and end dates for chart title
+    start_date_formatted = format_date_long(pd.to_datetime(start_query))
+    end_date_formatted = format_date_long(pd.to_datetime(end_query))
 
+    # Plot formatting
     plot_format = {
         "size": (8, 3),
         "title_x": series_names[serie_x],
-        "title_y": series_names[secondary_column],
-        "title_chart": "",
+        "title_y": series_names[target_column],
+        "title_chart": f"Registro de {series_names[target_column].lower().split('(')[0]} entre {start_date_formatted} y {end_date_formatted}",
         "show_legend": False,
         "legend_location": "upper right",
         "grid": True,
     }
 
     series = []
-    all_secondary_values = []
+    all_target_values = []
+
     total_dfs = len(data_sensors["df"])
-
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        for column, style in series_styles.items():
-            if column in df.columns:
-                if column == unique_serie:
-                    color, marker = get_unique_marker_convo(
-                        i, total_dfs, color_palette=COLOR_PALETTE
-                    )
-                else:
-                    color = style["color"]
-                    marker = style["marker"]
+        # Filtrar por fechas
+        mask = (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
+        filtered_df = df[mask]
 
-                label = name if column == unique_serie else style["label_prefix"]
+        if target_column in filtered_df.columns:
+            y_vals = filtered_df[target_column].tolist()
+            x_vals = filtered_df[serie_x].tolist()
 
-                x_vals = df[serie_x].tolist()
-                y_vals = df[column].tolist()
+            if y_vals:  # Solo si hay datos
+                all_target_values.extend(y_vals)
+
+                color, marker = get_unique_marker_convo(
+                    i, total_dfs, color_palette=COLOR_PALETTE
+                )
 
                 series.append(
                     {
                         "x": x_vals,
                         "y": y_vals,
-                        "label": label,
+                        "label": name,
                         "color": color,
-                        "linetype": style["linetype"],
-                        "lineweight": style["lineweight"],
+                        "linetype": series_styles[target_column]["linetype"],
+                        "lineweight": series_styles[target_column]["lineweight"],
                         "marker": marker,
-                        "markersize": style["markersize"],
+                        "markersize": series_styles[target_column]["markersize"],
                     }
                 )
 
-                all_secondary_values.extend(y_vals)
-
-    # Calcular límites típicos solo si hay datos
-    if all_secondary_values:
-        lower_limit, upper_limit = get_typical_range(all_secondary_values, percentile=90, scale=1.5)
-        ylim = (lower_limit, upper_limit)
+    # Calcular límites típicos si hay datos
+    if all_target_values:
+        _, upper_limit = get_typical_range(all_target_values)
+        ylim = (0, upper_limit)
     else:
-        ylim = None  # Dejar que el gráfico elija automáticamente
+        ylim = None  # Automático si no hay datos
 
     plotter.plot_series(
         data=series,
@@ -339,8 +342,7 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        invert_y=True,
-        ylim=ylim,  # Usamos ylim ya que aplica al eje Y
+        ylim=ylim,
     )
 
     return plotter.get_drawing(), plotter.get_legend(
@@ -348,6 +350,7 @@ def create_cell_2(
         box_height=0.5,
         ncol=plotter.get_num_labels(),
     )
+
 
 
 def generate_report(

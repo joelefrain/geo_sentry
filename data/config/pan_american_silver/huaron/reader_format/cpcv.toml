@@ -1,0 +1,23 @@
+type = "excel_processor"
+
+[process]
+start_row = 23
+columns = [1, 3, 4]
+column_names = ["time", "digits", "temperature"]
+
+[process.attributes]
+sensor_level = "F18"
+terrain_level = "F16"
+lineal_factor = "D19"
+temperature_factor = "D20"
+
+[process.selected_attr]
+cell = ["C12", "D12", "E12"]
+column = ["time", "digits", "temperature"]
+
+[process.custom_functions]
+
+[location.attributes]
+east = "F15"
+north = "F14"
+elevation = "F18"

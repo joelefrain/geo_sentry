@@ -183,10 +183,29 @@ def preprocess_sensors(
                         df = text_folder_to_csv(subfolder, match_columns, **params)
                         df = assign_params(df, **params.get("processor", {}))
 
-                        file_path = os.path.join(
-                            output_folder_base, f"{structure}.{sensor_name}.csv"
-                        )
-                        save_df_to_csv(df=df, file_path=file_path)
+                        if 'sensor_name' in df.columns:
+                            for unique_sensor_name in df['sensor_name'].unique():
+                                df_subset = df[df['sensor_name'] == unique_sensor_name].copy()
+
+                                # Elimina la columna 'sensor_code' si existe
+                                if 'sensor_code' in df_subset.columns:
+                                    df_subset.drop(columns=['sensor_code'], inplace=True)
+
+                                # Guardar cada subset con su nombre único de sensor
+                                file_path = os.path.join(
+                                    output_folder_base, f"{structure}.{unique_sensor_name}.csv"
+                                )
+                                save_df_to_csv(df=df_subset, file_path=file_path)
+                        else:
+                            # Elimina la columna 'sensor_code' si existe
+                            if 'sensor_code' in df.columns:
+                                df.drop(columns=['sensor_code'], inplace=True)
+
+                            file_path = os.path.join(
+                                output_folder_base, f"{structure}.{sensor_name}.csv"
+                            )
+                            save_df_to_csv(df=df, file_path=file_path)
+
 
         if type_reader == "match_csv_processor":
             match_columns = reader_config["process_config"]["match_columns"]
@@ -474,6 +493,7 @@ def get_processed_data(
         processor = DataProcessor(sensor_type.lower())
         config = processor.config
         match_columns = config["process_config"]["match_columns"]
+        overall_columns = config["process_config"]["overall_columns"]
 
         processed_path = os.path.join(processed_data_folder_base, sensor_type)
         processed_csv_path = os.path.join(processed_path, f"{structure}.{code}.csv")
@@ -492,7 +512,7 @@ def get_processed_data(
             process_df, preprocess_df, match_columns=match_columns, match_type="all"
         )
 
-        df = processor.clean_data(temp_df, match_columns)
+        df = processor.prepare_data(temp_df, match_columns, overall_columns)
         df = processor.process_raw_data(df)
         save_df_to_csv(df, processed_csv_path)
 
@@ -717,14 +737,14 @@ def exec_processor(
 if __name__ == "__main__":
     try:
         processor_params = {
-            "client_code": "sample_client",
-            "project_code": "sample_project",
-            "engineering_code": "eor_2025",
-            "cut_off": ["250530 Data Monitoreo Anddes MAYO"],
+            "client_code": "pan_american_silver",
+            "project_code": "huaron",
+            "engineering_code": "eor_dr5_2025",
+            "cut_off": ["2025_05"],
             # "methods": ["preprocess", "process", "main_records"],
-            "methods": ["process", "main_records"],
-            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            # "sensor_codes": ["INC"],
+            "methods": ["preprocess"],
+            # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            "sensor_codes": ["PCV", "PTA", "INC", "PCT"],
         }
 
         logger.info(

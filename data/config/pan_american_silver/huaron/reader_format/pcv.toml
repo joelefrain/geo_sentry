@@ -1,0 +1,22 @@
+type = "excel_processor"
+
+[process]
+start_row = 15
+columns = [14, 15, 16]
+column_names = ["time", "digits", "temperature"]
+
+[process.attributes]
+sensor_level = "G11"
+terrain_level = "K12"
+lineal_factor = "X4"
+temperature_factor = "X9"
+
+[process.custom_functions]
+barometric_load = "lambda row: 0"
+
+[process.selected_attr]
+
+[location.attributes]
+east = "K10"
+north = "K11"
+elevation = "K12"

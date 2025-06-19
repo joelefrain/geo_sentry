@@ -16,6 +16,7 @@ from libs.utils.config_variables import (
     THEME_COLOR,
     THEME_COLOR_FONT,
     DATA_CONFIG,
+    OUTPUTS_DIR,
     PROCESS_OUTPUT_DIR,
     APPENDIX_OUTPUT_DIR,
     MINIMUN_RECORDS,
@@ -42,6 +43,7 @@ def generate_structure_plots(
     start_query,
     end_query,
     static_report_params,
+    agroup=True,
 ):
     """Generate plots for a specific structure with all requested sensor types.
 
@@ -107,11 +109,18 @@ def generate_structure_plots(
             logger.error(f"  Error importing plotter module: {e}")
             continue
 
-        # If group is not assigned, use the sensor code as group
-        sensor_df["group"] = sensor_df["group"].fillna(sensor_df["code"])
+        if agroup:
+            # Original grouping logic
+            sensor_df["group"] = sensor_df["group"].fillna(sensor_df["code"])
+            groups = sensor_df.groupby("group")
+        else:
+            # Create single group with structure and sensor type
+            group_name = f"{structure_code} - {sensor_type}"
+            sensor_df["group"] = group_name
+            groups = [(group_name, sensor_df)]
 
-        # Process each group
-        for group, df_group in sensor_df.groupby("group"):
+        # Process each group (now handles both grouped and ungrouped cases)
+        for group, df_group in groups:
             # Generate lists for data_sensors
             names = df_group["code"].tolist()
             east = df_group["east"].tolist()
@@ -197,9 +206,9 @@ def generate_structure_plots(
     return start_item
 
 
-def merge_outputs(client_code, project_code, output_dir):
+def merge_outputs(plot_type, client_code, project_code, output_dir):
     output_file = (
-        APPENDIX_OUTPUT_DIR / client_code / project_code / "processed_data.pdf"
+        OUTPUTS_DIR / "appendix" / client_code / project_code / f"{plot_type}.pdf"
     )
 
     if not os.path.isdir(output_dir):
@@ -224,6 +233,7 @@ def merge_outputs(client_code, project_code, output_dir):
 
 @log_execution_time(module="scripts.sensor_plotter")
 def exec_plotter(
+    plot_type,
     client_code,
     project_code,
     engineering_code,
@@ -234,14 +244,15 @@ def exec_plotter(
     report_date,
     start_item,
     appendix_chapter,
-    revsion,
+    revision,
     sensors,
+    agroup=True,
 ):
     # Load configuration from TOML
-    config_dir = DATA_CONFIG / client_code / project_code / "plot_formats"
+    config_dir = DATA_CONFIG / client_code / project_code / plot_type
     config = load_toml(config_dir, engineering_code)
 
-    output_dir = PROCESS_OUTPUT_DIR / client_code / project_code
+    output_dir = OUTPUTS_DIR / plot_type / client_code / project_code
 
     # Extract structure names and project parameters
     structure_names = config["structures"]
@@ -252,7 +263,7 @@ def exec_plotter(
         **project_params,
         "elaborated_by": elaborated_by,
         "approved_by": approved_by,
-        "revision": revsion,
+        "revision": revision,
         "date": report_date,
         "doc_title": DOC_TITLE,
         "theme_color": THEME_COLOR,
@@ -274,31 +285,34 @@ def exec_plotter(
             start_query=start_date,
             end_query=end_date,
             static_report_params=static_report_params,
+            agroup=agroup,
         )
 
     logger.info(
         f"All structures and sensors processed. Final item number: {start_item - 1}"
     )
 
-    merge_outputs(client_code, project_code, output_dir)
+    merge_outputs(plot_type, client_code, project_code, output_dir)
 
 
 if __name__ == "__main__":
     try:
         plotter_params = {
+            "plot_type": "map_creator",
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
             "elaborated_by": "J.A.",
             "approved_by": "R.L.",
-            "start_date": "2024-05-01 00:00:00",
-            "end_date": "2025-05-15 00:00:00",
+            "start_date": "2024-12-01 00:00:00",
+            "end_date": "2025-05-30 00:00:00",
             "report_date": "15-05-25",
             "start_item": 1,
-            "appendix_chapter": "5",
-            "revsion": "B",
-            # "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensors": ["INC"],
+            "appendix_chapter": "6",
+            "revision": "B",
+            "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            # "sensors": ["INC"],
+            "agroup": False,
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)

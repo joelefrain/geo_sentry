@@ -1,0 +1,18 @@
+type = "excel_processor"
+
+[process]
+start_row = 22
+columns = [0, 2, 3, 4, 5]
+column_names = ["FLEVEL", "A+", "A-", "B+", "B-"]
+
+[process.attributes]
+time = "D15"
+
+[process.custom_functions]
+
+[process.selected_attr]
+
+[location.attributes]
+east = "X10"
+north = "X11"
+elevation = "X12"

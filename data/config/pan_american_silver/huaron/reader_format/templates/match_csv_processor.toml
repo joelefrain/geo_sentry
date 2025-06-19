@@ -1,0 +1,34 @@
+type = "match_csv_processor"
+
+[default_params]
+folders = ["A", "B"]
+
+[default_params.folder.A]
+columns = ["A+", "A-", "FLEVEL"]
+target_columns = ["A+","A-","Level"]
+date_format = ["%m/%d/%y", "%m/%d/%Y", "%d/%m/%y", "%d/%m/%Y"]
+time_format = ["%H:%M:%S"]
+date_line = 8
+time_line = 9
+head_line = 12
+data_lines_start = 16
+
+[default_params.folder.B]
+columns = ["B+", "B-", "FLEVEL"]
+target_columns = ["B+","B-","Level"]
+date_format = ["%m/%d/%y", "%m/%d/%Y", "%d/%m/%y", "%d/%m/%Y"]
+time_format = ["%H:%M:%S"]
+date_line = 8
+time_line = 9
+head_line = 12
+data_lines_start = 16
+
+[default_params.processor]
+azimuth_rad = 0.0
+enbankment_slope_rad = 0.0
+a_axis_scale = 0.005
+b_axis_scale = 0.005
+base_line = false
+
+[process_config]
+match_columns = ["time", "FLEVEL"]

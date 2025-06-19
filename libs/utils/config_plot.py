@@ -8,6 +8,8 @@ class PlotConfig:
 
     @classmethod
     def setup_matplotlib(cls, ts_serie=True, ymargin=0.20):
+        # import locale
+        # locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
         """Configure global matplotlib parameters."""
         # Set system locale

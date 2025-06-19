@@ -14,8 +14,6 @@ avoid_self = true
 clip_on = true
 save_steps = false
 
-[adjust_text_params.arrow_props]
-color = "black"
-lw = 0.5
-width = 0.2
-arrowprops = { arrowstyle = "->", alpha = 0.8, connection_style = "arc3,rad=0.5" }
+[arrow_params]
+lw = 1
+arrowprops = { arrowstyle = "->", alpha = 0.8, connection_style = "arc3,rad=0.0" }

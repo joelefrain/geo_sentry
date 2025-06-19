@@ -37,3 +37,4 @@ target_phrase = "asentamiento"
 
 [process_config]
 match_columns = ["time"]
+overall_columns = ["digits", "temperature", "diff_e_res", "lineal_factor", "temperature_factor"]
