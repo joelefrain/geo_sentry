@@ -4,20 +4,18 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-import ezdxf
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects
 
 from io import BytesIO
-from adjustText import adjust_text
 from svglib.svglib import svg2rlg
-from reportlab.graphics.shapes import Drawing, Group, Rect
-from typing import Tuple, List
+from reportlab.graphics.shapes import Drawing
 
 from libs.utils.config_plot import PlotConfig
 from libs.utils.config_loader import load_toml
+from libs.utils.plot_helpers import dxfParser
 from libs.utils.config_variables import CHART_CONFIG_DIR
 
 
@@ -129,8 +127,8 @@ class PlotBuilder:
         xlim: tuple = None,
         ylim: tuple = None,
         invert_y: bool = False,
-        dxf_params: dict = {},
         format_params: dict = None,
+        dxf_params: dict = None,
     ) -> None:
         """Create a sophisticated multi-series plot with optional overlays.
 
@@ -177,10 +175,10 @@ class PlotBuilder:
             Y-axis limits (min, max)
         invert_y : bool, optional
             Invert Y-axis if True (default: False)
-        dxf_params : dict, optional
-            Additional parameters for DXF plotting
         format_params : dict, optional
             Formatting parameters for the plot
+        dxf_params : dict, optional
+            Additional parameters for DXF plotting
 
         Examples
         --------
@@ -207,18 +205,11 @@ class PlotBuilder:
         """
         # Ensure previous figure is closed before creating a new one
         self.close()
-
         self._initialize_plot(size)
         self.show_legend = show_legend
 
         if dxf_path:
-            doc = ezdxf.readfile(dxf_path)
-            msp = doc.modelspace()
-
-            for entity in msp.query("LWPOLYLINE"):
-                points = entity.get_points()
-                x, y = zip(*[(p[0], p[1]) for p in points])
-                self.ax1.plot(x, y, **dxf_params)
+            self._plot_dxf(dxf_path, dxf_params)
 
         for series in data:
             self._plot_single_series(self.ax1, series)
@@ -226,6 +217,100 @@ class PlotBuilder:
         self._finalize_plot(
             title_x, title_y, title_chart, xlim, ylim, invert_y, format_params
         )
+
+    def _plot_dxf(self, dxf_path: str, dxf_params: dict = None) -> None:
+        """
+        Plotea todas las entidades relevantes del DXF usando dxfParser.
+        Si dxf_params se proporciona, fuerza los valores de color, linewidth y linestyle.
+        Ejemplo de dxf_params: {"color": "#000000", "linewidth": 1, "linestyle": "-"}
+        """
+        parser = dxfParser(dxf_path)
+        entities = parser.parse_entities()
+        ax = self.ax1
+
+        for ent in entities:
+            color = (
+                dxf_params.get("color")
+                if dxf_params and "color" in dxf_params
+                else ent.get("color", "k")
+            )
+            linewidth = (
+                dxf_params.get("linewidth")
+                if dxf_params and "linewidth" in dxf_params
+                else ent.get("linewidth", 1)
+            )
+            linestyle = (
+                dxf_params.get("linestyle")
+                if dxf_params and "linestyle" in dxf_params
+                else ent.get("linestyle", "-")
+            )
+
+            if ent["type"] in ("LINE", "LWPOLYLINE", "POLYLINE", "SPLINE", "ELLIPSE"):
+                x, y = zip(*ent["points"])
+                ax.plot(
+                    x,
+                    y,
+                    color=color,
+                    linewidth=linewidth,
+                    linestyle=linestyle,
+                )
+                # Cierre de polilínea si corresponde
+                if ent.get("closed", False):
+                    ax.plot(
+                        [x[-1], x[0]],
+                        [y[-1], y[0]],
+                        color=color,
+                        linewidth=linewidth,
+                        linestyle=linestyle,
+                    )
+            elif ent["type"] == "HATCH":
+                x, y = zip(*ent["points"])
+                ax.fill(x, y, color=color, alpha=ent.get("alpha", 1.0))
+            elif ent["type"] == "HATCH_EDGE":
+                x, y = zip(*ent["points"])
+                ax.plot(
+                    x,
+                    y,
+                    color=color,
+                    linewidth=linewidth,
+                    linestyle=linestyle,
+                )
+            elif ent["type"] == "ARC":
+                arc = patches.Arc(
+                    ent["center"],
+                    2 * ent["radius"],
+                    2 * ent["radius"],
+                    angle=0,
+                    theta1=ent["start_angle"],
+                    theta2=ent["end_angle"],
+                    edgecolor=color,
+                    linewidth=linewidth,
+                )
+                ax.add_patch(arc)
+            elif ent["type"] == "CIRCLE":
+                circ = patches.Circle(
+                    ent["center"],
+                    ent["radius"],
+                    edgecolor=color,
+                    facecolor="none",
+                    linewidth=linewidth,
+                )
+                ax.add_patch(circ)
+            elif ent["type"] == "POINT":
+                ax.plot(
+                    [ent["point"][0]],
+                    [ent["point"][1]],
+                    marker="o",
+                    color=color,
+                )
+            elif ent["type"] == "TEXT":
+                ax.text(
+                    ent["position"][0],
+                    ent["position"][1],
+                    ent["text"],
+                    color=color,
+                    fontsize=ent.get("height", 8),
+                )
 
     def add_secondary_y_axis(
         self,
@@ -310,65 +395,6 @@ class PlotBuilder:
             self._add_single_color_band(range_band, color_band, name_band, i, **kwargs)
 
         if self.show_legend:
-            self.ax1.legend()
-
-    def plot_dxf(
-        self,
-        dxf_path,
-        data: list,
-        size=(8, 8),
-        title_x="",
-        title_y="",
-        title_chart="",
-        show_legend=False,
-        xlim=None,
-        ylim=None,
-        invert_y=False,
-        **kwargs,
-    ) -> None:
-        """
-        Plot polylines from a DXF file using the class's figure and axes.
-
-        Parameters
-        ----------
-        dxf_path : str
-            Path to the DXF file.
-        size : tuple, optional
-            Size of the plot (width, height), by default (8, 8).
-        title_x : str, optional
-            Title for the X-axis, by default "".
-        title_y : str, optional
-            Title for the Y-axis, by default "".
-        title_chart : str, optional
-            Title for the chart, by default "".
-        show_legend : bool, optional
-            Whether to show the legend, by default False.
-        xlim : tuple, optional
-            Limits for the X-axis, by default None.
-        ylim : tuple, optional
-            Limits for the Y-axis, by default None.
-        invert_y : bool, optional
-            Whether to invert the Y-axis, by default False.
-        **kwargs : dict
-            Additional style parameters for the lines (color, linestyle, etc.).
-        """
-        self._initialize_plot(size)
-        self.show_legend = show_legend
-
-        doc = ezdxf.readfile(dxf_path)
-        msp = doc.modelspace()
-
-        for entity in msp.query("LWPOLYLINE"):
-            points = entity.get_points()
-            x, y = zip(*[(p[0], p[1]) for p in points])
-            self.ax1.plot(x, y, **kwargs)
-
-        for series in data:
-            self._plot_single_series(self.ax1, series, **kwargs)
-
-        self._finalize_plot(title_x, title_y, title_chart, xlim, ylim, invert_y)
-
-        if show_legend:
             self.ax1.legend()
 
     def get_legend(
@@ -949,312 +975,3 @@ class PlotBuilder:
                 alpha=alpha,
             )
             self.ax1.add_patch(polygon)
-
-
-class PlotMerger:
-    """A utility class for combining multiple plots into a grid layout.
-
-    Provides functionality to arrange multiple plot objects in a customizable
-    grid layout with automatic scaling and positioning.
-
-    Parameters
-    ----------
-    fig_size : tuple[int, int], optional
-        Maximum figure dimensions (width, height) in inches
-        Default is (8, 6)
-
-    Attributes
-    ----------
-    fig_width : float
-        Figure width in points
-    fig_height : float
-        Figure height in points
-    objects : list
-        Plot objects to arrange
-    positions : list[tuple[int, int]]
-        Grid positions for each object
-    spans : list[tuple[int, int]]
-        Cell spans for each object
-    grid_dims : tuple[int, int], optional
-        Grid dimensions (rows, cols)
-    row_ratios : list[float], optional
-        Relative heights of rows
-    col_ratios : list[float], optional
-        Relative widths of columns
-
-    Examples
-    --------
-    >>> merger = PlotMerger(fig_size=(10, 8))
-    >>> merger.create_grid(2, 2, row_ratios=[0.6, 0.4], col_ratios=[0.5, 0.5])
-    >>> merger.add_object(plot1, (0, 0))
-    >>> merger.add_object(plot2, (0, 1))
-    >>> drawing = merger.build()
-
-    Notes
-    -----
-    - Automatically handles object scaling
-    - Preserves aspect ratios
-    - Memory-efficient object handling
-    """
-
-    def __init__(self, fig_size: Tuple[int, int] = (8, 6)):
-        """Initialize PlotMerger with figure dimensions in points."""
-        self._initialize_dimensions(fig_size)
-        self.objects: List = []
-        self.positions: List[Tuple[int, int]] = []
-        self.spans: List[Tuple[int, int]] = []
-        self.grid_dims: Tuple[int, int] = None
-        self.col_ratios: List[float] = None
-        self.row_ratios: List[float] = None
-
-    def _initialize_dimensions(self, fig_size: Tuple[int, int]) -> None:
-        """Convert inches to points and store dimensions."""
-        POINTS_PER_INCH = 72
-        self.fig_width = fig_size[0] * POINTS_PER_INCH
-        self.fig_height = fig_size[1] * POINTS_PER_INCH
-
-    def add_object(
-        self, obj, position: Tuple[int, int], span: Tuple[int, int] = (1, 1)
-    ) -> None:
-        """Add an object to the grid with position and span."""
-        self.objects.append(obj)
-        self.positions.append(position)
-        self.spans.append(span)
-
-    def create_grid(
-        self,
-        rows: int,
-        cols: int,
-        row_ratios: List[float] = None,
-        col_ratios: List[float] = None,
-    ) -> "PlotMerger":
-        """Set grid dimensions and optional row/column ratios.
-
-        Parameters
-        ----------
-        rows : int
-            Number of rows in the grid
-        cols : int
-            Number of columns in the grid
-        row_ratios : List[float], optional
-            Relative heights of each row. Must sum to 1 if provided.
-        col_ratios : List[float], optional
-            Relative widths of each column. Must sum to 1 if provided.
-
-        Returns
-        -------
-        PlotMerger
-            Self for method chaining
-        """
-        self.grid_dims = (rows, cols)
-
-        # Validate and set row ratios
-        if row_ratios is not None:
-            if len(row_ratios) != rows:
-                raise ValueError(f"row_ratios must have length {rows}")
-            if abs(sum(row_ratios) - 1.0) > 1e-6:
-                raise ValueError("row_ratios must sum to 1")
-            self.row_ratios = row_ratios
-        else:
-            self.row_ratios = [1 / rows] * rows
-
-        # Validate and set column ratios
-        if col_ratios is not None:
-            if len(col_ratios) != cols:
-                raise ValueError(f"col_ratios must have length {cols}")
-            if abs(sum(col_ratios) - 1.0) > 1e-6:
-                raise ValueError("col_ratios must sum to 1")
-            self.col_ratios = col_ratios
-        else:
-            self.col_ratios = [1 / cols] * cols
-
-        return self
-
-    def build(self, color_border: str = "white", cell_spacing: float = 10.0) -> Drawing:
-        """Build and return the combined figure."""
-        if not self._is_grid_initialized():
-            raise ValueError("Must call create_grid before build")
-
-        drawing = Drawing(self.fig_width, self.fig_height)
-        cell_dimensions = self._get_cell_dimensions(cell_spacing)
-
-        for obj_data in self._iter_objects():
-            self._add_object_to_drawing(
-                drawing, obj_data, cell_dimensions, color_border, cell_spacing
-            )
-
-        return drawing
-
-    def _is_grid_initialized(self) -> bool:
-        """Check if grid dimensions are set."""
-        return self.grid_dims is not None
-
-    def _get_cell_dimensions(self, spacing: float) -> Tuple[List[float], List[float]]:
-        """Calculate cell width and height with spacing and ratios."""
-        rows, cols = self.grid_dims
-
-        # Calculate total available space after spacing
-        available_width = self.fig_width - (cols - 1) * spacing
-        available_height = self.fig_height - (rows - 1) * spacing
-
-        # Calculate cell dimensions based on ratios
-        cell_widths = [ratio * available_width for ratio in self.col_ratios]
-        cell_heights = [ratio * available_height for ratio in self.row_ratios]
-
-        return cell_widths, cell_heights
-
-    def _iter_objects(self) -> Tuple:
-        """Iterate over object data as tuples."""
-        return zip(self.objects, self.positions, self.spans)
-
-    def _add_object_to_drawing(
-        self,
-        drawing: Drawing,
-        obj_data: Tuple,
-        cell_dims: Tuple[List[float], List[float]],
-        color_border: str,
-        cell_spacing: float,
-    ) -> None:
-        """Add a single object and its border to the drawing."""
-        obj, (row, col), (row_span, col_span) = obj_data
-        cell_widths, cell_heights = cell_dims
-
-        # Calculate object dimensions and transformations
-        span_dims = self._get_span_size(cell_dims, row, col, row_span, col_span)
-        scale = self._get_scale_factor(span_dims, (obj.width, obj.height))
-        scaled_size = (obj.width * scale, obj.height * scale)
-        position = self._get_object_position(
-            cell_dims, row, col, row_span, span_dims, scaled_size, cell_spacing
-        )
-
-        # Add transformed object
-        group = self._create_object_group(obj, scale, position, scaled_size)
-        drawing.add(group)
-
-        # Add cell border
-        border = self._create_border(
-            cell_dims, row, col, row_span, col_span, color_border, cell_spacing
-        )
-        drawing.add(border)
-
-    def _get_span_size(
-        self,
-        cell_dims: Tuple[List[float], List[float]],
-        row: int,
-        col: int,
-        row_span: int,
-        col_span: int,
-    ) -> Tuple[float, float]:
-        """Calculate total span width and height."""
-        cell_widths, cell_heights = cell_dims
-
-        # Sum the widths and heights of spanned cells
-        span_width = sum(cell_widths[col : col + col_span])
-        span_height = sum(
-            cell_heights[self.grid_dims[0] - row - row_span : self.grid_dims[0] - row]
-        )
-
-        return span_width, span_height
-
-    def _get_scale_factor(
-        self, container: Tuple[float, float], content: Tuple[float, float]
-    ) -> float:
-        """Calculate scale factor preserving aspect ratio."""
-        return min(container[0] / content[0], container[1] / content[1])
-
-    def _get_object_position(
-        self,
-        cell_dims: Tuple[List[float], List[float]],
-        row: int,
-        col: int,
-        row_span: int,
-        span_dims: Tuple[float, float],
-        scaled_size: Tuple[float, float],
-        spacing: float,
-    ) -> Tuple[float, float]:
-        """Calculate centered position for the object."""
-        cell_widths, cell_heights = cell_dims
-        span_width, span_height = span_dims
-        scaled_width, scaled_height = scaled_size
-
-        # Calculate x position based on column ratios
-        x = sum(cell_widths[:col]) + col * spacing
-        x += (span_width - scaled_width) / 2
-
-        # Calculate y position based on row ratios
-        y = (
-            sum(cell_heights[: self.grid_dims[0] - row - row_span])
-            + (self.grid_dims[0] - row - row_span) * spacing
-        )
-        y += (span_height - scaled_height) / 2
-
-        return x, y
-
-    def _create_object_group(
-        self,
-        obj,
-        scale: float,
-        position: Tuple[float, float],
-        scaled_size: Tuple[float, float],
-    ) -> Group:
-        """Create a transformed group containing the object."""
-        group = Group()
-        obj.scale(scale, scale)
-        obj.translate(-obj.width / 2, -obj.height / 2)
-        group.add(obj)
-        x, y = position
-        scaled_width, scaled_height = scaled_size
-        group.translate(x + scaled_width / 2, y + scaled_height / 2)
-        return group
-
-    def _create_border(
-        self,
-        cell_dims: Tuple[List[float], List[float]],
-        row: int,
-        col: int,
-        row_span: int,
-        col_span: int,
-        color: str,
-        spacing: float,
-    ) -> Rect:
-        """Create a border rectangle for the cell."""
-        cell_widths, cell_heights = cell_dims
-        x = sum(cell_widths[:col]) + col * spacing
-        y = (
-            sum(cell_heights[: self.grid_dims[0] - row - row_span])
-            + (self.grid_dims[0] - row - row_span) * spacing
-        )
-        width = sum(cell_widths[col : col + col_span]) + spacing * (col_span - 1)
-        height = sum(
-            cell_heights[self.grid_dims[0] - row - row_span : self.grid_dims[0] - row]
-        ) + spacing * (row_span - 1)
-        return Rect(x, y, width, height, strokeColor=color, fillColor=None)
-
-    @staticmethod
-    def scale_figure(figure: Drawing, size: Tuple[int, int] = (2, 2)) -> Drawing:
-        """Scale a figure to the specified size using PlotMerger.
-
-        A convenience method that creates a single-cell grid and places the figure in it,
-        effectively scaling the figure to the desired size.
-
-        Parameters
-        ----------
-        figure : Drawing
-            The figure to scale
-        size : tuple[int, int], optional
-            Target size in inches (width, height), default (2, 2)
-
-        Returns
-        -------
-        Drawing
-            The scaled figure
-
-        Examples
-        --------
-        >>> original_fig = some_drawing_object
-        >>> scaled_fig = PlotMerger.scale_figure(original_fig, size=(2, 2))
-        """
-        grid = PlotMerger(fig_size=size)
-        grid.create_grid(1, 1)
-        grid.add_object(figure, (0, 0))
-        return grid.build(color_border="white")

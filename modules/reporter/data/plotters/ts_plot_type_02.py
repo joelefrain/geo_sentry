@@ -5,7 +5,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 import pandas as pd
 
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+from modules.reporter.plot_builder import PlotBuilder
+from modules.reporter.plot_merger import PlotMerger
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.note_handler import NotesHandler
 from libs.utils.plot_helpers import get_unique_marker_convo
@@ -112,7 +113,7 @@ def create_map(dxf_path, data_sensors):
         "title_y": "",
         "title_chart": "",
         "show_legend": True,
-        "dxf_params": {"color": "black", "linestyle": "-", "linewidth": 0.02},
+        "dxf_params": {"linestyle": "-", "linewidth": 0.02},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,

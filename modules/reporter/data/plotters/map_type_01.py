@@ -12,7 +12,9 @@ from libs.utils.config_loader import load_toml
 from libs.utils.plot_helpers import get_unique_marker_convo
 from modules.reporter.note_handler import NotesHandler
 from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.plot_builder import PlotMerger, PlotBuilder
+from modules.reporter.plot_builder import PlotBuilder
+from modules.reporter.plot_merger import PlotMerger
+
 import pandas as pd
 import os
 import sys
@@ -136,7 +138,6 @@ def create_map(
         "title_y": "",
         "title_chart": "",
         "show_legend": False,
-        "dxf_params": {"color": "black", "linestyle": "-", "linewidth": 0.02},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,
@@ -221,7 +222,6 @@ def create_map(
         title_y=map_args["title_y"],
         title_chart=map_args["title_chart"],
         show_legend=map_args["show_legend"],
-        dxf_params=map_args["dxf_params"],
         format_params=map_args["format_params"],
     )
 

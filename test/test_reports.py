@@ -1,4 +1,5 @@
-from modules.reporter.plot_builder import PlotBuilder, PlotMerger
+from modules.reporter.plot_builder import PlotBuilder
+from modules.reporter.plot_merger import PlotMerger
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -27,11 +28,6 @@ def test_plot_dxf(size=(6, 4)):
         title_y="",
         title_chart="",
         show_legend=False,
-        dxf_params={
-            "color": "blue",
-            "linestyle": "-",
-            "linewidth": 0.02,
-        },
         format_params={
             "show_grid": False,
             "show_xticks": False,

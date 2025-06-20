@@ -20,7 +20,7 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from darts import TimeSeries
-from modules.reporter.plot_builder import PlotMerger
+from modules.reporter.plot_merger import PlotMerger
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from libs.utils.df_helpers import read_df_on_time_from_csv
 from libs.utils.config_plot import PlotConfig
