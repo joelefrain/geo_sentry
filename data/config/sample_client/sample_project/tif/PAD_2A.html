@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_e0eb1452b098efb7289c8e91dc8e17ba {
+                #map_a6e01b0a37669b8d434c9679318222a8 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -54,21 +54,46 @@
 <body>
     
     
-            <div class="folium-map" id="map_e0eb1452b098efb7289c8e91dc8e17ba" ></div>
+    <script>
+    window.mapBounds = [-78.20740986462378, -7.617147512019704, -78.19604782864117, -7.608607013053826];
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            var map = window[Object.keys(window).find(key => key.startsWith('map_'))];
+            if (map) {
+                var bounds = L.latLngBounds([-7.617147512019704, -78.20740986462378], [-7.608607013053826, -78.19604782864117]);
+                var topLeft = map.latLngToContainerPoint(bounds.getNorthWest());
+                var bottomRight = map.latLngToContainerPoint(bounds.getSouthEast());
+
+                window.rectanglePixelBounds = {
+                    left: Math.round(topLeft.x),
+                    top: Math.round(topLeft.y),
+                    right: Math.round(bottomRight.x),
+                    bottom: Math.round(bottomRight.y)
+                };
+
+                console.log('Rectangle pixel bounds:', window.rectanglePixelBounds);
+            }
+        }, 1000);
+    });
+    </script>
+    
+    
+            <div class="folium-map" id="map_a6e01b0a37669b8d434c9679318222a8" ></div>
         
 </body>
 <script>
     
     
-            var map_e0eb1452b098efb7289c8e91dc8e17ba = L.map(
-                "map_e0eb1452b098efb7289c8e91dc8e17ba",
+            var map_a6e01b0a37669b8d434c9679318222a8 = L.map(
+                "map_a6e01b0a37669b8d434c9679318222a8",
                 {
                     center: [-7.612877262536765, -78.20172884663248],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 17,
-  "zoomControl": true,
+  "zoomControl": false,
   "preferCanvas": false,
+  "attributionControl": false,
 }
 
                 }
@@ -78,7 +103,7 @@
 
         
     
-            var tile_layer_513487fd8e55a1b5922685a6dae9ef38 = L.tileLayer(
+            var tile_layer_121d9fc44c649447b46f97c7d53988d2 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -95,18 +120,18 @@
             );
         
     
-            tile_layer_513487fd8e55a1b5922685a6dae9ef38.addTo(map_e0eb1452b098efb7289c8e91dc8e17ba);
+            tile_layer_121d9fc44c649447b46f97c7d53988d2.addTo(map_a6e01b0a37669b8d434c9679318222a8);
         
     
-            var rectangle_83a30701f16920e6306fa37e980703d4 = L.rectangle(
-                [[-7.616293462123116, -78.20627366102553], [-7.609461062950413, -78.19718403223943]],
+            var rectangle_ec2852eed4b69c0363ba6efff0124052 = L.rectangle(
+                [[-7.617147512019704, -78.20740986462378], [-7.608607013053826, -78.19604782864117]],
                 {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
-            ).addTo(map_e0eb1452b098efb7289c8e91dc8e17ba);
+            ).addTo(map_a6e01b0a37669b8d434c9679318222a8);
         
     
-            map_e0eb1452b098efb7289c8e91dc8e17ba.fitBounds(
-                [[-7.616293462123116, -78.20627366102553], [-7.609461062950413, -78.19718403223943]],
-                {}
+            map_a6e01b0a37669b8d434c9679318222a8.fitBounds(
+                [[-7.617147512019704, -78.20740986462378], [-7.608607013053826, -78.19604782864117]],
+                {"padding": 0}
             );
         
 </script>
