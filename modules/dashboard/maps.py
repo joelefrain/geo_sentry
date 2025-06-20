@@ -242,30 +242,30 @@ if __name__ == '__main__':
     plotter.create_map(center_lat=test_data['lat'][0], center_lon=test_data['lon'][0])
     
     # Ejemplo de uso con rutas HTML para gráficos y datos
-    chart_paths = {
-        'Sensor Lima': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_dataframe_timeseries.html',
-        'Sensor Cusco': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_timeseries.html',
-        'Sensor Arequipa': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\timeseries.html'
-    }
+    # chart_paths = {
+    #     'Sensor Lima': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_dataframe_timeseries.html',
+    #     'Sensor Cusco': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_timeseries.html',
+    #     'Sensor Arequipa': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\timeseries.html'
+    # }
     
-    data_paths = {
-        'Sensor Lima': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_dataframe_timeseries.html',
-        'Sensor Cusco': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_timeseries.html',
-        'Sensor Arequipa': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\timeseries.html'
-    }
+    # data_paths = {
+    #     'Sensor Lima': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_dataframe_timeseries.html',
+    #     'Sensor Cusco': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\multi_timeseries.html',
+    #     'Sensor Arequipa': r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\timeseries.html'
+    # }
     
-    profile_path = r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\timeseries.html'
+    # # profile_path = r'C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\timeseries.html'
     
-    # Plot test points with both paths
-    plotter.plot_points(test_data, chart_paths, data_paths)
+    # # Plot test points with both paths
+    # plotter.plot_points(test_data, chart_paths, data_paths)
     
-    # Convert shapefile, GeoJSON, and XML to GeoDataFrame
-    gdf_shapefile = gpd.read_file(r"C:\Users\Joel Efraín\Desktop\SHA_LINE.shp")
-    gdf_geojson = gpd.read_file(r"C:\Users\Joel Efraín\Desktop\SHA_LINE.geojson")
+    # # Convert shapefile, GeoJSON, and XML to GeoDataFrame
+    # gdf_shapefile = gpd.read_file(r"C:\Users\Joel Efraín\Desktop\SHA_LINE.shp")
+    # gdf_geojson = gpd.read_file(r"C:\Users\Joel Efraín\Desktop\SHA_LINE.geojson")
     
-    # Plot geodata with profile button - note the added name parameter
-    plotter.plot_geodata(gdf_shapefile, name='Shapefile Line', show_profile=True, profile_path=profile_path, style_function=lambda x: {'color': 'blue'})
-    plotter.plot_geodata(gdf_geojson, name='GeoJSON Line', show_profile=True, profile_path=profile_path, style_function=lambda x: {'color': 'red'})
+    # # Plot geodata with profile button - note the added name parameter
+    # plotter.plot_geodata(gdf_shapefile, name='Shapefile Line', show_profile=True, profile_path=profile_path, style_function=lambda x: {'color': 'blue'})
+    # plotter.plot_geodata(gdf_geojson, name='GeoJSON Line', show_profile=True, profile_path=profile_path, style_function=lambda x: {'color': 'red'})
     
     # Save the map
     plotter.save_map('peru_sensors_map.html')

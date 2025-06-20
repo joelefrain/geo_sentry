@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects
+import rasterio
 
 from io import BytesIO
 from svglib.svglib import svg2rlg
@@ -119,6 +120,7 @@ class PlotBuilder:
         self,
         data: list = [],
         dxf_path: str = None,
+        tif_path: str = None,  # <-- nuevo argumento
         size: tuple = (4, 3),
         title_x: str = "",
         title_y: str = "",
@@ -208,6 +210,10 @@ class PlotBuilder:
         self._initialize_plot(size)
         self.show_legend = show_legend
 
+        # --- Añadir raster GeoTIFF al fondo si se proporciona ---
+        if tif_path:
+            self._plot_tif(tif_path)
+
         if dxf_path:
             self._plot_dxf(dxf_path, dxf_params)
 
@@ -217,6 +223,31 @@ class PlotBuilder:
         self._finalize_plot(
             title_x, title_y, title_chart, xlim, ylim, invert_y, format_params
         )
+
+    def _plot_tif(self, tif_path: str) -> None:
+        """
+        Añade un GeoTIFF como fondo del plot, sin modificar los límites del eje.
+        """
+        try:
+            with rasterio.open(tif_path) as src:
+                # Leer la imagen y la transformación
+                img = src.read([1, 2, 3]) if src.count >= 3 else src.read(1)
+                extent = (
+                    src.bounds.left,
+                    src.bounds.right,
+                    src.bounds.bottom,
+                    src.bounds.top,
+                )
+                # Mostrar el raster en el fondo, sin alterar límites
+                self.ax1.imshow(
+                    img.transpose(1, 2, 0) if src.count >= 3 else img,
+                    extent=extent,
+                    origin="upper",
+                    zorder=0,
+                    alpha=0.7,
+                )
+        except Exception as e:
+            print(f"[!] No se pudo cargar el GeoTIFF '{tif_path}': {e}")
 
     def _plot_dxf(self, dxf_path: str, dxf_params: dict = None) -> None:
         """

@@ -297,7 +297,7 @@ def exec_plotter(
 if __name__ == "__main__":
     try:
         plotter_params = {
-            "plot_type": "sensor_plotter",
+            "plot_type": "map_creator",
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
@@ -311,7 +311,7 @@ if __name__ == "__main__":
             "revision": "B",
             "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
             # "sensors": ["INC"],
-            "agroup": True,
+            "agroup": False,
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)
