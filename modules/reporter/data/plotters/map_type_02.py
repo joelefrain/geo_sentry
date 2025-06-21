@@ -22,7 +22,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
-COLOR_PALETTE = "cool"
+COLOR_PALETTE = "hsv"
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -73,13 +73,14 @@ def get_note_content(
     sensor_aka,
     limit,
     mask=None,
+    static_notes=None,
 ):
     # Initialize NotesHandler
     note_handler = NotesHandler()
 
     target_column_name = series_names[target_column].lower().split("(")[0]
 
-    # Calculate variables for all data (sorted)
+    # Calculate variables for all data
     calc_vars = calculate_note_variables(
         data_sensors["df"], data_sensors["names"], serie_x, target_column, mask
     )
@@ -94,15 +95,14 @@ def get_note_content(
     else:
         max_note = "No hay registros válidos para mostrar el valor máximo de los últimos registros."
 
-    azimuth_note = (
-        "Se muestra el vector azimut absoluto sobre cada prisma de control topográfico."
-    )
+    notes = [max_note]
+    if static_notes:
+        notes.extend(static_notes)
 
-    # Define sections with the maximum value note
     sections = [
         {
             "title": "Notas:",
-            "content": [max_note, azimuth_note],
+            "content": notes,
             "format_type": "numbered",
         },
     ]
@@ -121,24 +121,6 @@ def create_map(
     tif_path,
     project_epsg,
 ):
-    # Sort sensor data by maximum value of the target column in descending order
-    sorted_sensors = sorted(
-        zip(
-            data_sensors["names"],
-            data_sensors["df"],
-            data_sensors["east"],
-            data_sensors["north"],
-        ),
-        key=lambda x: x[1][target_column].max() if not x[1].empty else float("-inf"),
-        reverse=True,
-    )
-    (
-        data_sensors["names"],
-        data_sensors["df"],
-        data_sensors["east"],
-        data_sensors["north"],
-    ) = zip(*sorted_sensors)
-
     # Crear un diccionario para almacenar la última información de cada ubicación
     location_dict = {}
 
@@ -190,11 +172,11 @@ def create_map(
             }
         )
 
-    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
+    plotter = PlotBuilder(style_file="high_quality", ts_serie=True, ymargin=0)
     map_args = {
         "dxf_path": dxf_path,
-        # "tif_path": tif_path,
-        # "project_epsg": project_epsg,
+        "tif_path": tif_path,
+        "project_epsg": project_epsg,
         "size": [6.0, 4.5],
         "title_x": "",
         "title_y": "",
@@ -264,6 +246,7 @@ def generate_report(
     sensor_type_name = column_config["sensor_type_name"]
     sensor_aka = column_config["sensor_aka"]
     colorbar_config = column_config["colorbar"]
+    static_notes = column_config.get("static_notes", None)
 
     dxf_path = plot_params.get("dxf_path", None)
     if not dxf_path:
@@ -324,6 +307,7 @@ def generate_report(
         sensor_aka,
         None,  # No limit needed for notes-only
         mask,
+        static_notes,
     )
 
     logo_cell = load_svg(LOGO_SVG, 0.95)

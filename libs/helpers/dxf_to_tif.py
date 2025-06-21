@@ -216,14 +216,16 @@ def dxf_to_satellite_geotiff_precise(dxf_path, output_basename, utm_zone=18, cap
 
 # --- USO ---
 if __name__ == "__main__":
-    structure = "PAD_2A"
-    dxf_input = f"data/config/sample_client/sample_project/dxf/{structure}.dxf"
-    output_base = f"data/config/sample_client/sample_project/tif/{structure}"
+    structure = "DME_CHO"
+    client = "sample_client"
+    project = "sample_project"
+    dxf_input = f"data/config/{client}/{project}/dxf/{structure}.dxf"
+    output_base = f"data/config/{client}/{project}/tif/{structure}"
 
     # Escalado desde el centro (por ejemplo 1.3 = 30% más grande)
     dxf_to_satellite_geotiff_precise(
         dxf_input, output_base,
         utm_zone=17,
         capture_size=(2048, 1536),
-        scale=1.25
+        scale=1.0
     )

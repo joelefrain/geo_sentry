@@ -127,13 +127,13 @@ def parse_datetime(date_str, time_str, date_formats, time_formats):
     return pd.NaT
 
 
-def read_lines(filepath):
-    with open(filepath, "r") as file:
+def read_lines(filepath, encoding="utf-8"):
+    with open(file=filepath, mode="r", encoding=encoding) as file:
         return file.readlines()
 
 
-def write_lines(list_to_write, filepath):
-    with open(list_to_write, filepath, "w", encoding="utf-8") as f:
+def write_lines(list_to_write, filepath, encoding="utf-8"):
+    with open(file=filepath, mode="w", encoding=encoding) as f:
         for element in list_to_write:
             f.write(f"{element}\n")
 

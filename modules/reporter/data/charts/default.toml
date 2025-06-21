@@ -3,6 +3,7 @@ lw = 1
 arrowstyle = "->"
 alpha = 0.8
 connectionstyle = "arc3,rad=0.0"
+mutation_scale = 5
 
 [tif_params]
 origin = "upper"

@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_711fd2d480231a3b95664fee7d2e5d47 {
+                #map_1e20f27831715ce25c28b8fead8e0a08 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -55,22 +55,22 @@
     
     
     <script>
-    window.mapBounds = [-78.2066722166411, -7.628145635414706, -78.19211415700006, -7.6172123463353705];
+    window.mapBounds = [-78.20697376954426, -7.6292797694711, -78.19019675110466, -7.616608216597225];
     window.addEventListener('load', function() {
         setTimeout(function() {
             var map = window[Object.keys(window).find(key => key.startsWith('map_'))];
             if (map) {
-                var bounds = L.latLngBounds([-7.628145635414706, -78.2066722166411], [-7.6172123463353705, -78.19211415700006]);
+                var bounds = L.latLngBounds([-7.6292797694711, -78.20697376954426], [-7.616608216597225, -78.19019675110466]);
                 var topLeft = map.latLngToContainerPoint(bounds.getNorthWest());
                 var bottomRight = map.latLngToContainerPoint(bounds.getSouthEast());
-                
+
                 window.rectanglePixelBounds = {
                     left: Math.round(topLeft.x),
                     top: Math.round(topLeft.y),
                     right: Math.round(bottomRight.x),
                     bottom: Math.round(bottomRight.y)
                 };
-                
+
                 console.log('Rectangle pixel bounds:', window.rectanglePixelBounds);
             }
         }, 1000);
@@ -78,16 +78,16 @@
     </script>
     
     
-            <div class="folium-map" id="map_711fd2d480231a3b95664fee7d2e5d47" ></div>
+            <div class="folium-map" id="map_1e20f27831715ce25c28b8fead8e0a08" ></div>
         
 </body>
 <script>
     
     
-            var map_711fd2d480231a3b95664fee7d2e5d47 = L.map(
-                "map_711fd2d480231a3b95664fee7d2e5d47",
+            var map_1e20f27831715ce25c28b8fead8e0a08 = L.map(
+                "map_1e20f27831715ce25c28b8fead8e0a08",
                 {
-                    center: [-7.622678990875038, -78.19939318682057],
+                    center: [-7.622943993034163, -78.19858526032446],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 17,
@@ -103,7 +103,7 @@
 
         
     
-            var tile_layer_a8bdf4173a1c975c8f166040bd5a9d42 = L.tileLayer(
+            var tile_layer_c03df5384d5bbb0d84dd3d1cdbe36131 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -120,17 +120,17 @@
             );
         
     
-            tile_layer_a8bdf4173a1c975c8f166040bd5a9d42.addTo(map_711fd2d480231a3b95664fee7d2e5d47);
+            tile_layer_c03df5384d5bbb0d84dd3d1cdbe36131.addTo(map_1e20f27831715ce25c28b8fead8e0a08);
         
     
-            var rectangle_56794598879fbe89ebd66a680ef55475 = L.rectangle(
-                [[-7.628145635414706, -78.2066722166411], [-7.6172123463353705, -78.19211415700006]],
+            var rectangle_d34f7cee9473ab975d645009202950d8 = L.rectangle(
+                [[-7.6292797694711, -78.20697376954426], [-7.616608216597225, -78.19019675110466]],
                 {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
-            ).addTo(map_711fd2d480231a3b95664fee7d2e5d47);
+            ).addTo(map_1e20f27831715ce25c28b8fead8e0a08);
         
     
-            map_711fd2d480231a3b95664fee7d2e5d47.fitBounds(
-                [[-7.628145635414706, -78.2066722166411], [-7.6172123463353705, -78.19211415700006]],
+            map_1e20f27831715ce25c28b8fead8e0a08.fitBounds(
+                [[-7.6292797694711, -78.20697376954426], [-7.616608216597225, -78.19019675110466]],
                 {"padding": 0}
             );
         

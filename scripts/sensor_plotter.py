@@ -12,6 +12,7 @@ from libs.utils.config_logger import get_logger, log_execution_time
 from libs.utils.df_helpers import read_df_on_time_from_csv
 from libs.utils.text_helpers import write_lines
 from libs.helpers.pdf_merger import find_pdf_files, merge_pdfs
+from libs.utils.variables_helpers import flatten
 from libs.utils.config_variables import (
     DOC_TITLE,
     THEME_COLOR,
@@ -45,6 +46,7 @@ def generate_structure_plots(
     end_query,
     static_report_params,
     agroup=True,
+    utm_zone=None,
 ):
     """Generate plots for a specific structure with all requested sensor types.
 
@@ -73,12 +75,12 @@ def generate_structure_plots(
     # GeoTIFF path for the structure (si existe)
     tif_path = f"data/config/{client_code}/{project_code}/tif/{structure_code}.tif"
 
-    # --- Si sabes la zona UTM, puedes calcularla aquí (ejemplo: zona 17 sur) ---
-    utm_zone = 17
+    # Project EPSG code based on UTM zone
     project_epsg = 32700 + utm_zone
-    # project_epsg = None  # O ajusta según tu lógica
 
     logger.info(f"\nProcessing structure: {structure_name} ({structure_code})...")
+
+    chart_titles = []
 
     # Process each sensor type for this structure
     for sensor_type in sensors:
@@ -126,8 +128,6 @@ def generate_structure_plots(
             group_name = f"{structure_code} - {sensor_type}"
             sensor_df["group"] = group_name
             groups = [(group_name, sensor_df)]
-
-        chart_titles = []
 
         # Process each group (now handles both grouped and ungrouped cases)
         for group, df_group in groups:
@@ -263,11 +263,23 @@ def exec_plotter(
     appendix_chapter,
     revision,
     sensors,
-    agroup=True,
 ):
     # Load configuration from TOML
     config_dir = DATA_CONFIG / client_code / project_code / plot_type
     config = load_toml(config_dir, engineering_code)
+
+    if "agroup" in config.keys():
+        agroup = config.get("agroup", True)
+
+    # Load zone configuration
+    config_dir = DATA_CONFIG / client_code / project_code / "processor"
+    processor_config = load_toml(config_dir, engineering_code)
+    utm_zone = processor_config["utm_zone"]
+    if not utm_zone:
+        logger.error(
+            f"Error: UTM zone not defined in processor config for {client_code}/{project_code}"
+        )
+        sys.exit(1)
 
     output_dir = OUTPUTS_DIR / plot_type / client_code / project_code
 
@@ -305,6 +317,7 @@ def exec_plotter(
                 end_query=end_date,
                 static_report_params=static_report_params,
                 agroup=agroup,
+                utm_zone=utm_zone,
             )
 
             if chart_title:
@@ -317,20 +330,20 @@ def exec_plotter(
             logger.error(f"Error procesando estructura {structure_code}: {e}")
             continue
 
-    # Write all chart titles to a text file
-    write_lines(charts_titles, output_dir / "charts.txt")
-
     logger.info(
         f"All structures and sensors processed. Final item number: {start_item - 1}"
     )
 
     merge_outputs(plot_type, client_code, project_code, output_dir)
 
+    # Name all generated PDFs into a single output file
+    charts_titles = flatten(charts_titles)
+    write_lines(charts_titles, output_dir / "charts.txt")
 
 if __name__ == "__main__":
     try:
         plotter_params = {
-            "plot_type": "sensor_plotter",
+            "plot_type": "map_creator",
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
@@ -344,7 +357,6 @@ if __name__ == "__main__":
             "revision": "B",
             "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
             # "sensors": ["PCT"],
-            "agroup": True,
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)

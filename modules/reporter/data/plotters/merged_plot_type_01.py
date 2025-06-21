@@ -127,7 +127,7 @@ def get_note_content(
 def create_map(data_sensors, dxf_path, tif_path, project_epsg):
     plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
     map_args = {
-        # "dxf_path": dxf_path,
+        "dxf_path": dxf_path,
         "tif_path": tif_path,
         "project_epsg": project_epsg,
         "size": [2.0, 1.5],
@@ -135,7 +135,7 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg):
         "title_y": "",
         "title_chart": "",
         "show_legend": True,
-        # "dxf_params": {"linestyle": "-", "linewidth": 0.02, "color": "gray"},
+        "dxf_params": {"linestyle": "-", "linewidth": 0.01, "color": "whitesmoke"},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,
@@ -592,6 +592,7 @@ def generate_report(
             # Generate PDF
             pdf_generator.generate_pdf(pdf_path=pdf_filename)
             pdf_filenames.append(pdf_filename)
+            chart_titles.append(chart_title)
 
             # Increment the item number for the next report
             current_item += 1

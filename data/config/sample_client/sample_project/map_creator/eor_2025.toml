@@ -1,3 +1,5 @@
+agroup = false
+
 [project]
 project_code = "1408.10.0054-0000"
 company_name = "Shahuindo SAC"
@@ -19,9 +21,14 @@ unit_target = "cm"
 serie_x = "time"
 sensor_type_name = "punto de control topográfico"
 sensor_aka = "El prisma"
+static_notes = [
+  "Se muestra el vector azimut absoluto sobre cada prisma de control topográfico.",
+  "Se requiere definir niveles de alerta para una interpretación más confiable del desempeño estructural.",
+]
 [sensors.pct.column_config.colorbar]
 thresholds = [5, 20, 50]
 colors = ["green", "yellow", "orange", "red"]
+
 
 [sensors.pcv]
 plot_template = "map_type_02"
@@ -32,6 +39,9 @@ unit_target = "kPa"
 serie_x = "time"
 sensor_type_name = "piezómetro de cuerda vibrante"
 sensor_aka = "El piezómetro"
+static_notes = [
+  "Se requiere definir niveles de alerta para una interpretación más confiable del desempeño estructural.",
+]
 [sensors.pcv.column_config.colorbar]
 thresholds = [0, 10, 20]
 colors = ["green", "yellow", "orange", "red"]

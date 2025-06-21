@@ -1,7 +1,16 @@
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
+import json
 import ezdxf
 
 from matplotlib import colormaps
 from matplotlib.colors import rgb2hex
+
+from libs.utils.config_variables import DXF_COLORS_PATH
 
 
 def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):
@@ -37,18 +46,13 @@ def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):
 
 def dxf_color_to_hex(color_number):
     """Convierte el número de color DXF a código hexadecimal."""
-    # Mapa de colores DXF básicos
-    dxf_colors = {
-        1: "#FF0000",  # Red
-        2: "#FFFF00",  # Yellow
-        3: "#00FF00",  # Green
-        4: "#00FFFF",  # Cyan
-        5: "#0000FF",  # Blue
-        6: "#FF00FF",  # Magenta
-        7: "#000000",  # Black
-        8: "#808080",  # Gray
-        9: "#C0C0C0",  # Light Gray
-    }
+    color_number = (
+        str(color_number) if isinstance(color_number, (int, float)) else color_number
+    )
+
+    with open(DXF_COLORS_PATH, "r") as f:
+        dxf_colors = json.load(f)
+
     return dxf_colors.get(color_number, "#000000")  # Negro por defecto
 
 

@@ -903,11 +903,16 @@ class PlotBuilder:
             dx = radius * np.cos(np.radians(angle))
             dy = radius * np.sin(np.radians(angle))
 
+            # Se da prioridad al color del arrow_params si se especifica
+            if "color" in arrow_params.keys():
+                color = arrow_params["color"]
+            else:
+                color = series["color"]
+
             arrow = patches.FancyArrowPatch(
                 (x_point, y_point),
                 (x_point + dx, y_point + dy),
-                color=series["color"],
-                mutation_scale=10,
+                color=color,
                 **arrow_params,
             )
             self.ax1.add_patch(arrow)
