@@ -84,13 +84,13 @@ def generate_structure_plots(
 
     # Process each sensor type for this structure
     for sensor_type in sensors:
-        logger.info(f"  Processing sensor type: {sensor_type}...")
+        logger.info(f"Processing sensor type: {sensor_type}...")
 
         # Get sensor configuration
         sensor_config = get_sensor_config(config, sensor_type)
         if not sensor_config:
             logger.error(
-                f"  Error: Configuration for sensor type '{sensor_type}' not found."
+                f"Error: Configuration for sensor type '{sensor_type}' not found."
             )
             continue
 
@@ -103,7 +103,7 @@ def generate_structure_plots(
 
         # Skip if no sensors of this type for this structure
         if sensor_df.empty:
-            logger.warning(f"  No {sensor_type} sensors found for {structure_name}.")
+            logger.warning(f"No {sensor_type} sensors found for {structure_name}.")
             continue
 
         # Drop sensors with missing records
@@ -116,7 +116,7 @@ def generate_structure_plots(
             )
             generate_report = plotter_module.generate_report
         except ImportError as e:
-            logger.error(f"  Error importing plotter module: {e}")
+            logger.exception(f"Error importing plotter module: {e}")
             continue
 
         if agroup:
@@ -136,10 +136,13 @@ def generate_structure_plots(
             east = df_group["east"].tolist()
             north = df_group["north"].tolist()
 
-            # Get material if available
-            material = (
-                df_group["material"].iloc[0] if "material" in df_group.columns else None
-            )
+            # Get material if available and df_group is not empty
+            material = None
+            if "material" in df_group.columns and not df_group.empty:
+                try:
+                    material = df_group["material"].iloc[0]
+                except Exception:
+                    logger.exception("Error al obtener el valor de 'material'")
 
             # Load data for each sensor
             dfs = []
@@ -155,15 +158,15 @@ def generate_structure_plots(
                         dfs.append(df_sensor)
                     else:
                         logger.warning(
-                            f"  Sensor {code} tiene menos de {MINIMUN_RECORDS + 1} registros. Skipping."
+                            f"Sensor {code} tiene menos de {MINIMUN_RECORDS + 1} registros. Skipping."
                         )
                 except Exception as e:
-                    logger.error(f"  Error reading data for sensor {code}: {e}")
+                    logger.exception(f"Error reading data for sensor {code}: {e}")
                     continue
 
             # Skip if no data loaded
             if not dfs:
-                logger.warning(f"  No data loaded for group {group}. Skipping.")
+                logger.warning(f"No data loaded for group {group}. Skipping.")
                 continue
 
             # Prepare data_sensors dictionary
@@ -206,18 +209,21 @@ def generate_structure_plots(
                 )
                 if not generated_pdf:
                     logger.warning(
-                        f"  No PDF generated for group {group} in {structure_code} - {sensor_type}"
+                        f"No PDF generated for group {group} in {structure_code} - {sensor_type}"
                     )
                     continue
 
                 chart_titles.append(chart_title)
-                logger.info(
-                    f"  [{structure_code} - {sensor_type} - {group}] Generated PDF: {generated_pdf}"
-                )
                 n_pdf = len(generated_pdf)
                 start_item += n_pdf
+
+                logger.info(
+                    f"[{structure_code} - {sensor_type} - {group}] Generated PDF: {generated_pdf}"
+                    f" (Total: {len(generated_pdf)})"
+                    f" Starting item: {start_item}"
+                )
             except Exception as e:
-                logger.error(f"  Error generating PDF for group {group}: {e}")
+                logger.exception(f"Error generating PDF for group {group}: {e}")
                 continue
 
     return start_item, chart_titles
@@ -229,7 +235,7 @@ def merge_outputs(plot_type, client_code, project_code, output_dir):
     )
 
     if not os.path.isdir(output_dir):
-        logger.error(f"Error: El directorio de entrada '{output_dir}' no existe")
+        logger.exception(f"Error: El directorio de entrada '{output_dir}' no existe")
         return
 
     # Encontrar todos los archivos PDF
@@ -245,7 +251,7 @@ def merge_outputs(plot_type, client_code, project_code, output_dir):
         merge_pdfs(pdf_files, output_file)
         logger.info(f"Los PDFs se han fusionado exitosamente en '{output_file}'")
     except Exception as e:
-        logger.error(f"Error al fusionar los PDFs: {str(e)}")
+        logger.exception(f"Error al fusionar los PDFs: {str(e)}")
 
 
 @log_execution_time(module="scripts.sensor_plotter")
@@ -327,7 +333,7 @@ def exec_plotter(
                 )
 
         except Exception as e:
-            logger.error(f"Error procesando estructura {structure_code}: {e}")
+            logger.exception(f"Error procesando estructura {structure_code}: {e}")
             continue
 
     logger.info(
@@ -339,6 +345,7 @@ def exec_plotter(
     # Name all generated PDFs into a single output file
     charts_titles = flatten(charts_titles)
     write_lines(charts_titles, output_dir / "charts.txt")
+
 
 if __name__ == "__main__":
     try:
@@ -364,5 +371,5 @@ if __name__ == "__main__":
         logger.info("Sensor processor completed successfully")
 
     except Exception as e:
-        logger.error(f"Sensor processor failed: {e}")
+        logger.exception(f"Sensor processor failed: {e}")
         sys.exit(1)

@@ -1,15 +1,9 @@
-import os
-import sys
-
-# Add 'libs' path to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
 import re
 import json
 import pandas as pd
 from datetime import datetime
 
-from libs.utils.config_variables import (
+from .config_variables import (
     ALLOWED_TIME_CHARS,
     ALLOWED_SEP_CHARS,
     ALLOWD_HEADER_CHARS,

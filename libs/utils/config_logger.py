@@ -1,8 +1,10 @@
 import os
 import time
 import logging
-from logging.handlers import RotatingFileHandler
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
+
+from .config_variables import LOG_DIR
 
 
 def get_logger(module_name):
@@ -14,9 +16,7 @@ def get_logger(module_name):
     today_date = datetime.now().strftime("%Y-%m-%d")
 
     # Crear un directorio de logs si no existe, agrupado por fecha
-    log_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../logs", today_date)
-    )
+    log_dir = LOG_DIR / today_date
     os.makedirs(log_dir, exist_ok=True)
 
     # Configurar el archivo de log para este módulo dentro de la carpeta de la fecha actual

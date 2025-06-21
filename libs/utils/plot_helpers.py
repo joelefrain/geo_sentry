@@ -1,20 +1,14 @@
-import os
-import sys
-
-# Add 'libs' path to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
 import ezdxf
 
 from matplotlib import colormaps
 from matplotlib.colors import rgb2hex
 
-from libs.utils.config_variables import (
+from .text_helpers import read_json
+from .config_variables import (
     DXF_COLORS_PATH,
     DXF_LINETYPES_PATH,
     UNIQUE_MARKERS,
 )
-from libs.utils.text_helpers import read_json
 
 
 def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):

@@ -123,7 +123,7 @@ def preprocess_sensors(
                 f"Configuración cargada para {sensor_code} desde {config_sensor_path}"
             )
         except Exception as e:
-            logger.error(f"Error al cargar configuración para {sensor_code}: {e}")
+            logger.exception(f"Error al cargar configuración para {sensor_code}: {e}")
             continue
 
         type_reader = reader_config["type"]
@@ -155,7 +155,7 @@ def preprocess_sensors(
                 try:
                     input_folder = sensor_data_paths[sensor_code][structure]
                 except KeyError:
-                    logger.error(
+                    logger.exception(
                         f"No se encontró la ruta para '{structure}' en '{sensor_code}'"
                     )
                     continue
@@ -214,7 +214,7 @@ def preprocess_sensors(
                 try:
                     input_folder = sensor_data_paths[sensor_code][structure]
                 except KeyError:
-                    logger.error(
+                    logger.exception(
                         f"No se encontró la ruta para '{structure}' en '{sensor_code}'"
                     )
                     continue
@@ -284,7 +284,7 @@ def preprocess_sensors(
                                 logger.info(f"Procesado exitosamente: {file_path}")
 
                         except Exception as e:
-                            logger.error(f"Error procesando {subfolder_name}: {e}")
+                            logger.exception(f"Error procesando {subfolder_name}: {e}")
 
 
 @log_execution_time(module="scripts.sensor_processor")
@@ -673,7 +673,7 @@ def exec_processor(
             config = load_toml(config_dir, engineering_code)
             logger.debug(f"Configuration loaded from {config_dir}/{engineering_code}")
         except Exception as e:
-            logger.error(f"Failed to load configuration: {e}")
+            logger.exception(f"Failed to load configuration: {e}")
             raise FileNotFoundError(f"Configuration not found: {engineering_code}")
 
         # Extract configuration
@@ -707,7 +707,7 @@ def exec_processor(
                             work_path,
                         )
                     except Exception as e:
-                        logger.error(f"Preprocessing failed for {cut}: {e}")
+                        logger.exception(f"Preprocessing failed for {cut}: {e}")
 
             elif method == "process":
                 for cut in cut_off:
@@ -715,14 +715,14 @@ def exec_processor(
                         logger.info(f"Processing data for cutoff: {cut}")
                         exec_process(cut, work_path, sensor_codes)
                     except Exception as e:
-                        logger.error(f"Processing failed for {cut}: {e}")
+                        logger.exception(f"Processing failed for {cut}: {e}")
 
             elif method == "main_records":
                 try:
                     logger.info("Updating main records")
                     get_main_records(work_path, sensor_codes)
                 except Exception as e:
-                    logger.error(f"Main records update failed: {e}")
+                    logger.exception(f"Main records update failed: {e}")
 
             else:
                 logger.warning(f"Unknown method: {method}")
@@ -730,7 +730,7 @@ def exec_processor(
         logger.info("Processing workflow completed successfully")
 
     except Exception as e:
-        logger.error(f"Processing workflow failed: {e}")
+        logger.exception(f"Processing workflow failed: {e}")
         raise
 
 
@@ -755,5 +755,5 @@ if __name__ == "__main__":
         logger.info("Sensor processor completed successfully")
 
     except Exception as e:
-        logger.error(f"Sensor processor failed: {e}")
+        logger.exception(f"Sensor processor failed: {e}")
         sys.exit(1)

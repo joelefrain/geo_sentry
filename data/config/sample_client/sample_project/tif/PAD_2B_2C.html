@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_ef1ce63ddba4a539a8f039dc40bd2b63 {
+                #map_1c6266107b46ac0991c68afd23c6a2c4 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -55,12 +55,12 @@
     
     
     <script>
-    window.mapBounds = [-78.19750872342894, -7.618490705420724, -78.18083534854117, -7.605951944880387];
+    window.mapBounds = [-78.19750638150974, -7.618482532202101, -78.18083578214696, -7.605951944880387];
     window.addEventListener('load', function() {
         setTimeout(function() {
             var map = window[Object.keys(window).find(key => key.startsWith('map_'))];
             if (map) {
-                var bounds = L.latLngBounds([-7.618490705420724, -78.19750872342894], [-7.605951944880387, -78.18083534854117]);
+                var bounds = L.latLngBounds([-7.618482532202101, -78.19750638150974], [-7.605951944880387, -78.18083578214696]);
                 var topLeft = map.latLngToContainerPoint(bounds.getNorthWest());
                 var bottomRight = map.latLngToContainerPoint(bounds.getSouthEast());
 
@@ -78,16 +78,16 @@
     </script>
     
     
-            <div class="folium-map" id="map_ef1ce63ddba4a539a8f039dc40bd2b63" ></div>
+            <div class="folium-map" id="map_1c6266107b46ac0991c68afd23c6a2c4" ></div>
         
 </body>
 <script>
     
     
-            var map_ef1ce63ddba4a539a8f039dc40bd2b63 = L.map(
-                "map_ef1ce63ddba4a539a8f039dc40bd2b63",
+            var map_1c6266107b46ac0991c68afd23c6a2c4 = L.map(
+                "map_1c6266107b46ac0991c68afd23c6a2c4",
                 {
-                    center: [-7.612221325150555, -78.18917203598505],
+                    center: [-7.612217238541245, -78.18917108182835],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 17,
@@ -103,7 +103,7 @@
 
         
     
-            var tile_layer_eb4fe3991e9117adc53d640cc79bb960 = L.tileLayer(
+            var tile_layer_2f18bb5d30c2604442a188e2265d6390 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -120,17 +120,17 @@
             );
         
     
-            tile_layer_eb4fe3991e9117adc53d640cc79bb960.addTo(map_ef1ce63ddba4a539a8f039dc40bd2b63);
+            tile_layer_2f18bb5d30c2604442a188e2265d6390.addTo(map_1c6266107b46ac0991c68afd23c6a2c4);
         
     
-            var rectangle_36c42f7caf12eae87bc913d670aa5769 = L.rectangle(
-                [[-7.618490705420724, -78.19750872342894], [-7.605951944880387, -78.18083534854117]],
-                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
-            ).addTo(map_ef1ce63ddba4a539a8f039dc40bd2b63);
+            var rectangle_212e613816938b654f62c20dac4b441a = L.rectangle(
+                [[-7.618482532202101, -78.19750638150974], [-7.605951944880387, -78.18083578214696]],
+                {"bubblingMouseEvents": true, "color": null, "dashArray": null, "dashOffset": null, "fill": false, "fillColor": null, "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_1c6266107b46ac0991c68afd23c6a2c4);
         
     
-            map_ef1ce63ddba4a539a8f039dc40bd2b63.fitBounds(
-                [[-7.618490705420724, -78.19750872342894], [-7.605951944880387, -78.18083534854117]],
+            map_1c6266107b46ac0991c68afd23c6a2c4.fitBounds(
+                [[-7.618482532202101, -78.19750638150974], [-7.605951944880387, -78.18083578214696]],
                 {"padding": 0}
             );
         

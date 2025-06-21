@@ -1,6 +1,6 @@
-from .config_variables import DECIMAL_CHAR, THOUSAND_CHAR, DEFAULT_FONT, DATE_FORMAT
-
 import matplotlib.pyplot as plt
+
+from .config_variables import DEFAULT_FONT, DATE_FORMAT
 
 
 class PlotConfig:

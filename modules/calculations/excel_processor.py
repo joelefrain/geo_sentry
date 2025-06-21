@@ -103,7 +103,7 @@ class ExcelProcessor:
 
                         output_path = Path(output_folder) / f"{code}.{sheet_name}.csv"
                         df.to_csv(output_path, sep=SEP_FORMAT, index=False)
-                        logger.info(f"✅ Guardado: {output_path}")
+                        logger.info(f"Guardado: {output_path}")
                     else:
                         logger.info(
                             f"⚠️ Hoja '{sheet_name}' vacía después de eliminar nulos."
@@ -144,7 +144,7 @@ class ExcelProcessor:
                         df = pd.DataFrame(location_data)
                         output_path = Path(output_folder) / f"{code}.{sheet_name}.csv"
                         df.to_csv(output_path, sep=SEP_FORMAT, index=False)
-                        logger.info(f"✅ Guardado: {output_path}")
+                        logger.info(f"Guardado: {output_path}")
 
             except Exception as e:
                 logger.warning(
@@ -233,7 +233,7 @@ class ExcelProcessor:
                     df = df.sort_values("time", ignore_index=True)
 
                 logger.info(
-                    f"✅ Nuevo registro agregado con valores de celdas seleccionadas"
+                    f"Nuevo registro agregado con valores de celdas seleccionadas"
                 )
 
         return df

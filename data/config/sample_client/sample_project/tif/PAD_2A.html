@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_235b7ef61ed7641c668cfe274aee8f24 {
+                #map_ee2a7b124f76fa383913504dbe2885e0 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -55,12 +55,12 @@
     
     
     <script>
-    window.mapBounds = [-78.20790399740007, -7.618332213695815, -78.19407218711495, -7.607951726158975];
+    window.mapBounds = [-78.2078994057016, -7.618331127407436, -78.19407218711495, -7.607957163070004];
     window.addEventListener('load', function() {
         setTimeout(function() {
             var map = window[Object.keys(window).find(key => key.startsWith('map_'))];
             if (map) {
-                var bounds = L.latLngBounds([-7.618332213695815, -78.20790399740007], [-7.607951726158975, -78.19407218711495]);
+                var bounds = L.latLngBounds([-7.618331127407436, -78.2078994057016], [-7.607957163070004, -78.19407218711495]);
                 var topLeft = map.latLngToContainerPoint(bounds.getNorthWest());
                 var bottomRight = map.latLngToContainerPoint(bounds.getSouthEast());
 
@@ -78,16 +78,16 @@
     </script>
     
     
-            <div class="folium-map" id="map_235b7ef61ed7641c668cfe274aee8f24" ></div>
+            <div class="folium-map" id="map_ee2a7b124f76fa383913504dbe2885e0" ></div>
         
 </body>
 <script>
     
     
-            var map_235b7ef61ed7641c668cfe274aee8f24 = L.map(
-                "map_235b7ef61ed7641c668cfe274aee8f24",
+            var map_ee2a7b124f76fa383913504dbe2885e0 = L.map(
+                "map_ee2a7b124f76fa383913504dbe2885e0",
                 {
-                    center: [-7.613141969927395, -78.20098809225752],
+                    center: [-7.61314414523872, -78.20098579640828],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 17,
@@ -103,7 +103,7 @@
 
         
     
-            var tile_layer_f9812e916eaffb33dcaaf31215750191 = L.tileLayer(
+            var tile_layer_dba335748cb8f5fe61671a737d1e32ce = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -120,17 +120,17 @@
             );
         
     
-            tile_layer_f9812e916eaffb33dcaaf31215750191.addTo(map_235b7ef61ed7641c668cfe274aee8f24);
+            tile_layer_dba335748cb8f5fe61671a737d1e32ce.addTo(map_ee2a7b124f76fa383913504dbe2885e0);
         
     
-            var rectangle_6cb0f5a95e47f4702d3c0316f03bb86d = L.rectangle(
-                [[-7.618332213695815, -78.20790399740007], [-7.607951726158975, -78.19407218711495]],
-                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
-            ).addTo(map_235b7ef61ed7641c668cfe274aee8f24);
+            var rectangle_79073ec631f67b896f4511cb6cca1c2f = L.rectangle(
+                [[-7.618331127407436, -78.2078994057016], [-7.607957163070004, -78.19407218711495]],
+                {"bubblingMouseEvents": true, "color": null, "dashArray": null, "dashOffset": null, "fill": false, "fillColor": null, "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_ee2a7b124f76fa383913504dbe2885e0);
         
     
-            map_235b7ef61ed7641c668cfe274aee8f24.fitBounds(
-                [[-7.618332213695815, -78.20790399740007], [-7.607951726158975, -78.19407218711495]],
+            map_ee2a7b124f76fa383913504dbe2885e0.fitBounds(
+                [[-7.618331127407436, -78.2078994057016], [-7.607957163070004, -78.19407218711495]],
                 {"padding": 0}
             );
         

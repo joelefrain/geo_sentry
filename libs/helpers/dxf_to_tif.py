@@ -1,17 +1,28 @@
 import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
+import io
 import time
+import json
 import ezdxf
 import folium
 import rasterio
+
 import numpy as np
 import geopandas as gpd
+
 from PIL import Image
 from shapely.geometry import LineString
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from rasterio.transform import from_bounds
-import json
-import io
+
+from libs.utils.config_logger import get_logger
+
+logger = get_logger("libs.helpers.dxf_to_tif")
 
 
 def extract_bounds_latlon(dxf_path, utm_epsg=32718, scale=1.0):
@@ -59,15 +70,15 @@ def create_folium_map_for_cropping(bounds, output_html):
         tiles="Esri.WorldImagery",
         control_scale=False,
         zoom_control=False,
-        attribution_control=False
+        attribution_control=False,
     )
 
     folium.Rectangle(
         bounds=[[minlat, minlon], [maxlat, maxlon]],
-        color="red",
+        color=None,
         weight=2,
         fill=False,
-        opacity=1.0
+        opacity=1.0,
     ).add_to(m)
 
     m.fit_bounds([[minlat, minlon], [maxlat, maxlon]], padding=0)
@@ -100,10 +111,12 @@ def create_folium_map_for_cropping(bounds, output_html):
 
     m.get_root().html.add_child(folium.Element(bounds_js))
     m.save(output_html)
-    print(f"[✔] Mapa HTML generado: {output_html}")
+    logger.info(f"Mapa HTML generado: {output_html}")
 
 
-def capture_and_crop_satellite_image(html_path, bounds, output_png, width=1024, height=768, delay=5):
+def capture_and_crop_satellite_image(
+    html_path, bounds, output_png, width=1024, height=768, delay=5
+):
     """Captura la imagen y recorta exactamente el área del rectángulo."""
     minlon, minlat, maxlon, maxlat = bounds
 
@@ -124,41 +137,49 @@ def capture_and_crop_satellite_image(html_path, bounds, output_png, width=1024, 
         """)
 
         if pixel_bounds is None:
-            print("[⚠] No se pudieron obtener las coordenadas pixel, usando método alternativo...")
+            logger.info(
+                "No se pudieron obtener las coordenadas pixel, usando método alternativo..."
+            )
             margin = 50
             pixel_bounds = {
-                'left': margin,
-                'top': margin,
-                'right': width - margin,
-                'bottom': height - margin
+                "left": margin,
+                "top": margin,
+                "right": width - margin,
+                "bottom": height - margin,
             }
 
         screenshot = driver.get_screenshot_as_png()
         full_image = Image.open(io.BytesIO(screenshot))
 
-        left = max(0, pixel_bounds['left'])
-        top = max(0, pixel_bounds['top'])
-        right = min(full_image.width, pixel_bounds['right'])
-        bottom = min(full_image.height, pixel_bounds['bottom'])
+        left = max(0, pixel_bounds["left"])
+        top = max(0, pixel_bounds["top"])
+        right = min(full_image.width, pixel_bounds["right"])
+        bottom = min(full_image.height, pixel_bounds["bottom"])
 
         cropped_image = full_image.crop((left, top, right, bottom))
         cropped_image.save(output_png, "PNG")
 
-        print(f"[✔] Imagen recortada guardada: {output_png}")
-        print(f"[i] Dimensiones originales: {full_image.width}x{full_image.height}")
-        print(f"[i] Dimensiones recortadas: {cropped_image.width}x{cropped_image.height}")
-        print(f"[i] Área recortada: left={left}, top={top}, right={right}, bottom={bottom}")
+        logger.info(f"Imagen recortada guardada: {output_png}")
+        logger.info(f"Dimensiones originales: {full_image.width}x{full_image.height}")
+        logger.info(
+            f"Dimensiones recortadas: {cropped_image.width}x{cropped_image.height}"
+        )
+        logger.info(
+            f"Área recortada: left={left}, top={top}, right={right}, bottom={bottom}"
+        )
 
         return cropped_image.width, cropped_image.height
 
     except Exception as e:
-        print(f"[✗] Error en captura: {e}")
+        logger.exception(f"Error en captura: {e}")
         return None, None
     finally:
         driver.quit()
 
 
-def png_to_geotiff_precise(png_path, bounds, output_tif, img_width=None, img_height=None):
+def png_to_geotiff_precise(
+    png_path, bounds, output_tif, img_width=None, img_height=None
+):
     """Convierte la imagen PNG recortada a GeoTIFF con georreferenciación precisa."""
     img = Image.open(png_path).convert("RGB")
     img_np = np.array(img)
@@ -177,23 +198,25 @@ def png_to_geotiff_precise(png_path, bounds, output_tif, img_width=None, img_hei
         dtype=img_np.dtype,
         crs="EPSG:4326",
         transform=transform,
-        compress='lzw'
+        compress="lzw",
     ) as dst:
         for i in range(3):
             dst.write(img_np[:, :, i], i + 1)
 
-    print(f"[✔] GeoTIFF georreferenciado generado: {output_tif}")
+    logger.info(f"GeoTIFF georreferenciado generado: {output_tif}")
     with rasterio.open(output_tif) as src:
-        print(f"[i] CRS: {src.crs}")
-        print(f"[i] Transform: {src.transform}")
-        print(f"[i] Bounds verificados: {src.bounds}")
+        logger.info(f"CRS: {src.crs}")
+        logger.info(f"Transform: {src.transform}")
+        logger.info(f"Bounds verificados: {src.bounds}")
 
 
-def dxf_to_satellite_geotiff_precise(dxf_path, output_basename, utm_zone=18, capture_size=(1024, 768), scale=1.0):
+def dxf_to_satellite_geotiff_precise(
+    dxf_path, output_basename, utm_zone=18, capture_size=(1024, 768), scale=1.0
+):
     """Pipeline completo con recorte preciso y escalado desde el centro del rectángulo."""
     utm_epsg = 32700 + utm_zone
     bounds = extract_bounds_latlon(dxf_path, utm_epsg=utm_epsg, scale=scale)
-    print(f"[i] Bounds extraídos y escalados: {bounds}")
+    logger.info(f"Bounds extraídos y escalados: {bounds}")
 
     html_path = output_basename + ".html"
     png_path = output_basename + ".png"
@@ -202,21 +225,19 @@ def dxf_to_satellite_geotiff_precise(dxf_path, output_basename, utm_zone=18, cap
     create_folium_map_for_cropping(bounds, html_path)
 
     img_width, img_height = capture_and_crop_satellite_image(
-        html_path, bounds, png_path,
-        width=capture_size[0], height=capture_size[1]
+        html_path, bounds, png_path, width=capture_size[0], height=capture_size[1]
     )
 
     if img_width and img_height:
         png_to_geotiff_precise(png_path, bounds, tif_path, img_width, img_height)
-        print(f"[✔] Proceso completado exitosamente!")
-        print(f"[✔] Archivo final: {tif_path}")
+        logger.info(f"Proceso completado exitosamente. Archivo final: {tif_path}")
     else:
-        print("[✗] Error en el proceso de captura y recorte")
+        logger.error("Error en el proceso de captura y recorte")
 
 
 # --- USO ---
 if __name__ == "__main__":
-    structure = "DME_CHO"
+    structure = "PAD_2B_2C"
     client = "sample_client"
     project = "sample_project"
     dxf_input = f"data/config/{client}/{project}/dxf/{structure}.dxf"
@@ -224,8 +245,5 @@ if __name__ == "__main__":
 
     # Escalado desde el centro (por ejemplo 1.3 = 30% más grande)
     dxf_to_satellite_geotiff_precise(
-        dxf_input, output_base,
-        utm_zone=17,
-        capture_size=(2048, 1536),
-        scale=1.0
+        dxf_input, output_base, utm_zone=17, capture_size=(2048, 1536), scale=1.0
     )

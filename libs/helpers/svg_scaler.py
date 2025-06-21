@@ -71,7 +71,7 @@ def scale_svg(
 
     return save_path
 
-
+# --- USO ---
 if __name__ == "__main__":
     # Leer archivo SVG de entrada
     input_file = Path("data/logo/logo_main.svg")

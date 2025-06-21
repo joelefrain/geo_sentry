@@ -1,5 +1,16 @@
+import os
+import sys
+
+# Add 'libs' path to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 import markdown
 from weasyprint import HTML
+
+from libs.utils.config_logger import get_logger
+
+logger = get_logger("libs.helpers.md_to_pdf")
+
 
 def convert_md_to_pdf(input_md: str, output_pdf: str):
     """
@@ -14,7 +25,7 @@ def convert_md_to_pdf(input_md: str, output_pdf: str):
         md_text = f.read()
 
     # Convertir markdown a HTML
-    html_text = markdown.markdown(md_text, extensions=['fenced_code', 'tables'])
+    html_text = markdown.markdown(md_text, extensions=["fenced_code", "tables"])
 
     # Añadir estilo básico para el PDF
     html_template = f"""
@@ -57,8 +68,9 @@ def convert_md_to_pdf(input_md: str, output_pdf: str):
 
     # Generar el PDF
     HTML(string=html_template).write_pdf(output_pdf)
-    print(f"✅ PDF generado: {output_pdf}")
+    logger.info(f"PDF generado: {output_pdf}")
 
-# Ejemplo de uso
+
+# --- USO ---
 if __name__ == "__main__":
     convert_md_to_pdf("README.md", "README.pdf")

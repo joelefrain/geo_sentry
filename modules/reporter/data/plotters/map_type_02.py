@@ -9,7 +9,7 @@ from libs.utils.calc_helpers import (
     get_typical_range,
 )
 from libs.utils.config_loader import load_toml
-from libs.utils.plot_helpers import get_unique_marker_convo
+from libs.utils.config_variables import SENSOR_VISUAL_CONFIG
 from modules.reporter.note_handler import NotesHandler
 from modules.reporter.report_builder import ReportBuilder, load_svg
 from modules.reporter.plot_builder import PlotBuilder
@@ -22,7 +22,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
-COLOR_PALETTE = "gist_rainbow"
+COLOR_PALETTE = "copper"
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -111,6 +111,7 @@ def get_note_content(
 
 
 def create_map(
+    sensor_type,
     dxf_path,
     data_sensors,
     target_column,
@@ -121,6 +122,9 @@ def create_map(
     tif_path,
     project_epsg,
 ):
+    marker = SENSOR_VISUAL_CONFIG[sensor_type]["mpl_marker"]
+    color = SENSOR_VISUAL_CONFIG[sensor_type]["color"]
+
     # Crear un diccionario para almacenar la última información de cada ubicación
     location_dict = {}
 
@@ -163,10 +167,8 @@ def create_map(
     # Generar series_data usando solo el máximo valor por ubicación
     series_data = []
     for idx, ((east, north), info) in enumerate(location_dict.items()):
-        color, marker = get_unique_marker_convo(
-            idx, len(location_dict), color_palette=COLOR_PALETTE
-        )
         last_value = info["value"]
+        angle = info["angle"]
         last_value_formatted = round_decimal(last_value, 2)
         series_data.append(
             {
@@ -294,6 +296,7 @@ def generate_report(
 
     # Create map and get its legend
     chart_cell, legend, colorbar = create_map(
+        sensor_type,
         dxf_path,
         data_sensors,
         target_column,

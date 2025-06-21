@@ -71,7 +71,7 @@ def parse_text_file(filepath, match_columns, **kwargs):
         df.dropna(subset=match_columns, inplace=True)
 
     except Exception as e:
-        logger.error(f"Error al procesar {filepath}: {e}")
+        logger.exception(f"Error al procesar {filepath}: {e}")
         return None
 
     return df

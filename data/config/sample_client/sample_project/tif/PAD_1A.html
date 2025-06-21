@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_83600cd54c7993dc73458769ef328139 {
+                #map_97d95ae06a37a2d5079929a34b7f631d {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -55,12 +55,12 @@
     
     
     <script>
-    window.mapBounds = [-78.20329706282004, -7.610688997995437, -78.18947739483373, -7.600308490246906];
+    window.mapBounds = [-78.2032963749715, -7.61068795641083, -78.18948064868584, -7.600309227076066];
     window.addEventListener('load', function() {
         setTimeout(function() {
             var map = window[Object.keys(window).find(key => key.startsWith('map_'))];
             if (map) {
-                var bounds = L.latLngBounds([-7.610688997995437, -78.20329706282004], [-7.600308490246906, -78.18947739483373]);
+                var bounds = L.latLngBounds([-7.61068795641083, -78.2032963749715], [-7.600309227076066, -78.18948064868584]);
                 var topLeft = map.latLngToContainerPoint(bounds.getNorthWest());
                 var bottomRight = map.latLngToContainerPoint(bounds.getSouthEast());
 
@@ -78,16 +78,16 @@
     </script>
     
     
-            <div class="folium-map" id="map_83600cd54c7993dc73458769ef328139" ></div>
+            <div class="folium-map" id="map_97d95ae06a37a2d5079929a34b7f631d" ></div>
         
 </body>
 <script>
     
     
-            var map_83600cd54c7993dc73458769ef328139 = L.map(
-                "map_83600cd54c7993dc73458769ef328139",
+            var map_97d95ae06a37a2d5079929a34b7f631d = L.map(
+                "map_97d95ae06a37a2d5079929a34b7f631d",
                 {
-                    center: [-7.605498744121172, -78.1963872288269],
+                    center: [-7.605498591743448, -78.19638851182867],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 17,
@@ -103,7 +103,7 @@
 
         
     
-            var tile_layer_491298fbd23160885ac8b08c889ee994 = L.tileLayer(
+            var tile_layer_13581bb768844f02e2fb186423d83af8 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -120,17 +120,17 @@
             );
         
     
-            tile_layer_491298fbd23160885ac8b08c889ee994.addTo(map_83600cd54c7993dc73458769ef328139);
+            tile_layer_13581bb768844f02e2fb186423d83af8.addTo(map_97d95ae06a37a2d5079929a34b7f631d);
         
     
-            var rectangle_687205b734349af4d513df05fa74797c = L.rectangle(
-                [[-7.610688997995437, -78.20329706282004], [-7.600308490246906, -78.18947739483373]],
-                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
-            ).addTo(map_83600cd54c7993dc73458769ef328139);
+            var rectangle_304e37d8441ae10e7155d38beac77d1e = L.rectangle(
+                [[-7.61068795641083, -78.2032963749715], [-7.600309227076066, -78.18948064868584]],
+                {"bubblingMouseEvents": true, "color": null, "dashArray": null, "dashOffset": null, "fill": false, "fillColor": null, "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_97d95ae06a37a2d5079929a34b7f631d);
         
     
-            map_83600cd54c7993dc73458769ef328139.fitBounds(
-                [[-7.610688997995437, -78.20329706282004], [-7.600308490246906, -78.18947739483373]],
+            map_97d95ae06a37a2d5079929a34b7f631d.fitBounds(
+                [[-7.61068795641083, -78.2032963749715], [-7.600309227076066, -78.18948064868584]],
                 {"padding": 0}
             );
         

@@ -270,7 +270,7 @@ class PlotBuilder:
                     **tif_params,
                 )
         except Exception as e:
-            logger.error(f"[!] No se pudo cargar el GeoTIFF '{tif_path}': {e}")
+            logger.exception(f"No se pudo cargar el GeoTIFF '{tif_path}': {e}")
 
     def _plot_dxf(self, dxf_path: str, dxf_params: dict = None) -> None:
         """

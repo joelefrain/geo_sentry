@@ -71,6 +71,6 @@ def save_dataframe_to_csv(df: pd.DataFrame, output_path: str) -> None:
     """Guarda un DataFrame a un archivo CSV con el separador especificado."""
     try:
         df.to_csv(output_path, sep=SEP_FORMAT, index=False)
-        logger.info(f"✅ Guardado: {output_path}")
+        logger.info(f"Guardado: {output_path}")
     except Exception as e:
         logger.warning(f"❌ Error guardando CSV: {e}")

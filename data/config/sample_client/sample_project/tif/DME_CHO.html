@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_5fa803d4245f4ab019f6f06af6cce1fa {
+                #map_f0bbb48ad5313edac915b67025f856ab {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -55,12 +55,12 @@
     
     
     <script>
-    window.mapBounds = [-78.20708801853361, -7.607045171269343, -78.19468619861006, -7.5977175720197];
+    window.mapBounds = [-78.20707777768696, -7.607045171269343, -78.1946863000563, -7.597718557314801];
     window.addEventListener('load', function() {
         setTimeout(function() {
             var map = window[Object.keys(window).find(key => key.startsWith('map_'))];
             if (map) {
-                var bounds = L.latLngBounds([-7.607045171269343, -78.20708801853361], [-7.5977175720197, -78.19468619861006]);
+                var bounds = L.latLngBounds([-7.607045171269343, -78.20707777768696], [-7.597718557314801, -78.1946863000563]);
                 var topLeft = map.latLngToContainerPoint(bounds.getNorthWest());
                 var bottomRight = map.latLngToContainerPoint(bounds.getSouthEast());
 
@@ -78,16 +78,16 @@
     </script>
     
     
-            <div class="folium-map" id="map_5fa803d4245f4ab019f6f06af6cce1fa" ></div>
+            <div class="folium-map" id="map_f0bbb48ad5313edac915b67025f856ab" ></div>
         
 </body>
 <script>
     
     
-            var map_5fa803d4245f4ab019f6f06af6cce1fa = L.map(
-                "map_5fa803d4245f4ab019f6f06af6cce1fa",
+            var map_f0bbb48ad5313edac915b67025f856ab = L.map(
+                "map_f0bbb48ad5313edac915b67025f856ab",
                 {
-                    center: [-7.602381371644522, -78.20088710857183],
+                    center: [-7.602381864292072, -78.20088203887164],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 17,
@@ -103,7 +103,7 @@
 
         
     
-            var tile_layer_81df5645f3192b10df5077533a0b15db = L.tileLayer(
+            var tile_layer_b384c6768db6f77cf5d78c5d41af3c21 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -120,17 +120,17 @@
             );
         
     
-            tile_layer_81df5645f3192b10df5077533a0b15db.addTo(map_5fa803d4245f4ab019f6f06af6cce1fa);
+            tile_layer_b384c6768db6f77cf5d78c5d41af3c21.addTo(map_f0bbb48ad5313edac915b67025f856ab);
         
     
-            var rectangle_3ca094fc16b5a1c71c11a375c8305712 = L.rectangle(
-                [[-7.607045171269343, -78.20708801853361], [-7.5977175720197, -78.19468619861006]],
-                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
-            ).addTo(map_5fa803d4245f4ab019f6f06af6cce1fa);
+            var rectangle_9695280b320b32fab203da530c288db0 = L.rectangle(
+                [[-7.607045171269343, -78.20707777768696], [-7.597718557314801, -78.1946863000563]],
+                {"bubblingMouseEvents": true, "color": null, "dashArray": null, "dashOffset": null, "fill": false, "fillColor": null, "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 2}
+            ).addTo(map_f0bbb48ad5313edac915b67025f856ab);
         
     
-            map_5fa803d4245f4ab019f6f06af6cce1fa.fitBounds(
-                [[-7.607045171269343, -78.20708801853361], [-7.5977175720197, -78.19468619861006]],
+            map_f0bbb48ad5313edac915b67025f856ab.fitBounds(
+                [[-7.607045171269343, -78.20707777768696], [-7.597718557314801, -78.1946863000563]],
                 {"padding": 0}
             );
         

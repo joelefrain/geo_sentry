@@ -32,7 +32,7 @@ thresholds = [5, 20, 50]
 colors = ["green", "yellow", "orange", "red"]
 
 [sensors.pcv]
-plot_template = "map_type_02"
+plot_template = "map_type_03"
 
 [sensors.pcv.column_config]
 target_column = "hydraulic_load_kpa"

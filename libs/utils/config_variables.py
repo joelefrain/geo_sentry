@@ -28,6 +28,9 @@ THEME_COLOR_FONT = "white"
 # ---------------------------------------------------------------
 BASE_DIR = Path(__file__).parent.parent.parent
 
+LOG_DIR = BASE_DIR / "logs"
+ENV_FILE_PATH = BASE_DIR / "config" / ".env"
+
 LOGO_SVG = BASE_DIR / "data" / "logo" / "logo_main_anddes.svg"
 LOGO_PDF = BASE_DIR / "data" / "logo" / "logo_main_anddes.pdf"
 DATA_CONFIG = BASE_DIR / "data" / "config"
@@ -40,6 +43,7 @@ CALC_CONFIG_DIR = BASE_DIR / "modules" / "calculations" / "data"
 REPORT_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "reports"
 CHART_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "charts"
 NOTE_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "notes"
+TABLE_CONFIG_DIR = BASE_DIR / "modules" / "reporter" / "data" / "tables"
 
 OUTPUTS_DIR = BASE_DIR / "outputs"
 PROCESS_OUTPUT_DIR = BASE_DIR / "outputs" / "process"
