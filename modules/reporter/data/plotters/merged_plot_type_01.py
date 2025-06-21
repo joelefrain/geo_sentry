@@ -632,7 +632,7 @@ def generate_report(
                 logo_cell = load_svg(LOGO_SVG, 0.95)
 
                 # Set up PDF generator
-                pdf_generator, chart_title = ReportBuilder(
+                pdf_generator = ReportBuilder(
                     sample="chart_landscape_a4_type_02",
                     logo_cell=logo_cell,
                     chart_cell=chart_cell,

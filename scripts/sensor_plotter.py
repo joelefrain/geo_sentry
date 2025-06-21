@@ -316,7 +316,7 @@ def exec_plotter(
         except Exception as e:
             logger.error(f"Error procesando estructura {structure_code}: {e}")
             continue
-        
+
     # Write all chart titles to a text file
     write_lines(charts_titles, output_dir / "charts.txt")
 
@@ -343,7 +343,7 @@ if __name__ == "__main__":
             "appendix_chapter": "4",
             "revision": "B",
             "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            # "sensors": ["INC"],
+            # "sensors": ["PCT"],
             "agroup": True,
         }
 
