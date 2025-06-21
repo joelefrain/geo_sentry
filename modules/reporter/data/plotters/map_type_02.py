@@ -79,18 +79,9 @@ def get_note_content(
 
     target_column_name = series_names[target_column].lower().split("(")[0]
 
-    # Sort sensor data by the value of the last record of each sensor (descending)
-    last_values = [
-        df[target_column].iloc[-1] if not df.empty and target_column in df.columns else float('-inf')
-        for df in data_sensors["df"]
-    ]
-    sorted_indices = sorted(range(len(last_values)), key=lambda i: last_values[i], reverse=True)
-    sorted_dfs = [data_sensors["df"][i] for i in sorted_indices]
-    sorted_names = [data_sensors["names"][i] for i in sorted_indices]
-
     # Calculate variables for all data (sorted)
     calc_vars = calculate_note_variables(
-        sorted_dfs, sorted_names, serie_x, target_column, mask
+        data_sensors["df"], data_sensors["names"], serie_x, target_column, mask
     )
 
     # Find the maximum value among the last values of each sensor
@@ -127,6 +118,8 @@ def create_map(
     unit_target,
     series_names,
     colorbar,
+    tif_path,
+    project_epsg,
 ):
     # Sort sensor data by maximum value of the target column in descending order
     sorted_sensors = sorted(
@@ -151,7 +144,10 @@ def create_map(
 
     # Recopilar la última información de cada sensor por ubicación
     for name, df, east, north in zip(
-        data_sensors["names"], data_sensors["df"], data_sensors["east"], data_sensors["north"]
+        data_sensors["names"],
+        data_sensors["df"],
+        data_sensors["east"],
+        data_sensors["north"],
     ):
         # Omitir si el DataFrame está vacío
         if df.empty:
@@ -185,8 +181,8 @@ def create_map(
                 "x": [east],
                 "y": [north],
                 "color": color,
-                "linetype": "",
-                "lineweight": 0,
+                "linestyle": "",
+                "linewidth": 0,
                 "marker": marker,
                 "markersize": 3.0,
                 "label": f"{info['name']} ({last_value_formatted} {unit_target})",
@@ -194,9 +190,11 @@ def create_map(
             }
         )
 
-    plotter = PlotBuilder(ts_serie=True, ymargin=0)
+    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
     map_args = {
         "dxf_path": dxf_path,
+        # "tif_path": tif_path,
+        # "project_epsg": project_epsg,
         "size": [6.0, 4.5],
         "title_x": "",
         "title_y": "",
@@ -211,13 +209,7 @@ def create_map(
 
     plotter.plot_series(
         data=series_data,
-        dxf_path=map_args["dxf_path"],
-        size=map_args["size"],
-        title_x=map_args["title_x"],
-        title_y=map_args["title_y"],
-        title_chart=map_args["title_chart"],
-        show_legend=map_args["show_legend"],
-        format_params=map_args["format_params"],
+        **map_args,
     )
 
     # Add triangulation using only the max value per location
@@ -248,9 +240,6 @@ def create_map(
 def generate_report(
     data_sensors,
     group_args,
-    dxf_path,
-    start_query,
-    end_query,
     appendix,
     start_item,
     structure_code,
@@ -259,6 +248,7 @@ def generate_report(
     output_dir,
     static_report_params,
     column_config,
+    **plot_params,
 ):
     """Generate chart report with notes and merged plots.
 
@@ -274,6 +264,21 @@ def generate_report(
     sensor_type_name = column_config["sensor_type_name"]
     sensor_aka = column_config["sensor_aka"]
     colorbar_config = column_config["colorbar"]
+
+    dxf_path = plot_params.get("dxf_path", None)
+    if not dxf_path:
+        raise ValueError("DXF path must be provided in plot_params.")
+
+    tif_path = plot_params.get("tif_path", None)
+    if not tif_path:
+        raise ValueError("TIF path must be provided in plot_params.")
+
+    project_epsg = plot_params.get("project_epsg", None)
+    if not project_epsg:
+        raise ValueError("Project EPSG must be provided in plot_params.")
+
+    start_query = plot_params.get("start_query", None)
+    end_query = plot_params.get("end_query", None)
 
     # Load configuration
     calc_config = load_toml(CALC_CONFIG_DIR, sensor_type)
@@ -295,6 +300,8 @@ def generate_report(
         unit_target,
         series_names,
         colorbar_config,
+        tif_path=tif_path,
+        project_epsg=project_epsg,
     )
 
     plot_grid = PlotMerger(fig_size=(2, 4.5))
@@ -342,12 +349,14 @@ def generate_report(
     structure_formatted = structure_code.replace(" ", "_")
     sensor_type_formatted = sensor_type.replace(" ", "_").upper()
     pdf_filenames = []
+    chart_titles = []
 
     # Generate base filename
     base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
     pdf_filenames.append(base_filename)
+    chart_titles.append(chart_title)
 
     # Generate PDF
     pdf_generator.generate_pdf(pdf_path=base_filename)
 
-    return pdf_filenames
+    return pdf_filenames, chart_titles

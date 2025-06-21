@@ -1,6 +1,7 @@
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
+    SENSOR_VISUAL_CONFIG,
 )
 from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
 from libs.utils.config_loader import load_toml
@@ -178,32 +179,37 @@ def get_note_content(
                 f"a {round_decimal(last_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
                 f"el día {format_date_short(last_date)}.",
                 f"La frecuencia de monitoreo promedio es de un registro cada {round_decimal(combined_df[serie_x].drop_duplicates().sort_values().diff().dt.days.mean(), 2)} días."
-                if len(combined_df[serie_x].drop_duplicates()) > 1 else
-                "No es posible calcular la frecuencia de monitoreo promedio por falta de datos suficientes."
+                if len(combined_df[serie_x].drop_duplicates()) > 1
+                else "No es posible calcular la frecuencia de monitoreo promedio por falta de datos suficientes.",
             ],
             "format_type": "numbered",
         },
     ]
 
-    return note_handler.create_notes(sections)
+    return note_handler.create_notes(sections), first_date
 
 
-def create_map(dxf_path, data_sensors):
-    plotter = PlotBuilder(ts_serie=True, ymargin=0)
+def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config):
+    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
     map_args = {
-        "dxf_path": dxf_path,
+        # "dxf_path": dxf_path,
+        "tif_path": tif_path,
+        "project_epsg": project_epsg,
         "size": [1.3, 0.975],
         "title_x": "",
         "title_y": "",
         "title_chart": "",
         "show_legend": True,
-        "dxf_params": {"linestyle": "-", "linewidth": 0.02},
+        # "dxf_params": {"linestyle": "-", "linewidth": 0.02, "color": "gray"},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,
             "show_yticks": False,
         },
     }
+
+    # Set marker style from sensor visual config or default to 'o'
+    marker = sensor_visual_config.get("mpl_marker", "o")
 
     series_data = []
 
@@ -217,32 +223,23 @@ def create_map(dxf_path, data_sensors):
                 "x": data_sensors["east"][i],
                 "y": data_sensors["north"][i],
                 "color": color,
-                "linetype": "",
-                "lineweight": 0,
-                "marker": "o",
+                "linestyle": "",
+                "linewidth": 0,
+                "marker": marker,
                 "markersize": 10,
                 "label": "",
-                "note": name,
-                "fontsize": 6,
             }
         )
 
     plotter.plot_series(
         data=series_data,
-        dxf_path=map_args["dxf_path"],
-        size=map_args["size"],
-        title_x=map_args["title_x"],
-        title_y=map_args["title_y"],
-        title_chart=map_args["title_chart"],
-        show_legend=map_args["show_legend"],
-        dxf_params=map_args["dxf_params"],
-        format_params=map_args["format_params"],
+        **map_args,
     )
-
+    
     return plotter.get_drawing()
 
 
-def create_non_ts_cell_1(
+def create_non_ts_cell(
     data_sensors,
     series_names,
     target_column,
@@ -252,7 +249,7 @@ def create_non_ts_cell_1(
     plotter = PlotBuilder(ts_serie=False, ymargin=0.0)
     # Plot formatting
     plot_format = {
-        "size": (8.5, 10),
+        "size": (8, 14),
         "title_x": series_names[target_column],
         "title_y": series_names[serie_y],
         "title_chart": f"{series_names[target_column]}",
@@ -287,7 +284,7 @@ def create_non_ts_cell_1(
                         "label": format_date_short(date),
                         "color": color,
                         "linestyle": "-",
-                        "lineweight": 1,
+                        "linewidth": 1,
                         "marker": marker,
                         "markersize": 4,
                     }
@@ -311,7 +308,7 @@ def create_non_ts_cell_1(
         limit,
         plotter.get_drawing(),
         plotter.get_legend(
-            box_width=7.5,
+            box_width=2.0,
             box_height=1.0,
             ncol=2,
         ),
@@ -321,9 +318,6 @@ def create_non_ts_cell_1(
 def generate_report(
     data_sensors,
     group_args,
-    dxf_path,
-    start_query,
-    end_query,
     appendix,
     start_item,
     structure_code,
@@ -332,6 +326,7 @@ def generate_report(
     output_dir,
     static_report_params,
     column_config,
+    **plot_params,
 ):
     """Generate chart reports for time series plots defined in column_config.
 
@@ -341,21 +336,46 @@ def generate_report(
     plots = column_config["plots"]
     sensor_type_name = column_config["sensor_type_name"]
 
+    dxf_path = plot_params.get("dxf_path", None)
+    if not dxf_path:
+        raise ValueError("DXF path must be provided in plot_params.")
+
+    tif_path = plot_params.get("tif_path", None)
+    if not tif_path:
+        raise ValueError("TIF path must be provided in plot_params.")
+
+    project_epsg = plot_params.get("project_epsg", None)
+    if not project_epsg:
+        raise ValueError("Project EPSG must be provided in plot_params.")
+
+    start_query = plot_params.get("start_query", None)
+    end_query = plot_params.get("end_query", None)
+
     # Load configuration
     calc_config = load_toml(CALC_CONFIG_DIR, sensor_type)
     series_names = calc_config["names"]["es"]
 
+    # Load visual config for sensor type
+    sensor_visual_config = SENSOR_VISUAL_CONFIG.get(sensor_type, {})
+    if not sensor_visual_config:
+        raise ValueError(
+            f"No visual configuration found for sensor type: {sensor_type}"
+        )
+
     os.makedirs(output_dir, exist_ok=True)
     pdf_filenames = []
+    chart_titles = []
     current_item = start_item
 
     # Ordenar las series según el nombre del sensor antes de procesar
-    sorted_indices = sorted(range(len(data_sensors["names"])), key=lambda k: data_sensors["names"][k])
+    sorted_indices = sorted(
+        range(len(data_sensors["names"])), key=lambda k: data_sensors["names"][k]
+    )
     data_sensors = {
         "df": [data_sensors["df"][i] for i in sorted_indices],
         "names": [data_sensors["names"][i] for i in sorted_indices],
         "east": [data_sensors["east"][i] for i in sorted_indices],
-        "north": [data_sensors["north"][i] for i in sorted_indices]
+        "north": [data_sensors["north"][i] for i in sorted_indices],
     }
 
     for plot in plots:
@@ -365,7 +385,7 @@ def generate_report(
         serie_y = plot["series_y"]
 
         # Generate chart components
-        limit, chart_cell1, legend1 = create_non_ts_cell_1(
+        limit, chart_cell, legend = create_non_ts_cell(
             data_sensors,
             series_names,
             target_column,
@@ -383,13 +403,13 @@ def generate_report(
         # Create and configure plot grid
         plot_grid = PlotMerger(fig_size=(5, 8))
         plot_grid.create_grid(1, 1, row_ratios=[1.0])
-        plot_grid.add_object(chart_cell1, (0, 0))
+        plot_grid.add_object(chart_cell, (0, 0))
 
         chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
 
         plot_grid = PlotMerger(fig_size=(1.5, 5.5))
         plot_grid.create_grid(1, 1, row_ratios=[1])
-        plot_grid.add_object(legend1, (0, 0))
+        plot_grid.add_object(legend, (0, 0))
 
         upper_cell = plot_grid.build(color_border="white", cell_spacing=0)
 
@@ -398,7 +418,7 @@ def generate_report(
         )
 
         # Create report components
-        middle_cell = get_note_content(
+        middle_cell, first_date = get_note_content(
             group_args,
             data_sensors,
             target_column,
@@ -406,17 +426,20 @@ def generate_report(
             series_names,
             serie_x,
             serie_y,
-            limit,  # Add this parameter
+            limit,
             mask,
         )
-        lower_cell = create_map(dxf_path, data_sensors)
+        lower_cell = create_map(
+            data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config
+        )
         logo_cell = load_svg(LOGO_SVG, 0.75)
         chart_title = " / ".join(
             filter(
                 None,
                 [
-                    f"Registro histórico de {target_column_name}",
+                    f"Registro histórico de {target_column_name.split('(')[0]}",
                     group_args["name"],
+                    f"Medida base en {format_date_short(first_date)}",
                     structure_name,
                 ],
             )
@@ -441,6 +464,7 @@ def generate_report(
 
         pdf_generator.generate_pdf(pdf_path=pdf_filename)
         pdf_filenames.append(pdf_filename)
+        chart_titles.append(chart_title)
         current_item += 1
 
-    return pdf_filenames
+    return pdf_filenames, chart_titles

@@ -1,8 +1,14 @@
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
+    SENSOR_VISUAL_CONFIG,
 )
-from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short, get_typical_range
+from libs.utils.calc_helpers import (
+    round_decimal,
+    format_date_long,
+    format_date_short,
+    get_typical_range,
+)
 from libs.utils.config_loader import load_toml
 from libs.utils.plot_helpers import get_unique_marker_convo
 from modules.reporter.note_handler import NotesHandler
@@ -14,8 +20,7 @@ import pandas as pd
 import os
 import sys
 
-sys.path.append(os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
 COLOR_PALETTE = "cool"
@@ -37,8 +42,7 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
 
         total_records = len(df)
         mean_freq = (
-            (last_date - first_date).days /
-            total_records if total_records > 0 else 0
+            (last_date - first_date).days / total_records if total_records > 0 else 0
         )
 
         all_vars.append(
@@ -74,12 +78,11 @@ def get_note_content(
 
     # Filter dataframes by limit before analysis
     filtered_dfs = []
-    for df in data_sensors["df"]:          
+    for df in data_sensors["df"]:
         # Apply value limits mask
         if limit:
-            mask_limit = (
-                df[target_column].isna() |
-                df[target_column].between(limit[0], limit[1])
+            mask_limit = df[target_column].isna() | df[target_column].between(
+                limit[0], limit[1]
             )
             df = df[mask_limit]
         filtered_dfs.append(df)
@@ -118,16 +121,18 @@ def get_note_content(
     return note_handler.create_notes(sections)
 
 
-def create_map(dxf_path, data_sensors):
-    plotter = PlotBuilder(ts_serie=True, ymargin=0)
+def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config):
+    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
     map_args = {
-        "dxf_path": dxf_path,
+        # "dxf_path": dxf_path,
+        "tif_path": tif_path,
+        "project_epsg": project_epsg,
         "size": [2.0, 1.5],
         "title_x": "",
         "title_y": "",
         "title_chart": "",
         "show_legend": True,
-        "dxf_params": {"linestyle": "-", "linewidth": 0.02},
+        # "dxf_params": {"linestyle": "-", "linewidth": 0.02, "color": "gray"},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,
@@ -135,37 +140,32 @@ def create_map(dxf_path, data_sensors):
         },
     }
 
+    # Set marker style from sensor visual config or default to 'o'
+    marker = sensor_visual_config.get("mpl_marker", "o")
+
     series_data = []
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
         color, _ = get_unique_marker_convo(
-            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE)
+            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE
+        )
         series_data.append(
             {
                 "x": data_sensors["east"][i],
                 "y": data_sensors["north"][i],
                 "color": color,
-                "linetype": "",
-                "lineweight": 0,
-                "marker": "o",
+                "linestyle": "",
+                "linewidth": 0,
+                "marker": marker,
                 "markersize": 10,
                 "label": "",
-                "note": name,
-                "fontsize": 6,
             }
         )
 
     plotter.plot_series(
         data=series_data,
-        dxf_path=map_args["dxf_path"],
-        size=map_args["size"],
-        title_x=map_args["title_x"],
-        title_y=map_args["title_y"],
-        title_chart=map_args["title_chart"],
-        show_legend=map_args["show_legend"],
-        dxf_params=map_args["dxf_params"],
-        format_params=map_args["format_params"],
+        **map_args,
     )
 
     return plotter.get_drawing()
@@ -184,8 +184,8 @@ def create_cell_1(
     series_styles = {
         target_column: {
             "color": "blue",
-            "linetype": "-",
-            "lineweight": 1,
+            "linestyle": "-",
+            "linewidth": 1,
             "marker": "o",
             "markersize": 4,
             "label_prefix": series_names[target_column],
@@ -210,7 +210,8 @@ def create_cell_1(
         if target_column in df.columns:
             all_values.extend(df[target_column].dropna().tolist())
             color, marker = get_unique_marker_convo(
-                i, total_dfs, color_palette=COLOR_PALETTE)
+                i, total_dfs, color_palette=COLOR_PALETTE
+            )
 
             series.append(
                 {
@@ -218,15 +219,15 @@ def create_cell_1(
                     "y": df[target_column].tolist(),
                     "label": name,
                     "color": color,
-                    "linetype": series_styles[target_column]["linetype"],
-                    "lineweight": series_styles[target_column]["lineweight"],
+                    "linestyle": series_styles[target_column]["linestyle"],
+                    "linewidth": series_styles[target_column]["linewidth"],
                     "marker": marker,
                     "markersize": series_styles[target_column]["markersize"],
                 }
             )
 
     # Calculate typical range limits
-    limit = get_typical_range(all_values, percentile=95, scale=2.5)
+    limit = get_typical_range(all_values, percentile=98, scale=2.5)
 
     plotter.plot_series(
         data=series,
@@ -237,16 +238,26 @@ def create_cell_1(
         show_legend=plot_format["show_legend"],
         ylim=limit,  # Apply the calculated limits
     )
-    
-    return limit, plotter.get_drawing(), plotter.get_legend(
-        box_width=7.5,
-        box_height=0.5,
-        ncol=plotter.get_num_labels(),
+
+    return (
+        limit,
+        plotter.get_drawing(),
+        plotter.get_legend(
+            box_width=7.5,
+            box_height=0.5,
+            ncol=plotter.get_num_labels(),
+        ),
     )
 
 
 def create_cell_2(
-    data_sensors, start_query, end_query, series_names, target_column, serie_x, limit,
+    data_sensors,
+    start_query,
+    end_query,
+    series_names,
+    target_column,
+    serie_x,
+    limit,
 ):
     plotter = PlotBuilder()
 
@@ -254,8 +265,8 @@ def create_cell_2(
     series_styles = {
         target_column: {
             "color": "blue",
-            "linetype": "-",
-            "lineweight": 1,
+            "linestyle": "-",
+            "linewidth": 1,
             "marker": "o",
             "markersize": 4,
             "label_prefix": series_names[target_column],
@@ -286,7 +297,8 @@ def create_cell_2(
 
         if target_column in filtered_df.columns:
             color, marker = get_unique_marker_convo(
-                i, total_dfs, color_palette=COLOR_PALETTE)
+                i, total_dfs, color_palette=COLOR_PALETTE
+            )
 
             series.append(
                 {
@@ -294,8 +306,8 @@ def create_cell_2(
                     "y": filtered_df[target_column].tolist(),
                     "label": name,
                     "color": color,
-                    "linetype": series_styles[target_column]["linetype"],
-                    "lineweight": series_styles[target_column]["lineweight"],
+                    "linestyle": series_styles[target_column]["linestyle"],
+                    "linewidth": series_styles[target_column]["linewidth"],
                     "marker": marker,
                     "markersize": series_styles[target_column]["markersize"],
                 }
@@ -321,9 +333,6 @@ def create_cell_2(
 def generate_report(
     data_sensors,
     group_args,
-    dxf_path,
-    start_query,
-    end_query,
     appendix,
     start_item,
     structure_code,
@@ -332,6 +341,7 @@ def generate_report(
     output_dir,
     static_report_params,
     column_config,
+    **plot_params,
 ):
     """Generate chart report with notes and merged plots.
 
@@ -345,9 +355,31 @@ def generate_report(
     sensor_type_name = column_config["sensor_type_name"]
     sensor_aka = column_config["sensor_aka"]
 
+    dxf_path = plot_params.get("dxf_path", None)
+    if not dxf_path:
+        raise ValueError("DXF path must be provided in plot_params.")
+
+    tif_path = plot_params.get("tif_path", None)
+    if not tif_path:
+        raise ValueError("TIF path must be provided in plot_params.")
+
+    project_epsg = plot_params.get("project_epsg", None)
+    if not project_epsg:
+        raise ValueError("Project EPSG must be provided in plot_params.")
+
+    start_query = plot_params.get("start_query", None)
+    end_query = plot_params.get("end_query", None)
+
     # Load configuration
     calc_config = load_toml(CALC_CONFIG_DIR, sensor_type)
     series_names = calc_config["names"]["es"]
+
+    # Load visual config for sensor type
+    sensor_visual_config = SENSOR_VISUAL_CONFIG.get(sensor_type, {})
+    if not sensor_visual_config:
+        raise ValueError(
+            f"No visual configuration found for sensor type: {sensor_type}"
+        )
 
     # Generate chart components
     limit, chart_cell1, legend1 = create_cell_1(
@@ -358,12 +390,21 @@ def generate_report(
         sensor_type_name,
     )
     chart_cell2, legend2 = create_cell_2(
-        data_sensors, start_query, end_query, series_names, target_column, serie_x, limit,
+        data_sensors,
+        start_query,
+        end_query,
+        series_names,
+        target_column,
+        serie_x,
+        limit,
     )
 
     # Define mask for filtering data if start_query and end_query are provided
-    mask = (lambda df: (df[serie_x] >= start_query) & (
-        df[serie_x] <= end_query)) if start_query and end_query else None
+    mask = (
+        (lambda df: (df[serie_x] >= start_query) & (df[serie_x] <= end_query))
+        if start_query and end_query
+        else None
+    )
 
     # Create and configure plot grid
     plot_grid = PlotMerger(fig_size=(7.5, 5.5))
@@ -388,7 +429,9 @@ def generate_report(
         limit,
         mask,
     )
-    lower_cell = create_map(dxf_path, data_sensors)
+    lower_cell = create_map(
+        data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config
+    )
     logo_cell = load_svg(LOGO_SVG, 0.95)
     chart_title_elements = [
         f"Registro histórico de {sensor_type_name}",
@@ -416,12 +459,14 @@ def generate_report(
     structure_formatted = structure_code.replace(" ", "_")
     sensor_type_formatted = sensor_type.replace(" ", "_").upper()
     pdf_filenames = []
+    chart_titles = []
 
     # Generate base filename
     base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
     pdf_filenames.append(base_filename)
+    chart_titles.append(chart_title)
 
     # Generate PDF
     pdf_generator.generate_pdf(pdf_path=base_filename)
 
-    return pdf_filenames
+    return pdf_filenames, chart_titles

@@ -10,6 +10,7 @@ import pandas as pd
 from libs.utils.config_loader import load_toml
 from libs.utils.config_logger import get_logger, log_execution_time
 from libs.utils.df_helpers import read_df_on_time_from_csv
+from libs.utils.text_helpers import write_lines
 from libs.helpers.pdf_merger import find_pdf_files, merge_pdfs
 from libs.utils.config_variables import (
     DOC_TITLE,
@@ -69,6 +70,13 @@ def generate_structure_plots(
 
     # DXF path for the structure
     dxf_path = f"data/config/{client_code}/{project_code}/dxf/{structure_code}.dxf"
+    # GeoTIFF path for the structure (si existe)
+    tif_path = f"data/config/{client_code}/{project_code}/tif/{structure_code}.tif"
+
+    # --- Si sabes la zona UTM, puedes calcularla aquí (ejemplo: zona 17 sur) ---
+    utm_zone = 17
+    project_epsg = 32700 + utm_zone
+    # project_epsg = None  # O ajusta según tu lógica
 
     logger.info(f"\nProcessing structure: {structure_name} ({structure_code})...")
 
@@ -118,6 +126,8 @@ def generate_structure_plots(
             group_name = f"{structure_code} - {sensor_type}"
             sensor_df["group"] = group_name
             groups = [(group_name, sensor_df)]
+
+        chart_titles = []
 
         # Process each group (now handles both grouped and ungrouped cases)
         for group, df_group in groups:
@@ -171,14 +181,19 @@ def generate_structure_plots(
                 "material": material,
             }
 
+            plotter_params = {
+                "dxf_path": dxf_path,
+                "tif_path": tif_path,
+                "project_epsg": project_epsg,
+                "start_query": start_query,
+                "end_query": end_query,
+            }
+
             # Generate report, continue if error
             try:
-                generated_pdf = generate_report(
+                generated_pdf, chart_title = generate_report(
                     data_sensors=data_sensors,
                     group_args=group_args,
-                    dxf_path=dxf_path,
-                    start_query=start_query,
-                    end_query=end_query,
                     appendix=appendix_chapter,
                     start_item=start_item,
                     structure_code=structure_code,
@@ -187,8 +202,15 @@ def generate_structure_plots(
                     output_dir=f"{output_dir}/{structure_code}/{sensor_type.lower()}",
                     static_report_params=static_report_params,
                     column_config=sensor_config["column_config"],
+                    **plotter_params,
                 )
+                if not generated_pdf:
+                    logger.warning(
+                        f"  No PDF generated for group {group} in {structure_code} - {sensor_type}"
+                    )
+                    continue
 
+                chart_titles.append(chart_title)
                 logger.info(
                     f"  [{structure_code} - {sensor_type} - {group}] Generated PDF: {generated_pdf}"
                 )
@@ -198,7 +220,7 @@ def generate_structure_plots(
                 logger.error(f"  Error generating PDF for group {group}: {e}")
                 continue
 
-    return start_item
+    return start_item, chart_titles
 
 
 def merge_outputs(plot_type, client_code, project_code, output_dir):
@@ -265,10 +287,11 @@ def exec_plotter(
         "theme_color_font": THEME_COLOR_FONT,
     }
 
+    charts_titles = []
     # Process each structure first, then each sensor type within the structure
     for structure_code, structure_name in structure_names.items():
         try:
-            start_item = generate_structure_plots(
+            start_item, chart_title = generate_structure_plots(
                 config=config,
                 structure_code=structure_code,
                 structure_name=structure_name,
@@ -283,9 +306,19 @@ def exec_plotter(
                 static_report_params=static_report_params,
                 agroup=agroup,
             )
+
+            if chart_title:
+                charts_titles.append(chart_title)
+                logger.info(
+                    f"Processed structure {structure_code} with {len(chart_title)} charts."
+                )
+
         except Exception as e:
             logger.error(f"Error procesando estructura {structure_code}: {e}")
             continue
+        
+    # Write all chart titles to a text file
+    write_lines(charts_titles, output_dir / "charts.txt")
 
     logger.info(
         f"All structures and sensors processed. Final item number: {start_item - 1}"
@@ -297,21 +330,21 @@ def exec_plotter(
 if __name__ == "__main__":
     try:
         plotter_params = {
-            "plot_type": "map_creator",
+            "plot_type": "sensor_plotter",
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
             "elaborated_by": "J.A.",
             "approved_by": "R.L.",
             "start_date": "2024-12-01 00:00:00",
-            "end_date": "2025-05-30 00:00:00",
-            "report_date": "15-05-25",
-            "start_item": 240,
-            "appendix_chapter": "5",
+            "end_date": "2025-06-15 00:00:00",
+            "report_date": "15-06-25",
+            "start_item": 1,
+            "appendix_chapter": "4",
             "revision": "B",
             "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
             # "sensors": ["INC"],
-            "agroup": False,
+            "agroup": True,
         }
 
         logger.info("Starting sensor processor with parameters:", extra=plotter_params)

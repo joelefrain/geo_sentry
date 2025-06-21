@@ -737,14 +737,15 @@ def exec_processor(
 if __name__ == "__main__":
     try:
         processor_params = {
-            "client_code": "pan_american_silver",
-            "project_code": "huaron",
-            "engineering_code": "eor_dr5_2025",
-            "cut_off": ["2025_05"],
+            "client_code": "sample_client",
+            "project_code": "sample_project",
+            "engineering_code": "eor_2025",
+            "cut_off": ["250530 Data Monitoreo Anddes MAYO"],
             # "methods": ["preprocess", "process", "main_records"],
-            "methods": ["preprocess"],
-            # "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            "sensor_codes": ["PCV", "PTA", "INC", "PCT"],
+            # "methods": ["preprocess"],
+            "methods": ["process", "main_records"],
+            "sensor_codes": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
+            # "sensor_codes": ["PCT"],
         }
 
         logger.info(

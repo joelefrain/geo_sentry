@@ -16,6 +16,7 @@ from libs.utils.calc_helpers import round_decimal, format_date_long, format_date
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
+    SENSOR_VISUAL_CONFIG,
 )
 
 COLOR_PALETTE = "cool"
@@ -104,16 +105,18 @@ def get_note_content(
     return note_handler.create_notes(sections)
 
 
-def create_map(dxf_path, data_sensors):
-    plotter = PlotBuilder(ts_serie=True, ymargin=0)
+def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config):
+    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
     map_args = {
-        "dxf_path": dxf_path,
+        # "dxf_path": dxf_path,
+        "tif_path": tif_path,
+        "project_epsg": project_epsg,
         "size": [2.0, 1.5],
         "title_x": "",
         "title_y": "",
         "title_chart": "",
         "show_legend": True,
-        "dxf_params": {"linestyle": "-", "linewidth": 0.02},
+        # "dxf_params": {"linestyle": "-", "linewidth": 0.02, "color": "gray"},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,
@@ -133,28 +136,19 @@ def create_map(dxf_path, data_sensors):
                 "x": data_sensors["east"][i],
                 "y": data_sensors["north"][i],
                 "color": color,
-                "linetype": "",
-                "lineweight": 0,
+                "linestyle": "",
+                "linewidth": 0,
                 "marker": "o",
                 "markersize": 10,
                 "label": "",
-                "note": name,
-                "fontsize": 6,
             }
         )
 
     plotter.plot_series(
         data=series_data,
-        dxf_path=map_args["dxf_path"],
-        size=map_args["size"],
-        title_x=map_args["title_x"],
-        title_y=map_args["title_y"],
-        title_chart=map_args["title_chart"],
-        show_legend=map_args["show_legend"],
-        dxf_params=map_args["dxf_params"],
-        format_params=map_args["format_params"],
+        **map_args,
     )
-
+    
     return plotter.get_drawing()
 
 
@@ -174,16 +168,16 @@ def create_cell_1(
     series_styles = {
         top_reference_column: {
             "color": "peru",
-            "linetype": "-",
-            "lineweight": 1,
+            "linestyle": "-",
+            "linewidth": 1,
             "marker": "s",
             "markersize": 2,
             "label_prefix": series_names[top_reference_column],
         },
         bottom_reference_column: {
             "color": "dimgrey",
-            "linetype": "-",
-            "lineweight": 1,
+            "linestyle": "-",
+            "linewidth": 1,
             "marker": "s",
             "markersize": 2,
             "label_prefix": series_names[bottom_reference_column],
@@ -194,8 +188,8 @@ def create_cell_1(
     if primary_column:
         series_styles[primary_column] = {
             "color": "blue",
-            "linetype": "-",
-            "lineweight": 1,
+            "linestyle": "-",
+            "linewidth": 1,
             "marker": "o",
             "markersize": 4,
             "label_prefix": series_names[primary_column],
@@ -240,8 +234,8 @@ def create_cell_1(
                         "y": df[column].tolist(),
                         "label": label,
                         "color": color,
-                        "linetype": style["linetype"],
-                        "lineweight": style["lineweight"],
+                        "linestyle": style["linestyle"],
+                        "linewidth": style["linewidth"],
                         "marker": marker,
                         "markersize": style["markersize"],
                     }
@@ -271,8 +265,8 @@ def create_cell_2(
     series_styles = {
         secondary_column: {
             "color": "blue",
-            "linetype": "-",
-            "lineweight": 1,
+            "linestyle": "-",
+            "linewidth": 1,
             "marker": "o",
             "markersize": 4,
             "label_prefix": series_names[secondary_column],
@@ -317,8 +311,8 @@ def create_cell_2(
                         "y": y_vals,
                         "label": label,
                         "color": color,
-                        "linetype": style["linetype"],
-                        "lineweight": style["lineweight"],
+                        "linestyle": style["linestyle"],
+                        "linewidth": style["linewidth"],
                         "marker": marker,
                         "markersize": style["markersize"],
                     }
@@ -328,7 +322,9 @@ def create_cell_2(
 
     # Calcular límites típicos solo si hay datos
     if all_secondary_values:
-        lower_limit, upper_limit = get_typical_range(all_secondary_values, percentile=90, scale=1.5)
+        lower_limit, upper_limit = get_typical_range(
+            all_secondary_values, percentile=90, scale=1.5
+        )
         ylim = (lower_limit, upper_limit)
     else:
         ylim = None  # Dejar que el gráfico elija automáticamente
@@ -354,9 +350,6 @@ def create_cell_2(
 def generate_report(
     data_sensors,
     group_args,
-    dxf_path,
-    start_query,
-    end_query,
     appendix,
     start_item,
     structure_code,
@@ -365,6 +358,7 @@ def generate_report(
     output_dir,
     static_report_params,
     column_config,
+    **plot_params,
 ):
     """Generate chart report with notes and merged plots.
 
@@ -383,9 +377,31 @@ def generate_report(
     sensor_type_name = column_config["sensor_type_name"]
     sensor_aka = column_config["sensor_aka"]
 
+    dxf_path = plot_params.get("dxf_path", None)
+    if not dxf_path:
+        raise ValueError("DXF path must be provided in plot_params.")
+
+    tif_path = plot_params.get("tif_path", None)
+    if not tif_path:
+        raise ValueError("TIF path must be provided in plot_params.")
+
+    project_epsg = plot_params.get("project_epsg", None)
+    if not project_epsg:
+        raise ValueError("Project EPSG must be provided in plot_params.")
+
+    start_query = plot_params.get("start_query", None)
+    end_query = plot_params.get("end_query", None)
+
     # Load configuration
     calc_config = load_toml(CALC_CONFIG_DIR, sensor_type)
     series_names = calc_config["names"]["es"]
+
+    # Load visual config for sensor type
+    sensor_visual_config = SENSOR_VISUAL_CONFIG.get(sensor_type, {})
+    if not sensor_visual_config:
+        raise ValueError(
+            f"No visual configuration found for sensor type: {sensor_type}"
+        )
 
     # Generate chart components
     chart_cell1, legend1 = create_cell_1(
@@ -431,7 +447,9 @@ def generate_report(
         sensor_aka,
         mask,
     )
-    lower_cell = create_map(dxf_path, data_sensors)
+    lower_cell = create_map(
+        data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config
+    )
     logo_cell = load_svg(LOGO_SVG, 0.95)
     chart_title_elements = [
         f"Registro histórico de {sensor_type_name}",
@@ -459,12 +477,14 @@ def generate_report(
     structure_formatted = structure_code.replace(" ", "_")
     sensor_type_formatted = sensor_type.replace(" ", "_").upper()
     pdf_filenames = []
+    chart_titles = []
 
     # Generate base filename
     base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
     pdf_filenames.append(base_filename)
+    chart_titles.append(chart_title)
 
     # Generate PDF
     pdf_generator.generate_pdf(pdf_path=base_filename)
 
-    return pdf_filenames
+    return pdf_filenames, chart_titles

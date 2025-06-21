@@ -8,4 +8,4 @@ connectionstyle = "arc3,rad=0.0"
 origin = "upper"
 zorder = 0
 alpha = 0.7
-interpolation = "lanczos"
+interpolation = "none"

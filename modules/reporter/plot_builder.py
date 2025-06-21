@@ -7,17 +7,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import matplotlib.patheffects as path_effects
 import rasterio
 
 from io import BytesIO
 from svglib.svglib import svg2rlg
 from reportlab.graphics.shapes import Drawing
+from rasterio.warp import transform_bounds
 
 from libs.utils.config_plot import PlotConfig
 from libs.utils.config_loader import load_toml
 from libs.utils.plot_helpers import dxfParser
 from libs.utils.config_variables import CHART_CONFIG_DIR
+from libs.utils.config_logger import get_logger
+
+logger = get_logger("modules.reporter.plot_builder")
 
 
 class PlotBuilder:
@@ -120,7 +123,8 @@ class PlotBuilder:
         self,
         data: list = [],
         dxf_path: str = None,
-        tif_path: str = None,  # <-- nuevo argumento
+        tif_path: str = None,
+        project_epsg: int = None,
         size: tuple = (4, 3),
         title_x: str = "",
         title_y: str = "",
@@ -156,8 +160,6 @@ class PlotBuilder:
                 Marker style (default: 'o')
             * label : str, optional
                 Series label for legend
-            * note : str or list[str], optional
-                Annotations to add
 
         dxf_path : str, optional
             Path to DXF file for overlay
@@ -212,7 +214,7 @@ class PlotBuilder:
 
         # --- Añadir raster GeoTIFF al fondo si se proporciona ---
         if tif_path:
-            self._plot_tif(tif_path)
+            self._plot_tif_utm(tif_path, project_epsg)
 
         if dxf_path:
             self._plot_dxf(dxf_path, dxf_params)
@@ -224,30 +226,50 @@ class PlotBuilder:
             title_x, title_y, title_chart, xlim, ylim, invert_y, format_params
         )
 
-    def _plot_tif(self, tif_path: str) -> None:
+    def _plot_tif_utm(self, tif_path: str, project_epsg: int = None) -> None:
         """
-        Añade un GeoTIFF como fondo del plot, sin modificar los límites del eje.
+        Añade un GeoTIFF georreferenciado como fondo, alineado a coordenadas UTM (x, y).
+        Si utm_epsg no se especifica, se intenta deducir del raster.
         """
         try:
             with rasterio.open(tif_path) as src:
-                # Leer la imagen y la transformación
                 img = src.read([1, 2, 3]) if src.count >= 3 else src.read(1)
-                extent = (
-                    src.bounds.left,
-                    src.bounds.right,
-                    src.bounds.bottom,
-                    src.bounds.top,
-                )
-                # Mostrar el raster en el fondo, sin alterar límites
+                bounds = src.bounds
+                src_crs = src.crs
+
+                # Determinar EPSG destino (UTM)
+                if project_epsg is None:
+                    # Si el raster ya está en UTM, usar ese
+                    if src_crs and src_crs.is_projected:
+                        project_epsg = int(str(src_crs.to_epsg()))
+                    else:
+                        raise ValueError(
+                            "Debe especificar utm_epsg para transformar el raster a UTM."
+                        )
+
+                # Transformar bounds a UTM si es necesario
+                if src_crs.to_epsg() != project_epsg:
+                    utm_bounds = transform_bounds(
+                        src_crs,
+                        f"EPSG:{project_epsg}",
+                        bounds.left,
+                        bounds.bottom,
+                        bounds.right,
+                        bounds.top,
+                    )
+                else:
+                    utm_bounds = (bounds.left, bounds.bottom, bounds.right, bounds.top)
+
+                extent = (utm_bounds[0], utm_bounds[2], utm_bounds[1], utm_bounds[3])
+                tif_params = self.plot_style.get("tif_params", {})
+
                 self.ax1.imshow(
                     img.transpose(1, 2, 0) if src.count >= 3 else img,
                     extent=extent,
-                    origin="upper",
-                    zorder=0,
-                    alpha=0.7,
+                    **tif_params,
                 )
         except Exception as e:
-            print(f"[!] No se pudo cargar el GeoTIFF '{tif_path}': {e}")
+            logger.error(f"[!] No se pudo cargar el GeoTIFF '{tif_path}': {e}")
 
     def _plot_dxf(self, dxf_path: str, dxf_params: dict = None) -> None:
         """
@@ -865,8 +887,6 @@ class PlotBuilder:
 
         # Load arrow parameters from TOML configuration
         arrow_params = self.plot_style.get("arrow_params", {})
-        arrowprops = arrow_params.get("arrowprops", {})
-        lw = arrow_params.get("lw", 0.5)
 
         for series in data:
             x = series["x"]
@@ -887,61 +907,10 @@ class PlotBuilder:
                 (x_point, y_point),
                 (x_point + dx, y_point + dy),
                 color=series["color"],
-                lw=lw,
                 mutation_scale=10,
-                arrowstyle=arrowprops.get("arrowstyle", "->"),
-                alpha=arrowprops.get("alpha", 0.8),
-                connectionstyle=arrowprops.get("connection_style", "arc3,rad=0.5"),
+                **arrow_params,
             )
             self.ax1.add_patch(arrow)
-
-    def add_notes(
-        self,
-        x_point: float,
-        y_point: float,
-        dx: float,
-        dy: float,
-        note: str,
-    ) -> None:
-        """
-        Add a single note to the plot.
-
-        Parameters
-        ----------
-        x_point : float
-            X-coordinate of the anchor point.
-        y_point : float
-            Y-coordinate of the anchor point.
-        dx : float
-            X-offset from the anchor point.
-        dy : float
-            Y-offset from the anchor point.
-        note : str
-            Text to display as the note.
-        """
-        if self.fig is None or self.ax1 is None:
-            raise RuntimeError("Primary plot must be created before adding notes.")
-
-        # Load note style from TOML configuration
-        note_style = self.plot_style.get("note_style", {})
-        fontsize = note_style.get("fontsize", 10)
-        bbox = note_style.get("bbox", {})
-        path_effects_config = note_style.get("path_effects", [])
-
-        # Apply path effects if configured
-        path_effects_list = [
-            path_effects.withStroke(**effect) for effect in path_effects_config
-        ]
-
-        # Add the note to the plot
-        self.ax1.text(
-            x_point + dx,
-            y_point + dy,
-            note,
-            fontsize=fontsize,
-            bbox=bbox,
-            path_effects=path_effects_list,
-        )
 
     def add_triangulation(
         self,

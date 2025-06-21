@@ -2,7 +2,12 @@ from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
 )
-from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+from libs.utils.calc_helpers import (
+    round_decimal,
+    round_upper,
+    format_date_long,
+    format_date_short,
+)
 from libs.utils.config_loader import load_toml
 from libs.utils.plot_helpers import get_unique_marker_convo
 from modules.reporter.note_handler import NotesHandler
@@ -21,7 +26,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
 COLOR_PALETTE = "Spectral"
-MAX_COL_LEN_LEGEND = 5 # número de columnas
+MIN_ROWS_IN_LEGEND = 2
+MAX_ROWS_IN_LEGEND = 3
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -118,16 +124,18 @@ def get_note_content(
     return note_handler.create_notes(sections)
 
 
-def create_map(dxf_path, data_sensors):
-    plotter = PlotBuilder(ts_serie=True, ymargin=0)
+def create_map(data_sensors, dxf_path, tif_path, project_epsg):
+    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
     map_args = {
-        "dxf_path": dxf_path,
+        # "dxf_path": dxf_path,
+        "tif_path": tif_path,
+        "project_epsg": project_epsg,
         "size": [2.0, 1.5],
         "title_x": "",
         "title_y": "",
         "title_chart": "",
         "show_legend": True,
-        "dxf_params": {"linestyle": "-", "linewidth": 0.02},
+        # "dxf_params": {"linestyle": "-", "linewidth": 0.02, "color": "gray"},
         "format_params": {
             "show_grid": False,
             "show_xticks": False,
@@ -139,7 +147,7 @@ def create_map(dxf_path, data_sensors):
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
-        color, _ = get_unique_marker_convo(
+        color, marker = get_unique_marker_convo(
             i, len(data_sensors["names"]), color_palette=COLOR_PALETTE
         )
         series_data.append(
@@ -147,26 +155,17 @@ def create_map(dxf_path, data_sensors):
                 "x": data_sensors["east"][i],
                 "y": data_sensors["north"][i],
                 "color": color,
-                "linetype": "",
-                "lineweight": 0,
-                "marker": "o",
-                "markersize": 10,
+                "linestyle": "",
+                "linewidth": 0,
+                "marker": marker,
+                "markersize": 5,
                 "label": "",
-                "note": name,
-                "fontsize": 6,
             }
         )
 
     plotter.plot_series(
         data=series_data,
-        dxf_path=map_args["dxf_path"],
-        size=map_args["size"],
-        title_x=map_args["title_x"],
-        title_y=map_args["title_y"],
-        title_chart=map_args["title_chart"],
-        show_legend=map_args["show_legend"],
-        dxf_params=map_args["dxf_params"],
-        format_params=map_args["format_params"],
+        **map_args,
     )
 
     return plotter.get_drawing()
@@ -187,7 +186,7 @@ def create_ts_cell_1(
         target_column: {
             "color": "blue",
             "linestyle": "-",
-            "lineweight": 1,
+            "linewidth": 1,
             "marker": "o",
             "markersize": 4,
             "label_prefix": series_names[target_column],
@@ -221,7 +220,7 @@ def create_ts_cell_1(
                     "label": label,
                     "color": color,
                     "linestyle": series_styles[target_column]["linestyle"],
-                    "lineweight": series_styles[target_column]["lineweight"],
+                    "linewidth": series_styles[target_column]["linewidth"],
                     "marker": marker,
                     "markersize": series_styles[target_column]["markersize"],
                 }
@@ -237,11 +236,11 @@ def create_ts_cell_1(
     )
 
     len_series = len(series)
-    max_len = MAX_COL_LEN_LEGEND
-    if len_series >= max_len:
-        ncol = max_len
-    else:
-        ncol = max(1, len_series / 2)
+
+    # Calcula el número mínimo de columnas necesario para que las filas estén entre 2 y 3
+    ncol = round_upper(len_series / MAX_ROWS_IN_LEGEND)
+    if len_series / ncol < MIN_ROWS_IN_LEGEND:
+        ncol = round_upper(len_series / MIN_ROWS_IN_LEGEND)
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
@@ -260,7 +259,7 @@ def create_ts_cell_2(
         target_column: {
             "color": "blue",
             "linestyle": "-",
-            "lineweight": 1,
+            "linewidth": 1,
             "marker": "o",
             "markersize": 4,
             "label_prefix": series_names[target_column],
@@ -310,7 +309,7 @@ def create_ts_cell_2(
                         "label": label,
                         "color": color,
                         "linestyle": style["linestyle"],
-                        "lineweight": style["lineweight"],
+                        "linewidth": style["linewidth"],
                         "marker": marker,
                         "markersize": style["markersize"],
                     }
@@ -326,11 +325,11 @@ def create_ts_cell_2(
     )
 
     len_series = len(series)
-    max_len = MAX_COL_LEN_LEGEND
-    if len_series >= max_len:
-        ncol = max_len
-    else:
-        ncol = max(1, len_series / 2)
+
+    # Calcula el número mínimo de columnas necesario para que las filas estén entre 2 y 3
+    ncol = round_upper(len_series / MAX_ROWS_IN_LEGEND)
+    if len_series / ncol < MIN_ROWS_IN_LEGEND:
+        ncol = round_upper(len_series / MIN_ROWS_IN_LEGEND)
 
     return plotter.get_drawing(), plotter.get_legend(
         box_width=7.5,
@@ -356,7 +355,7 @@ def create_non_ts_cell_1(
         target_column: {
             "color": "green",
             "linestyle": "-",
-            "lineweight": 1,
+            "linewidth": 1,
             "marker": "s",
             "markersize": 4,
             "label_prefix": series_names[target_column],
@@ -364,7 +363,7 @@ def create_non_ts_cell_1(
         "initial_position": {
             "color": "orange",
             "linestyle": "",
-            "lineweight": 0,
+            "linewidth": 0,
             "marker": "^",
             "markersize": 6,
             "label": "Posición inicial",
@@ -372,7 +371,7 @@ def create_non_ts_cell_1(
         "final_position": {
             "color": "red",
             "linestyle": "",
-            "lineweight": 0,
+            "linewidth": 0,
             "marker": "s",
             "markersize": 6,
             "label": "Posición final",
@@ -409,7 +408,7 @@ def create_non_ts_cell_1(
                     "label": label,
                     "color": color,
                     "linestyle": series_styles[target_column]["linestyle"],
-                    "lineweight": series_styles[target_column]["lineweight"],
+                    "linewidth": series_styles[target_column]["linewidth"],
                     "marker": marker,
                     "markersize": series_styles[target_column]["markersize"],
                 }
@@ -425,7 +424,7 @@ def create_non_ts_cell_1(
                     "label": series_styles["initial_position"]["label"],
                     "color": series_styles["initial_position"]["color"],
                     "linestyle": series_styles["initial_position"]["linestyle"],
-                    "lineweight": series_styles["initial_position"]["lineweight"],
+                    "linewidth": series_styles["initial_position"]["linewidth"],
                     "marker": series_styles["initial_position"]["marker"],
                     "markersize": series_styles["initial_position"]["markersize"],
                 }
@@ -441,7 +440,7 @@ def create_non_ts_cell_1(
                     "label": series_styles["final_position"]["label"],
                     "color": series_styles["final_position"]["color"],
                     "linestyle": series_styles["final_position"]["linestyle"],
-                    "lineweight": series_styles["final_position"]["lineweight"],
+                    "linewidth": series_styles["final_position"]["linewidth"],
                     "marker": series_styles["final_position"]["marker"],
                     "markersize": series_styles["final_position"]["markersize"],
                 }
@@ -461,9 +460,6 @@ def create_non_ts_cell_1(
 def generate_report(
     data_sensors,
     group_args,
-    dxf_path,
-    start_query,
-    end_query,
     appendix,
     start_item,
     structure_code,
@@ -472,6 +468,7 @@ def generate_report(
     output_dir,
     static_report_params,
     column_config,
+    **plot_params,
 ):
     """Generate chart reports for a list of plots defined in column_config.
 
@@ -482,6 +479,21 @@ def generate_report(
     plots = column_config["plots"]  # List of plot configurations
     sensor_type_name = column_config["sensor_type_name"]
 
+    dxf_path = plot_params.get("dxf_path", None)
+    if not dxf_path:
+        raise ValueError("DXF path must be provided in plot_params.")
+
+    tif_path = plot_params.get("tif_path", None)
+    if not tif_path:
+        raise ValueError("TIF path must be provided in plot_params.")
+
+    project_epsg = plot_params.get("project_epsg", None)
+    if not project_epsg:
+        raise ValueError("Project EPSG must be provided in plot_params.")
+
+    start_query = plot_params.get("start_query", None)
+    end_query = plot_params.get("end_query", None)
+
     # Load configuration
     calc_config = load_toml(CALC_CONFIG_DIR, sensor_type)
     series_names = calc_config["names"]["es"]
@@ -490,6 +502,7 @@ def generate_report(
     os.makedirs(output_dir, exist_ok=True)
 
     pdf_filenames = []
+    chart_titles = []
     current_item = start_item
 
     for plot in plots:
@@ -550,7 +563,7 @@ def generate_report(
                 serie_x,
                 mask,
             )
-            lower_cell = create_map(dxf_path, data_sensors)
+            lower_cell = create_map(data_sensors, dxf_path, tif_path, project_epsg)
             logo_cell = load_svg(LOGO_SVG, 0.95)
             chart_title_elements = [
                 f"Registro histórico de {target_column_name}",
@@ -619,7 +632,7 @@ def generate_report(
                 logo_cell = load_svg(LOGO_SVG, 0.95)
 
                 # Set up PDF generator
-                pdf_generator = ReportBuilder(
+                pdf_generator, chart_title = ReportBuilder(
                     sample="chart_landscape_a4_type_02",
                     logo_cell=logo_cell,
                     chart_cell=chart_cell,
@@ -636,8 +649,9 @@ def generate_report(
                 # Generate PDF
                 pdf_generator.generate_pdf(pdf_path=pdf_filename)
                 pdf_filenames.append(pdf_filename)
+                chart_titles.append(chart_title)
 
                 # Increment the item number for the next report
                 current_item += 1
 
-    return pdf_filenames
+    return pdf_filenames, chart_titles

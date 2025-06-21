@@ -7,3 +7,8 @@ ezdxf
 svglib
 babel
 tomli
+pymupdf
+reportlab
+frontend
+pikepdf
+PyPDF2

@@ -47,38 +47,39 @@ APPENDIX_OUTPUT_DIR = BASE_DIR / "outputs" / "appendix"
 
 # Configuration for sensors
 # ---------------------------------------------------------------
-SENSOR_CONFIG = {
-    "PCV": {
-        "marker": "circle",
+SENSOR_VISUAL_CONFIG = {
+    "pcv": {
+        "bokeh_marker": "circle_x",
+        "mpl_marker": r"$\circ$",
         "color": "skyblue",
-        "name": {"es": "Piezómetro de cuerda vibrante"},
     },
-    "PTA": {
-        "marker": "circle_hollow",
+    "pta": {
+        "bokeh_marker": "circle",
+        "mpl_marker": "o",
         "color": "blue",
-        "name": {"es": "Piezómetro de tubo abierto"},
     },
-    "PCT": {
-        "marker": "diamond",
+    "pct": {
+        "bokeh_marker": "diamond",
+        "mpl_marker": "D",
         "color": "purple",
-        "name": {"es": "Punto de control topográfico"},
     },
-    "SACV": {
-        "marker": "triangle",
+    "sacv": {
+        "bokeh_marker": "triangle",
+        "mpl_marker": "^",
         "color": "orange",
-        "name": {"es": "Celda de asentamiento de cuerda vibrante"},
     },
-    "CPCV": {
-        "marker": "ellipse",
+    "cpcv": {
+        "bokeh_marker": "circle_dot",
+        "mpl_marker": r"$\odot$",
         "color": "pink",
-        "name": {"es": "Celda de presión de cuerda vibrante"},
     },
-    "INC": {
-        "marker": "square",
+    "inc": {
+        "bokeh_marker": "square",
+        "mpl_marker": "s",
         "color": "green",
-        "name": {"es": "Inclinómetro vertical"},
     },
 }
+
 
 # Extensions for file types
 # ---------------------------------------------------------------

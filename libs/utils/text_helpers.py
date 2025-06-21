@@ -132,6 +132,12 @@ def read_lines(filepath):
         return file.readlines()
 
 
+def write_lines(list_to_write, filepath):
+    with open(list_to_write, filepath, "w", encoding="utf-8") as f:
+        for element in list_to_write:
+            f.write(f"{element}\n")
+
+
 def extract_line(line, delimiter=ALLOWED_SEP_CHARS, header_chars=ALLOWD_HEADER_CHARS):
     return [
         clean_str(col, header_chars=header_chars, remove_space=True)
