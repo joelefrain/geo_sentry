@@ -1,14 +1,17 @@
 import os
 import sys
-import pandas as pd
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib import colors
 
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from libs.utils.config_loader import load_toml
+import pandas as pd
+
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+
 from libs.utils.config_variables import TABLE_CONFIG_DIR
+
+from libs.utils.config_loader import load_toml
 
 
 class TableHandler:

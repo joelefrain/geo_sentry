@@ -4,18 +4,21 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from libs.utils.config_loader import load_toml
-from libs.utils.config_variables import CALC_CONFIG_DIR
-from libs.utils.df_helpers import read_df_on_time_from_csv
-from libs.utils.config_logger import get_logger
+import numpy as np
+import pandas as pd
+
+from datetime import datetime
 
 from .matrix_processor import process_self_operations, process_base_operations
 
-import numpy as np
-import pandas as pd
-from datetime import datetime
+from libs.utils.config_variables import CALC_CONFIG_DIR
 
-logger = get_logger("modules.calculations")
+from libs.utils.config_loader import load_toml
+from libs.utils.df_helpers import read_df_on_time_from_csv
+
+from libs.utils.config_logger import get_logger
+
+logger = get_logger("modules.calculations.data_processor")
 
 
 class DataProcessor:
@@ -35,7 +38,6 @@ class DataProcessor:
         df = read_df_on_time_from_csv(csv_path, set_index)
 
         return df
-
 
     def prepare_data(
         self, df: pd.DataFrame, match_columns, overall_columns

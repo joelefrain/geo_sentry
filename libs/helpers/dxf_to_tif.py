@@ -16,9 +16,9 @@ import geopandas as gpd
 
 from PIL import Image
 from shapely.geometry import LineString
+from rasterio.transform import from_bounds
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from rasterio.transform import from_bounds
 
 from libs.utils.config_logger import get_logger
 

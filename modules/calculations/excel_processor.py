@@ -4,17 +4,20 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from libs.utils.config_logger import get_logger
-from libs.utils.config_variables import SEP_FORMAT
-
 import pandas as pd
+
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+
+from .path_handler import PathHandler
 from .excel_handler import ExcelReader
 from .data_transformer import DataTransformer
-from .path_handler import PathHandler
 
-logger = get_logger("modules.calculations")
+from libs.utils.config_variables import SEP_FORMAT
+
+from libs.utils.config_logger import get_logger
+
+logger = get_logger("modules.calculations.excel_processor")
 
 
 class ExcelProcessor:
@@ -38,7 +41,7 @@ class ExcelProcessor:
         """Procesa todos los archivos Excel en un directorio."""
         # Validar ruta de entrada
         if not PathHandler.validate_input_path(input_folder):
-            logger.info(f"❌ La ruta de entrada no existe: {input_folder}")
+            logger.warning(f"La ruta de entrada no existe: {input_folder}")
             return
 
         # Obtener rutas de salida usando PathHandler
@@ -73,12 +76,12 @@ class ExcelProcessor:
         """Procesa los archivos Excel para datos de medición."""
         excel_files = self._get_excel_files(input_folder)
         if not excel_files:
-            logger.info(f"❌ No se encontraron archivos Excel en {input_folder}")
+            logger.warning(f"No se encontraron archivos Excel en {input_folder}")
             return
 
         for excel_file in excel_files:
             try:
-                logger.info(f"\nProcesando {excel_file.name}...")
+                logger.info(f"Procesando {excel_file.name}...")
                 reader = ExcelReader(str(excel_file))
                 sheets = reader.get_filtered_sheets(exclude_sheets)
 
@@ -105,12 +108,12 @@ class ExcelProcessor:
                         df.to_csv(output_path, sep=SEP_FORMAT, index=False)
                         logger.info(f"Guardado: {output_path}")
                     else:
-                        logger.info(
-                            f"⚠️ Hoja '{sheet_name}' vacía después de eliminar nulos."
+                        logger.warning(
+                            f"Hoja '{sheet_name}' vacía después de eliminar nulos."
                         )
 
             except Exception as e:
-                logger.warning(f"❌ Error procesando {excel_file.name}: {e}")
+                logger.exception(f"Error procesando {excel_file.name}: {e}")
 
     def _preprocess_location_files(
         self,
@@ -127,7 +130,7 @@ class ExcelProcessor:
 
         for excel_file in excel_files:
             try:
-                logger.info(f"\nProcesando ubicaciones de {excel_file.name}...")
+                logger.info(f"Procesando ubicaciones de {excel_file.name}...")
                 reader = ExcelReader(str(excel_file))
                 sheets = reader.get_filtered_sheets(exclude_sheets)
 
@@ -147,8 +150,8 @@ class ExcelProcessor:
                         logger.info(f"Guardado: {output_path}")
 
             except Exception as e:
-                logger.warning(
-                    f"❌ Error procesando ubicaciones de {excel_file.name}: {e}"
+                logger.exception(
+                    f"Error procesando ubicaciones de {excel_file.name}: {e}"
                 )
 
     def _apply_transformations(
@@ -206,7 +209,9 @@ class ExcelProcessor:
             for cell_ref, col in zip(cells, cols):
                 value = reader.read_cell_value(sheet_name, cell_ref)
                 if value is None:
-                    logger.info(f"⚠️ No se pudo obtener el valor de la celda {cell_ref}")
+                    logger.warning(
+                        f"No se pudo obtener el valor de la celda {cell_ref}"
+                    )
                     valid_values = False
                     break
                 new_record[col] = value
@@ -233,7 +238,7 @@ class ExcelProcessor:
                     df = df.sort_values("time", ignore_index=True)
 
                 logger.info(
-                    f"Nuevo registro agregado con valores de celdas seleccionadas"
+                    "Nuevo registro agregado con valores de celdas seleccionadas"
                 )
 
         return df

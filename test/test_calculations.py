@@ -5,7 +5,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from modules.calculations.excel_processor import ExcelProcessor
-from modules.calculations.data_analysis import JumpDetector, AnomalyDetector
+from modules.forecast.data_analysis import JumpDetector, AnomalyDetector
 from modules.calculations.data_processor import DataProcessor
 from libs.utils.df_helpers import read_df_on_time_from_csv
 from libs.utils.config_loader import load_toml

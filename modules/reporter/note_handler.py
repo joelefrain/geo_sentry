@@ -4,11 +4,12 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from reportlab.platypus import Paragraph, ListFlowable, ListItem
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, ListFlowable, ListItem
+
+from libs.utils.config_variables import NOTE_CONFIG_DIR
 
 from libs.utils.config_loader import load_toml
-from libs.utils.config_variables import NOTE_CONFIG_DIR
 
 
 class NotesHandler:

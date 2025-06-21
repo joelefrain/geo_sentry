@@ -1,4 +1,5 @@
 import numpy as np
+
 from typing import Tuple
 from babel import Locale
 from babel.dates import format_date
@@ -37,7 +38,7 @@ def round_upper(value):
     return int(-(-value // 1))
 
 
-def format_date_long(date, lang='es'):
+def format_date_long(date, lang="es"):
     """Convert date to 'mmmm yyyy' format in the specified language."""
     locale = Locale(lang)
     return format_date(date, "MMMM yyyy", locale=locale).lower()
@@ -68,7 +69,9 @@ def get_percentile_value(data: list, percentile: float = 90.0) -> float:
     return float(np.nanpercentile(data_arr, percentile))
 
 
-def get_limit(data: list, percentile: float = 90.0, scale: float = 1.5, abs_mode: bool = True) -> float:
+def get_limit(
+    data: list, percentile: float = 90.0, scale: float = 1.5, abs_mode: bool = True
+) -> float:
     """
     Calculate the limit based on a specified percentile.
 
@@ -95,7 +98,9 @@ def get_limit(data: list, percentile: float = 90.0, scale: float = 1.5, abs_mode
     return limit
 
 
-def get_typical_range(data: list, percentile: float = 90.0, scale: float = 1.5) -> float:
+def get_typical_range(
+    data: list, percentile: float = 90.0, scale: float = 1.5
+) -> float:
     """
     Calculate the typical range based on a specified percentile and scale.
     Parameters
@@ -115,23 +120,24 @@ def get_typical_range(data: list, percentile: float = 90.0, scale: float = 1.5) 
 
     upper_limit = get_limit(data, percentile, scale, abs_mode=False)
     if upper_limit < 0:
-        upper_limit = get_limit(data, percentile, 1/scale, abs_mode=False)
+        upper_limit = get_limit(data, percentile, 1 / scale, abs_mode=False)
     else:
         upper_limit = get_limit(data, percentile, scale, abs_mode=True)
     upper_limit = round_upper(upper_limit)
-    
-    
-    lower_limit = get_limit(data, 100-percentile, 1/scale, abs_mode=False)
+
+    lower_limit = get_limit(data, 100 - percentile, 1 / scale, abs_mode=False)
     if lower_limit < 0:
-        lower_limit = get_limit(data, 100-percentile, scale, abs_mode=False)
+        lower_limit = get_limit(data, 100 - percentile, scale, abs_mode=False)
     else:
-        lower_limit = get_limit(data, 100-percentile, 1/scale, abs_mode=True)
+        lower_limit = get_limit(data, 100 - percentile, 1 / scale, abs_mode=True)
     lower_limit = round_lower(lower_limit)
 
     return lower_limit, upper_limit
 
 
-def get_symetric_range(data: list, percentile: float = 90.0, scale: float = 1.5) -> Tuple[float, float]:
+def get_symetric_range(
+    data: list, percentile: float = 90.0, scale: float = 1.5
+) -> Tuple[float, float]:
     """
     Calculate symmetric limits based on a specified percentile and scale.
 

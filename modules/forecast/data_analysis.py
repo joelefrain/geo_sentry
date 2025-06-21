@@ -3,7 +3,9 @@ import pandas as pd
 
 from typing import List
 from datetime import datetime
+
 from pykalman import KalmanFilter
+
 from scipy.signal import medfilt
 from scipy.stats import linregress
 
@@ -175,7 +177,7 @@ class AnomalyDetector:
         return np.array(scores)
 
 
-class DataAnalyst:
+class DataHandler:
     """Procesamiento posterior de datos para manejo de saltos y anomalías."""
 
     @staticmethod

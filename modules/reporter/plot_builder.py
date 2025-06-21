@@ -4,21 +4,25 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
+import rasterio
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import rasterio
 
 from io import BytesIO
-from svglib.svglib import svg2rlg
 from reportlab.graphics.shapes import Drawing
-from rasterio.warp import transform_bounds
-from adjustText import adjust_text
 
-from libs.utils.config_plot import PlotConfig
-from libs.utils.config_loader import load_toml
-from libs.utils.plot_helpers import dxfParser, parse_path_effects
+from svglib.svglib import svg2rlg
+from adjustText import adjust_text
+from rasterio.warp import transform_bounds
+
 from libs.utils.config_variables import CHART_CONFIG_DIR
+
+from libs.utils.config_loader import load_toml
+from libs.utils.config_plot import PlotConfig
+from libs.utils.plot_helpers import dxfParser, parse_path_effects
+
 from libs.utils.config_logger import get_logger
 
 logger = get_logger("modules.reporter.plot_builder")

@@ -4,16 +4,20 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from reportlab.lib.pagesizes import landscape, portrait, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib import colors
-from svglib.svglib import svg2rlg
 import itertools
 import reportlab.lib.pagesizes
 
-from libs.utils.config_loader import load_toml
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
+
+from svglib.svglib import svg2rlg
+from reportlab.lib.pagesizes import landscape, portrait, A4
+
 from libs.utils.config_variables import REPORT_CONFIG_DIR
+
+from libs.utils.config_loader import load_toml
+
 
 def load_svg(svg_path, scale):
     """Carga un archivo SVG y ajusta su escala.
@@ -31,12 +35,13 @@ def load_svg(svg_path, scale):
     drawing.scale(scale, scale)
     return drawing
 
+
 class ReportBuilder:
     """Construye reportes PDF personalizados con tablas y estilos configurables.
-    
+
     Esta clase maneja la generación de reportes PDF basados en configuraciones TOML,
     permitiendo personalizar estilos, dimensiones y contenido de las tablas.
-    
+
     Attributes:
         sample (dict): Configuración cargada del archivo TOML.
         theme_color: Color principal del tema del reporte.
@@ -76,6 +81,7 @@ class ReportBuilder:
             attributes (list): Lista de atributos a actualizar.
             values (list): Lista de valores correspondientes.
         """
+
         def update_theme_color(attribute, value):
             attribute_value = getattr(self, value)
             if self.sample["table"][attribute][row][col] == value:
@@ -164,7 +170,6 @@ class ReportBuilder:
             style.append((style_name, (col, row), (col, row), *style_attributes))
 
         for row, col in itertools.product(range(self.rows), range(self.cols)):
-
             styles_mapping = {
                 "GRID": ["size_border", "color_border"],
                 "ALIGN": ["align"],
@@ -250,7 +255,7 @@ class ReportBuilder:
 
     def create_table(self, margins, outer_border_style, outer_border_size):
         """Crea la tabla principal del reporte con los estilos y dimensiones especificados.
-        
+
         Args:
             margins (float): Márgenes de la página en puntos.
             outer_border_style: Estilo del borde exterior.
@@ -332,7 +337,7 @@ class ReportBuilder:
 
     def generate_pdf(self, pdf_path="output.pdf"):
         """Genera el archivo PDF final con el reporte.
-        
+
         Args:
             pdf_path (str): Ruta donde se guardará el PDF. Por defecto 'output.pdf'.
         """
@@ -404,15 +409,14 @@ class ReportBuilder:
 
     def adjust_font_size(self, attributes):
         """Ajusta el tamaño de la fuente para que el texto quepa en la celda.
-        
+
         Reduce iterativamente el tamaño de la fuente hasta que el texto quepa
         en el ancho máximo disponible de la celda.
-        
+
         Args:
             attributes (list): Lista de atributos cuyos tamaños de fuente se ajustarán.
         """
         for attribute in attributes:
-
             row, col = self.sample["cell_positions"][attribute]
             text = getattr(self, attribute)
             font_size = self.sample["table"]["font_size"][row][col]
@@ -425,11 +429,11 @@ class ReportBuilder:
 
     def get_max_width(self, row, col):
         """Calcula el ancho máximo disponible para una celda.
-        
+
         Args:
             row (int): Índice de la fila.
             col (int): Índice de la columna.
-            
+
         Returns:
             float: Ancho máximo disponible en puntos.
         """
@@ -445,11 +449,11 @@ class ReportBuilder:
 
     def get_text_width(self, text, font_size):
         """Estima el ancho de un texto con un tamaño de fuente específico.
-        
+
         Args:
             text (str): Texto a medir.
             font_size (float): Tamaño de la fuente.
-            
+
         Returns:
             float: Ancho estimado del texto.
         """

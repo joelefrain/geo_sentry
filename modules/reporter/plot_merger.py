@@ -1,11 +1,5 @@
-import os
-import sys
-
-# Add 'libs' path to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
-from reportlab.graphics.shapes import Drawing, Group, Rect
 from typing import Tuple, List
+from reportlab.graphics.shapes import Drawing, Group, Rect
 
 
 class PlotMerger:

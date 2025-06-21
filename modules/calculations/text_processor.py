@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 import pandas as pd
 
 from libs.utils.config_variables import VALID_TEXT_EXTENSIONS
-from libs.utils.config_logger import get_logger
+
 from libs.utils.text_helpers import (
     extract_str_suffix,
     parse_datetime,
@@ -15,6 +15,7 @@ from libs.utils.text_helpers import (
     extract_line,
     extract_matrix,
 )
+from libs.utils.config_logger import get_logger
 
 logger = get_logger("modules.calculations.text_processor")
 
@@ -46,7 +47,7 @@ def insert_datetime(df, lines, params):
         )
         df.insert(0, "time", dt)
     except Exception as e:
-        logger.warning(f"No se pudo parsear la fecha y hora: {e}")
+        logger.exception(f"No se pudo parsear la fecha y hora: {e}")
     return df
 
 
