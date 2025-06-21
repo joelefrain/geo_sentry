@@ -13,10 +13,11 @@ from io import BytesIO
 from svglib.svglib import svg2rlg
 from reportlab.graphics.shapes import Drawing
 from rasterio.warp import transform_bounds
+from adjustText import adjust_text
 
 from libs.utils.config_plot import PlotConfig
 from libs.utils.config_loader import load_toml
-from libs.utils.plot_helpers import dxfParser
+from libs.utils.plot_helpers import dxfParser, parse_path_effects
 from libs.utils.config_variables import CHART_CONFIG_DIR
 from libs.utils.config_logger import get_logger
 
@@ -980,3 +981,52 @@ class PlotBuilder:
                 alpha=alpha,
             )
             self.ax1.add_patch(polygon)
+
+    def add_notes(self, notes: list) -> None:
+        """
+        Add text notes to the plot at specified points using annotate and adjustText.
+
+        Parameters
+        ----------
+        notes : list of dict
+            Each dict must have:
+                - 'text': str, the note to display
+                - 'x': float, x coordinate
+                - 'y': float, y coordinate
+        """
+        if self.fig is None or self.ax1 is None:
+            raise RuntimeError("Primary plot must be created before adding notes.")
+
+        note_params = self.plot_style.get("note_params", {})
+        adjust_text_params = self.plot_style.get("adjust_text_params", {})
+
+        text_style = note_params.get("text_style", {})
+        effects_config = note_params.get("path_effects", [])
+        path_effects_list = (
+            parse_path_effects(effects_config) if effects_config else None
+        )
+
+        text_objects = []
+
+        for note in notes:
+            text = note["text"]
+            x = note["x"]
+            y = note["y"]
+
+            text_obj = self.ax1.text(
+                x,
+                y,
+                text,
+                **text_style,
+            )
+
+            if path_effects_list:
+                text_obj.set_path_effects(path_effects_list)
+
+            text_objects.append(text_obj)
+
+        adjust_text(
+            text_objects,
+            ax=self.ax1,
+            **adjust_text_params,
+        )

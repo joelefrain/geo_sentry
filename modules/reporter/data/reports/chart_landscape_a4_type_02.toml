@@ -7,7 +7,6 @@ color = [
     ["white", "white", "white", "white", "white"],
     ["theme_color", "white", "white", "white", "white"],
 ]
-
 align = [
     ["CENTER", "CENTER", "CENTER", "CENTER", "CENTER"],
     ["CENTER", "CENTER", "CENTER", "CENTER", "CENTER"],
@@ -16,7 +15,6 @@ align = [
     ["CENTER", "LEFT", "LEFT", "CENTER", "CENTER"],
     ["CENTER", "LEFT", "LEFT", "CENTER", "CENTER"],
 ]
-
 valign = [
     ["MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE"],
     ["MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE"],
@@ -25,7 +23,6 @@ valign = [
     ["MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE"],
     ["MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE", "MIDDLE"],
 ]
-
 color_border = [
     ["white", "white", "black", "black", "black"],
     ["black", "black", "black", "black", "black"],
@@ -34,7 +31,6 @@ color_border = [
     ["black", "black", "black", "black", "black"],
     ["black", "black", "black", "black", "black"],
 ]
-
 size_border = [
     [0.25, 0.25, 0.25, 0.25, 0.25],
     [0.25, 0.25, 0.25, 0.25, 0.25],
@@ -43,7 +39,6 @@ size_border = [
     [0.25, 0.25, 0.25, 0.25, 0.25],
     [0.25, 0.25, 0.25, 0.25, 0.25],
 ]
-
 font_size = [
     [10, 10, 10, 10, 10],
     [10, 10, 10, 10, 10],
@@ -52,7 +47,6 @@ font_size = [
     [10, 10, 10, 10, 10],
     [10, 10, 10, 10, 10],
 ]
-
 font_color = [
     ["black", "black", "black", "black", "black"],
     ["black", "black", "black", "black", "black"],
@@ -61,7 +55,6 @@ font_color = [
     ["black", "black", "black", "black", "black"],
     ["theme_color_font", "black", "black", "black", "black"],
 ]
-
 font_name = [
     ["Helvetica", "Helvetica", "Helvetica", "Helvetica", "Helvetica"],
     ["Helvetica", "Helvetica-Bold", "Helvetica", "Helvetica-Bold", "Helvetica"],
@@ -70,7 +63,6 @@ font_name = [
     ["Helvetica", "Helvetica", "Helvetica-Bold", "Helvetica", "Helvetica"],
     ["Helvetica", "Helvetica", "Helvetica-Bold", "Helvetica", "Helvetica"],
 ]
-
 padding_left = [
     [0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0],
@@ -79,7 +71,6 @@ padding_left = [
     [0, 1.5, 1.5, 0, 0],
     [0, 1.5, 1.5, 0, 0],
 ]
-
 padding_right = [
     [0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0],
@@ -88,7 +79,6 @@ padding_right = [
     [0, 1.5, 1.5, 0, 0],
     [0, 1.5, 1.5, 0, 0],
 ]
-
 padding_top = [
     [0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0],
@@ -97,7 +87,6 @@ padding_top = [
     [0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0],
 ]
-
 padding_bottom = [
     [0, 0, 0, 0, 0],
     [0, 0, 0, 1, 0],
@@ -124,13 +113,12 @@ size = 1.0
 
 [spans]
 # {start = [R0, C0], end = [R1, C1]}
-
 values = [
-    {start = [0, 0], end = [0, 4]},
-    {start = [1, 0], end = [4, 0]},
-    {start = [1, 1], end = [1, 2]},
-    {start = [3, 3], end = [5, 3]},
-    {start = [2, 4], end = [5, 4]},
+    { start = [0, 0], end = [0, 4] },
+    { start = [1, 0], end = [4, 0] },
+    { start = [1, 1], end = [1, 2] },
+    { start = [3, 3], end = [5, 3] },
+    { start = [2, 4], end = [5, 4] },
 ]
 
 [settings]

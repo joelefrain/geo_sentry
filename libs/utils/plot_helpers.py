@@ -4,13 +4,17 @@ import sys
 # Add 'libs' path to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-import json
 import ezdxf
 
 from matplotlib import colormaps
 from matplotlib.colors import rgb2hex
 
-from libs.utils.config_variables import DXF_COLORS_PATH
+from libs.utils.config_variables import (
+    DXF_COLORS_PATH,
+    DXF_LINETYPES_PATH,
+    UNIQUE_MARKERS,
+)
+from libs.utils.text_helpers import read_json
 
 
 def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):
@@ -19,9 +23,6 @@ def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):
     Ensures consistency across series.
     """
     from itertools import cycle
-
-    # Define unique styles for markers
-    unique_styles = {"markers": ["o", "s", "D", "v", "^", "<", ">", "p", "h"]}
 
     # Generate random colors from the colormap
     colormap = colormaps[color_palette]
@@ -35,7 +36,7 @@ def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):
         color = rgb2hex(colormap(pos))
 
     # Cycle through markers to ensure consistency
-    marker_cycle = cycle(unique_styles["markers"])
+    marker_cycle = cycle(UNIQUE_MARKERS)
     for _ in range(df_index + 1):
         marker = next(marker_cycle)
 
@@ -44,14 +45,37 @@ def get_unique_marker_convo(df_index, total_dfs, color_palette="viridis"):
     return combination
 
 
+def parse_path_effects(effects_config: list) -> list:
+    """Convierte una lista de configuraciones dict a objetos de path_effects."""
+    import matplotlib.patheffects as path_effects
+
+    effect_map = {
+        "withStroke": lambda d: path_effects.withStroke(
+            linewidth=d.get("linewidth", 1), foreground=d.get("foreground", "black")
+        ),
+        "Normal": lambda d: path_effects.Normal(),
+        "SimpleLineShadow": lambda d: path_effects.SimpleLineShadow(
+            offset=tuple(d.get("offset", [1, -1])),
+            shadow_color=d.get("shadow_color", "black"),
+        ),
+    }
+
+    parsed_effects = []
+    for effect in effects_config:
+        effect_type = effect.get("type")
+        if effect_type in effect_map:
+            parsed_effects.append(effect_map[effect_type](effect))
+        else:
+            raise ValueError(f"Unsupported path_effect type: {effect_type}")
+    return parsed_effects
+
+
 def dxf_color_to_hex(color_number):
     """Convierte el número de color DXF a código hexadecimal."""
     color_number = (
         str(color_number) if isinstance(color_number, (int, float)) else color_number
     )
-
-    with open(DXF_COLORS_PATH, "r") as f:
-        dxf_colors = json.load(f)
+    dxf_colors = read_json(DXF_COLORS_PATH)
 
     return dxf_colors.get(color_number, "#000000")  # Negro por defecto
 
@@ -72,24 +96,7 @@ def dxf_linetype_to_style(linetype: str) -> str:
         return "-"
 
     linetype = linetype.strip().lower()
-
-    dxf_linetypes = {
-        "bylayer": "-",
-        "byblock": "-",
-        "continuous": "-",
-        "solid": "-",
-        "dashed": "--",
-        "hidden": "--",
-        "center": "--",
-        "phantom": "--",
-        "border": "--",
-        "dotted": ":",
-        "dot": ":",
-        "dashdot": "-.",
-        "center2": "-.",
-        "dashdot2": "-.",
-        "chain": "-.",
-    }
+    dxf_linetypes = read_json(DXF_LINETYPES_PATH)
 
     # Buscar coincidencia exacta
     if linetype in dxf_linetypes:

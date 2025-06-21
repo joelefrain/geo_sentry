@@ -22,7 +22,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
-COLOR_PALETTE = "hsv"
+COLOR_PALETTE = "gist_rainbow"
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -124,6 +124,9 @@ def create_map(
     # Crear un diccionario para almacenar la última información de cada ubicación
     location_dict = {}
 
+    # Crear lista de notas
+    notes = []
+
     # Recopilar la última información de cada sensor por ubicación
     for name, df, east, north in zip(
         data_sensors["names"],
@@ -134,6 +137,13 @@ def create_map(
         # Omitir si el DataFrame está vacío
         if df.empty:
             continue
+
+        note = {
+            "text": name,
+            "x": east,
+            "y": north,
+        }
+        notes.append(note)
 
         # Obtener el último valor y ángulo
         last_value = df[target_column].iloc[-1]
@@ -169,6 +179,7 @@ def create_map(
                 "markersize": 3.0,
                 "label": f"{info['name']} ({last_value_formatted} {unit_target})",
                 "value": last_value,
+                "angle": angle,
             }
         )
 
@@ -194,11 +205,18 @@ def create_map(
         **map_args,
     )
 
-    # Add triangulation using only the max value per location
     plotter.add_triangulation(
         data=series_data,
         colorbar=colorbar,
     )
+
+    # plotter.add_arrow(
+    #     data=series_data,
+    #     position="last",
+    #     radius=50.0,
+    # )
+
+    plotter.add_notes(notes)
 
     # Generate discrete colorbar
     return (

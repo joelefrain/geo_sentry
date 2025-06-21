@@ -14,6 +14,7 @@ DME_CHO = "DME Choloque"
 
 [sensors.pcv]
 plot_template = "ts_plot_type_01"
+
 [sensors.pcv.column_config]
 target_column = "hydraulic_load_kpa"
 unit_target = "kPa"
@@ -23,6 +24,7 @@ sensor_aka = "El piezómetro"
 
 [sensors.pta]
 plot_template = "ts_plot_type_04"
+
 [sensors.pta.column_config]
 target_column = "piezometric_level"
 unit_target = "m s. n. m."
@@ -37,33 +39,40 @@ sensor_aka = "El piezómetro"
 
 [sensors.pct]
 plot_template = "merged_plot_type_01"
+
 [sensors.pct.column_config]
 sensor_type_name = "punto de control topográfico"
+
 [[sensors.pct.column_config.plots]]
 target_column = "diff_horz_abs"
 unit_target = "cm"
 ts_serie_flag = true
 series_x = "time"
+
 [[sensors.pct.column_config.plots]]
 target_column = "diff_vert_abs"
 unit_target = "cm"
 ts_serie_flag = true
 series_x = "time"
+
 [[sensors.pct.column_config.plots]]
 target_column = "diff_disp_total_abs"
 unit_target = "cm"
 ts_serie_flag = true
 series_x = "time"
+
 [[sensors.pct.column_config.plots]]
 target_column = "mean_vel_rel"
 unit_target = "cm/día"
 ts_serie_flag = true
 series_x = "time"
+
 [[sensors.pct.column_config.plots]]
 target_column = "inv_mean_vel_rel"
 unit_target = "día/cm"
 ts_serie_flag = true
 series_x = "time"
+
 [[sensors.pct.column_config.plots]]
 target_column = "north"
 ts_serie_flag = false
@@ -72,6 +81,7 @@ serie_aka = "Trayectoria"
 
 [sensors.sacv]
 plot_template = "ts_plot_type_03"
+
 [sensors.sacv.column_config]
 target_column = "settlement_m"
 unit_target = "m"
@@ -86,6 +96,7 @@ sensor_aka = "La celda de asentamiento"
 
 [sensors.cpcv]
 plot_template = "ts_plot_type_02"
+
 [sensors.cpcv.column_config]
 target_column = "pressure_kpa"
 unit_target = "kPa"
@@ -100,14 +111,17 @@ sensor_aka = "La celda de presión"
 
 [sensors.inc]
 plot_template = "merged_plot_type_03"
+
 [sensors.inc.column_config]
 sensor_type_name = "inclinómetro vertical"
+
 [[sensors.inc.column_config.plots]]
 target_column = "A_deflection"
 unit_target = "cm"
 ts_serie_flag = true
 series_x = "time"
 series_y = "FLEVEL"
+
 [[sensors.inc.column_config.plots]]
 target_column = "B_deflection"
 unit_target = "cm"

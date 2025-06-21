@@ -158,7 +158,7 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg):
                 "linestyle": "",
                 "linewidth": 0,
                 "marker": marker,
-                "markersize": 5,
+                "markersize": 2.5,
                 "label": "",
             }
         )

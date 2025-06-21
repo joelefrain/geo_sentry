@@ -32,6 +32,7 @@ LOGO_SVG = BASE_DIR / "data" / "logo" / "logo_main_anddes.svg"
 LOGO_PDF = BASE_DIR / "data" / "logo" / "logo_main_anddes.pdf"
 DATA_CONFIG = BASE_DIR / "data" / "config"
 DXF_COLORS_PATH = BASE_DIR / "data" / "styles" / "dxf_colors.json"
+DXF_LINETYPES_PATH = BASE_DIR / "data" / "styles" / "dxf_linetypes.json"
 
 # Paths to configuration directories
 # ---------------------------------------------------------------
@@ -95,3 +96,7 @@ ALLOWD_HEADER_CHARS = r"[^\w()+\-]"
 # Minimum records required for processing & plotting
 # ---------------------------------------------------------------
 MINIMUN_RECORDS = 2
+
+# Styles for matplotlib
+# ---------------------------------------------------------------
+UNIQUE_MARKERS = ["o", "s", "D", "v", "^", "<", ">", "p", "h"]

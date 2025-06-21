@@ -14,6 +14,7 @@ DME_CHO = "DME Choloque"
 
 [sensors.pct]
 plot_template = "map_type_01"
+
 [sensors.pct.column_config]
 target_column = "diff_disp_total_abs"
 arrow_column = "horz_angle_abs_grad"
@@ -25,13 +26,14 @@ static_notes = [
   "Se muestra el vector azimut absoluto sobre cada prisma de control topográfico.",
   "Se requiere definir niveles de alerta para una interpretación más confiable del desempeño estructural.",
 ]
+
 [sensors.pct.column_config.colorbar]
 thresholds = [5, 20, 50]
 colors = ["green", "yellow", "orange", "red"]
 
-
 [sensors.pcv]
 plot_template = "map_type_02"
+
 [sensors.pcv.column_config]
 target_column = "hydraulic_load_kpa"
 arrow_column = "hydraulic_load_kpa"
@@ -42,6 +44,7 @@ sensor_aka = "El piezómetro"
 static_notes = [
   "Se requiere definir niveles de alerta para una interpretación más confiable del desempeño estructural.",
 ]
+
 [sensors.pcv.column_config.colorbar]
 thresholds = [0, 10, 20]
 colors = ["green", "yellow", "orange", "red"]

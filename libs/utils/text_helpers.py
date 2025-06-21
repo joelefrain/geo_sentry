@@ -5,6 +5,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 import re
+import json
 import pandas as pd
 from datetime import datetime
 
@@ -130,6 +131,11 @@ def parse_datetime(date_str, time_str, date_formats, time_formats):
 def read_lines(filepath, encoding="utf-8"):
     with open(file=filepath, mode="r", encoding=encoding) as file:
         return file.readlines()
+
+
+def read_json(filepath, encoding="utf-8"):
+    with open(file=filepath, mode="r", encoding=encoding) as file:
+        return json.load(file)
 
 
 def write_lines(list_to_write, filepath, encoding="utf-8"):

@@ -5,7 +5,7 @@ folders = ["A", "B"]
 
 [default_params.folder.A]
 columns = ["A+", "A-", "FLEVEL"]
-target_columns = ["A+","A-","Level"]
+target_columns = ["A+", "A-", "Level"]
 date_format = ["%m/%d/%y", "%m/%d/%Y", "%d/%m/%y", "%d/%m/%Y"]
 time_format = ["%H:%M:%S"]
 date_line = 8
@@ -15,7 +15,7 @@ data_lines_start = 16
 
 [default_params.folder.B]
 columns = ["B+", "B-", "FLEVEL"]
-target_columns = ["B+","B-","Level"]
+target_columns = ["B+", "B-", "Level"]
 date_format = ["%m/%d/%y", "%m/%d/%Y", "%d/%m/%y", "%d/%m/%Y"]
 time_format = ["%H:%M:%S"]
 date_line = 8

@@ -22,7 +22,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
-COLOR_PALETTE = "hsv"
+COLOR_PALETTE = "gist_rainbow"
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -121,7 +121,67 @@ def create_map(
     tif_path,
     project_epsg,
 ):
-    target_column_name = series_names[target_column]
+    # Crear un diccionario para almacenar la última información de cada ubicación
+    location_dict = {}
+
+    # Crear lista de notas
+    notes = []
+
+    # Recopilar la última información de cada sensor por ubicación
+    for name, df, east, north in zip(
+        data_sensors["names"],
+        data_sensors["df"],
+        data_sensors["east"],
+        data_sensors["north"],
+    ):
+        # Omitir si el DataFrame está vacío
+        if df.empty:
+            continue
+
+        note = {
+            "text": name,
+            "x": east,
+            "y": north,
+        }
+        notes.append(note)
+
+        # Obtener el último valor y ángulo
+        last_value = df[target_column].iloc[-1]
+        angle = df[arrow_column].iloc[-1]
+
+        # Usar como clave una tupla de la ubicación (este, norte)
+        key = (east, north)
+
+        # Actualizar el diccionario solo si la ubicación no está ya en el diccionario
+        if key not in location_dict:
+            location_dict[key] = {
+                "name": name,
+                "value": last_value,
+                "angle": angle,
+            }
+
+    # Generar series_data usando solo el máximo valor por ubicación
+    series_data = []
+    for idx, ((east, north), info) in enumerate(location_dict.items()):
+        color, marker = get_unique_marker_convo(
+            idx, len(location_dict), color_palette=COLOR_PALETTE
+        )
+        last_value = info["value"]
+        last_value_formatted = round_decimal(last_value, 2)
+        series_data.append(
+            {
+                "x": [east],
+                "y": [north],
+                "color": color,
+                "linestyle": "",
+                "linewidth": 0,
+                "marker": marker,
+                "markersize": 3.0,
+                "label": f"{info['name']} ({last_value_formatted} {unit_target})",
+                "value": last_value,
+                "angle": angle,
+            }
+        )
 
     plotter = PlotBuilder(style_file="high_quality", ts_serie=True, ymargin=0)
     map_args = {
@@ -140,74 +200,23 @@ def create_map(
         },
     }
 
-    series_data = []
-
-    # Generate unique color combinations for each sensor
-    for i, name in enumerate(data_sensors["names"]):
-        # Validate that all required data exists for this sensor
-        if (
-            i >= len(data_sensors["df"])
-            or i >= len(data_sensors["east"])
-            or i >= len(data_sensors["north"])
-        ):
-            continue
-
-        # Check if dataframe is empty or missing required columns
-        df = data_sensors["df"][i]
-        if (
-            df.empty
-            or target_column not in df.columns
-            or arrow_column not in df.columns
-        ):
-            continue
-
-        color, marker = get_unique_marker_convo(
-            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE
-        )
-
-        try:
-            # Skip if DataFrame is empty
-            if df.empty:
-                continue
-
-            last_value = df[target_column].iloc[-1]
-            last_value_formatted = round_decimal(last_value, 2)
-            angle = df[arrow_column].iloc[-1]
-
-            series_data.append(
-                {
-                    "x": [data_sensors["east"][i]],
-                    "y": [data_sensors["north"][i]],
-                    "color": color,
-                    "linestyle": "",
-                    "linewidth": 0,
-                    "marker": marker,
-                    "markersize": 3.0,
-                    "label": f"{name} ({last_value_formatted} {unit_target})",
-                    "value": last_value,
-                    "angle": angle,
-                }
-            )
-        except Exception:
-            continue
-
     plotter.plot_series(
         data=series_data,
         **map_args,
     )
 
-    # Add triangulation
     plotter.add_triangulation(
         data=series_data,
         colorbar=colorbar,
     )
 
-    # Add arrows to the plot
     plotter.add_arrow(
         data=series_data,
         position="last",
         radius=50.0,
     )
+
+    plotter.add_notes(notes)
 
     # Generate discrete colorbar
     return (
@@ -218,7 +227,7 @@ def create_map(
         plotter.get_colorbar(
             box_width=2.0,
             box_height=1.0,
-            label=target_column_name,
+            label=series_names[target_column],
             vmin=min([s["value"] for s in series_data]),
             vmax=max([s["value"] for s in series_data]),
             colors=colorbar["colors"],
@@ -316,7 +325,7 @@ def generate_report(
         sensor_aka,
         None,
         mask,
-        static_notes
+        static_notes,
     )
 
     logo_cell = load_svg(LOGO_SVG, 0.95)
