@@ -1,4 +1,6 @@
-agroup = true
+[format]
+by_groups = true
+all_sensor_type = false
 
 [project]
 project_code = "1408.10.0054-0000"

@@ -13,11 +13,11 @@ interpolation = "lanczos"
 
 [note_params.text_style]
 color = "black"
-fontsize = 6
+fontsize = 3
 
 [[note_params.path_effects]]
 type = "withStroke"
-linewidth = 2.0
+linewidth = 1.0
 foreground = "white"
 
 [[note_params.path_effects]]

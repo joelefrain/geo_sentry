@@ -14,6 +14,7 @@ from libs.utils.calc_helpers import (
 )
 
 from libs.utils.config_loader import load_toml
+from libs.utils.calc_helpers import get_typical_range
 from libs.utils.plot_helpers import get_unique_marker_convo
 
 from modules.reporter.plot_merger import PlotMerger
@@ -68,6 +69,7 @@ def get_note_content(
     unit_target,
     series_names,
     serie_x,
+    limit,
     mask=None,
 ):
     # Initialize NotesHandler
@@ -92,7 +94,9 @@ def get_note_content(
         if not df.empty
         and target_column in df.columns
         and len(df[target_column].dropna()) > 0
+        and df[target_column].dropna().between(limit[0], limit[1]).any()
     ]
+
     if valid_dfs:
         last_value = max(df[target_column].iloc[-1] for df in valid_dfs)
     else:
@@ -122,7 +126,7 @@ def get_note_content(
 
 
 def create_map(data_sensors, dxf_path, tif_path, project_epsg):
-    plotter = PlotBuilder(style_file="default", ts_serie=True, ymargin=0)
+    plotter = PlotBuilder(style_file="tiny_high_quality", ts_serie=True, ymargin=0)
     map_args = {
         "dxf_path": dxf_path,
         "tif_path": tif_path,
@@ -171,9 +175,8 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg):
         data=series_data,
         **map_args,
     )
-    
-    # plotter.add_notes(notes)
 
+    plotter.add_notes(notes)
 
     return plotter.get_drawing()
 
@@ -212,19 +215,20 @@ def create_ts_cell_1(
     }
 
     series = []
+    all_values = []  # List to collect all values for limit calculation
     total_dfs = len(data_sensors["df"])
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
         if target_column in df.columns:
+            all_values.extend(df[target_column].dropna().tolist())
             color, marker = get_unique_marker_convo(
                 i, total_dfs, color_palette=COLOR_PALETTE
             )
-            label = name
 
             series.append(
                 {
                     "x": df[serie_x].tolist(),
                     "y": df[target_column].tolist(),
-                    "label": label,
+                    "label": name,
                     "color": color,
                     "linestyle": series_styles[target_column]["linestyle"],
                     "linewidth": series_styles[target_column]["linewidth"],
@@ -233,6 +237,9 @@ def create_ts_cell_1(
                 }
             )
 
+    # Calculate typical range limits
+    limit = get_typical_range(all_values, percentile=97, scale=2.5)
+
     plotter.plot_series(
         data=series,
         size=plot_format["size"],
@@ -240,6 +247,7 @@ def create_ts_cell_1(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
+        ylim=limit,
     )
 
     len_series = len(series)
@@ -249,15 +257,19 @@ def create_ts_cell_1(
     if len_series / ncol < MIN_ROWS_IN_LEGEND:
         ncol = round_upper(len_series / MIN_ROWS_IN_LEGEND)
 
-    return plotter.get_drawing(), plotter.get_legend(
-        box_width=7.5,
-        box_height=1.0,
-        ncol=ncol,
+    return (
+        limit,
+        plotter.get_drawing(),
+        plotter.get_legend(
+            box_width=7.5,
+            box_height=1.0,
+            ncol=ncol,
+        ),
     )
 
 
 def create_ts_cell_2(
-    data_sensors, start_query, end_query, series_names, target_column, serie_x
+    limit, data_sensors, start_query, end_query, series_names, target_column, serie_x
 ):
     plotter = PlotBuilder(ts_serie=True)
 
@@ -329,6 +341,7 @@ def create_ts_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
+        ylim=limit,
     )
 
     len_series = len(series)
@@ -524,7 +537,7 @@ def generate_report(
 
         if ts_serie:
             # Generate chart components for ts_serie=True
-            chart_cell1, legend1 = create_ts_cell_1(
+            limit, chart_cell1, legend1 = create_ts_cell_1(
                 data_sensors,
                 series_names,
                 target_column,
@@ -533,6 +546,7 @@ def generate_report(
                 sensor_type_name,
             )
             chart_cell2, legend2 = create_ts_cell_2(
+                limit,
                 data_sensors,
                 start_query,
                 end_query,
@@ -568,6 +582,7 @@ def generate_report(
                 unit_target,
                 series_names,
                 serie_x,
+                limit,
                 mask,
             )
             lower_cell = create_map(data_sensors, dxf_path, tif_path, project_epsg)

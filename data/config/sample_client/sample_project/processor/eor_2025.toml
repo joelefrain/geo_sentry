@@ -1,9 +1,11 @@
+[location]
 utm_zone = 17
+northern_hemisphere = false
 
 [structures]
-PAD_1A = "Pad de lixiviación 1A"
-PAD_2A = "Pad de lixiviación 2A"
-PAD_2B_2C = "Pad de lixiviación 2B-2C"
+PAD_1A = "Pad 1A"
+PAD_2A = "Pad 2A"
+PAD_2B_2C = "Pad 2B-2C"
 DME_SUR = "DME Sur"
 DME_CHO = "DME Choloque"
 
