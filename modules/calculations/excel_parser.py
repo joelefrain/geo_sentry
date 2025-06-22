@@ -14,7 +14,7 @@ from libs.utils.config_logger import get_logger
 logger = get_logger("modules.calculations.excel_processor")
 
 
-class ExcelProcessor:
+class ExcelParser:
     """Clase principal para procesar archivos Excel y generar archivos CSV."""
 
     def __init__(self, config: dict):

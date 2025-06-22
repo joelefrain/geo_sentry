@@ -1,11 +1,14 @@
+import os
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional, Callable
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
 import pandas as pd
 
-sys.path.append(str(Path(__file__).parent.parent))
+from pathlib import Path
+from typing import Dict, List, Optional, Callable
 
-from modules.calculations.excel_processor import ExcelProcessor
+from modules.calculations.excel_parser import ExcelParser
 from modules.calculations.data_processor import DataProcessor
 from modules.calculations.text_processor import text_folder_to_csv
 from libs.utils.config_variables import CALC_CONFIG_DIR, BASE_DIR, DATA_CONFIG
@@ -66,6 +69,9 @@ class SensorPreprocessor:
 
     def __init__(self, config: Dict):
         self.config = config
+        print("*" * 50)
+        print(config)
+        print("*" * 50)
 
     def preprocess_sensors(self, **kwargs) -> None:
         """Main preprocessing method that routes to specific processors with base_line filtering."""
@@ -85,12 +91,22 @@ class SensorPreprocessor:
 
         for sensor_code in sensor_codes:
             try:
+                # Cargar configuración específica para este sensor
                 reader_config = load_toml(
                     data_dir=config_sensor_path, toml_name=sensor_code.lower()
                 )
                 logger.info(
                     f"Config loaded for {sensor_code} from {config_sensor_path}"
                 )
+                print("/" * 50)
+                print(reader_config)
+                print("/" * 50)
+
+                # Verificar que la configuración sea válida
+                if not reader_config or "type" not in reader_config:
+                    logger.error(f"Invalid config for {sensor_code}")
+                    continue
+
             except Exception as e:
                 logger.exception(f"Error loading config for {sensor_code}: {e}")
                 continue
@@ -111,7 +127,11 @@ class SensorPreprocessor:
 
     def _process_excel_processor(self, **kwargs) -> None:
         """Process Excel files with base_line filtering."""
-        processor = ExcelProcessor(kwargs["reader_config"])
+        print("&" * 50) 
+        print(kwargs["reader_config"])
+        print("&" * 50) 
+
+        processor = ExcelParser(kwargs["reader_config"])
 
         for structure in kwargs["order_structure"]:
             input_folder = kwargs["sensor_data_paths"][kwargs["sensor_code"]][structure]
@@ -264,19 +284,32 @@ class SensorPreprocessor:
     def _save_sensor_data(
         self, df: pd.DataFrame, output_folder: Path, structure: str, sensor_name: str
     ) -> None:
-        """Save sensor data to CSV files with proper handling."""
-        if "sensor_name" in df.columns:
-            for unique_sensor_name in df["sensor_name"].unique():
-                df_subset = df[df["sensor_name"] == unique_sensor_name].copy()
-                if "sensor_code" in df_subset.columns:
-                    df_subset.drop(columns=["sensor_code"], inplace=True)
-                file_path = output_folder / f"{structure}.{unique_sensor_name}.csv"
-                save_df_to_csv(df=df_subset, file_path=file_path)
-        else:
-            if "sensor_code" in df.columns:
-                df.drop(columns=["sensor_code"], inplace=True)
+        """Save sensor data to CSV files, creating one file per unique 'code' value.
+
+        Args:
+            df: DataFrame with sensor data
+            output_folder: Path to save the files
+            structure: Structure name for filename
+            sensor_name: Sensor name for filename
+        """
+        if "code" not in df.columns:
+            # If no 'code' column, save single file
             file_path = output_folder / f"{structure}.{sensor_name}.csv"
             save_df_to_csv(df=df, file_path=file_path)
+            return
+
+        # For each unique code value
+        for code_value in df["code"].unique():
+            # Filter data for this code
+            df_subset = df[df["code"] == code_value].copy()
+
+            # Remove 'code' column before saving
+            df_subset = df_subset.drop(columns=["code"])
+
+            # Create filename with structure.sensor_name.code_value format
+            file_path = output_folder / f"{structure}.{sensor_name}.{code_value}.csv"
+            save_df_to_csv(df=df_subset, file_path=file_path)
+            logger.debug(f"Saved data for code {code_value} to {file_path}")
 
 
 class OperativityManager:
@@ -284,33 +317,34 @@ class OperativityManager:
 
     @staticmethod
     def get_operativity(
-        location_data_folder_base: Path, work_path: Path, sensor_codes: List[str]
+        location_data_folder_base: Path,
+        work_path: Path,
+        sensor_codes: List[str],
+        preprocessed_data_folder_base: Path,
     ) -> None:
-        """Process and update sensor operativity data, creating entries even without location data."""
+        """Process and update sensor operativity data.
+
+        Args:
+            location_data_folder_base: Path to location data folders
+            work_path: Working directory path
+            sensor_codes: List of sensor types to process
+            preprocessed_data_folder_base: Path to preprocessed data to get sensor names
+        """
         logger.info("Starting operativity processing")
 
-        # Process location files if they exist
-        all_locations = []
-        for sensor_code in sensor_codes:
-            location_path = location_data_folder_base / sensor_code
-            if location_path.exists():
-                sensor_locations = OperativityManager._process_location_files(
-                    sensor_code, location_path
-                )
-                all_locations.extend(sensor_locations)
-            else:
-                # Create empty entries for sensors without location data
-                logger.info(
-                    f"No location data found for {sensor_code}, creating empty entries"
-                )
-                all_locations.append(
-                    OperativityManager._create_empty_entries(sensor_code)
-                )
+        # First get all sensors from preprocessed data
+        all_sensors = OperativityManager._get_all_sensors_from_preprocessed(
+            preprocessed_data_folder_base, sensor_codes
+        )
 
-        new_location_df = (
-            pd.concat(all_locations, ignore_index=True)
-            if all_locations
-            else pd.DataFrame()
+        # Then get location data for sensors that have it
+        location_data = OperativityManager._get_location_data(
+            location_data_folder_base, sensor_codes
+        )
+
+        # Combine both sources
+        combined_df = OperativityManager._combine_sensor_data(
+            all_sensors, location_data
         )
 
         # Setup operativity file path
@@ -323,90 +357,152 @@ class OperativityManager:
         )
 
         # Merge with new data
-        if not new_location_df.empty:
-            updated_df = merge_new_records(
-                existing_df,
-                new_location_df,
-                match_columns=["structure", "sensor_type", "code"],
-                match_type="all",
-            )
-
-            # Preserve existing non-null values
-            for col in existing_df.columns:
-                if col not in ["structure", "sensor_type", "code"]:
-                    mask = (
-                        updated_df["structure"].isin(existing_df["structure"])
-                        & updated_df["sensor_type"].isin(existing_df["sensor_type"])
-                        & updated_df["code"].isin(existing_df["code"])
-                    )
-                    updated_df.loc[mask, col] = existing_df.loc[mask, col]
-
-            updated_df = updated_df.drop_duplicates(
-                subset=["structure", "sensor_type", "code"], keep="last"
-            )
-            save_df_to_csv(updated_df, operativity_path)
-        else:
-            # Save existing data even if no location data was found
-            save_df_to_csv(existing_df, operativity_path)
-
-    @staticmethod
-    def _process_location_files(
-        sensor_code: str, location_path: Path
-    ) -> List[pd.DataFrame]:
-        """Process location files for a sensor type."""
-
-        def process_file(
-            file_path: Path, structure: str, code: str, sensor_type: str
-        ) -> pd.DataFrame:
-            location_csv_df = read_df_from_csv(file_path)
-            location_csv_df["structure"] = structure
-            location_csv_df["sensor_type"] = sensor_type
-            location_csv_df["code"] = code
-            location_csv_df["operativiy"] = True
-            return location_csv_df
-
-        results = []
-
-        for csv_file in location_path.glob("*.csv"):
-            structure, code = csv_file.stem.split(".")[:2]
-            result = process_file(csv_file, structure, code, sensor_code)
-            if result is not None:
-                results.append(result)
-
-        return results
-
-    @staticmethod
-    def _create_empty_entries(sensor_code: str) -> pd.DataFrame:
-        """Create empty operativity entries for sensors without location data."""
-        return pd.DataFrame(
-            {
-                "sensor_type": [sensor_code],
-                "operativiy": [True],
-                "structure": [None],
-                "code": [None],
-            }
+        updated_df = merge_new_records(
+            existing_df,
+            combined_df,
+            match_columns=["structure", "sensor_type", "code"],
+            match_type="all",
         )
+
+        # Preserve existing non-null values from previous records
+        for col in existing_df.columns:
+            if col not in ["structure", "sensor_type", "code", "operativiy"]:
+                mask = (
+                    updated_df["structure"].isin(existing_df["structure"])
+                    & updated_df["sensor_type"].isin(existing_df["sensor_type"])
+                    & updated_df["code"].isin(existing_df["code"])
+                )
+                updated_df.loc[mask, col] = existing_df.loc[mask, col]
+
+        # Remove duplicates keeping the most recent
+        updated_df = updated_df.drop_duplicates(
+            subset=["structure", "sensor_type", "code"], keep="last"
+        )
+
+        save_df_to_csv(updated_df, operativity_path)
+
+    @staticmethod
+    def _get_all_sensors_from_preprocessed(
+        preprocessed_data_folder_base: Path, sensor_codes: List[str]
+    ) -> pd.DataFrame:
+        """Get all sensors from preprocessed data folders."""
+        sensor_records = []
+
+        for sensor_code in sensor_codes:
+            sensor_path = preprocessed_data_folder_base / sensor_code
+            if not sensor_path.exists():
+                continue
+
+            for csv_file in sensor_path.glob("*.csv"):
+                try:
+                    # File name format: structure.code.csv or structure.code.extra.csv
+                    parts = csv_file.stem.split(".")
+                    structure = parts[0]
+                    code = parts[1]
+
+                    sensor_records.append(
+                        {
+                            "sensor_type": sensor_code,
+                            "structure": structure,
+                            "code": code,
+                            "operativiy": True,  # Default to True if no location data
+                        }
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Could not parse sensor info from {csv_file.name}: {e}"
+                    )
+
+        return pd.DataFrame(sensor_records)
+
+    @staticmethod
+    def _get_location_data(
+        location_data_folder_base: Path, sensor_codes: List[str]
+    ) -> pd.DataFrame:
+        """Get location data for sensors that have it."""
+        location_records = []
+
+        for sensor_code in sensor_codes:
+            location_path = location_data_folder_base / sensor_code
+            if not location_path.exists():
+                continue
+
+            for csv_file in location_path.glob("*.csv"):
+                try:
+                    # File name format: structure.code.csv or structure.code.extra.csv
+                    parts = csv_file.stem.split(".")
+                    structure = parts[0]
+                    code = parts[1]
+
+                    location_df = read_df_from_csv(csv_file)
+                    location_df["sensor_type"] = sensor_code
+                    location_df["structure"] = structure
+                    location_df["code"] = code
+                    location_df["operativiy"] = True
+
+                    location_records.append(location_df)
+                except Exception as e:
+                    logger.warning(
+                        f"Could not process location file {csv_file.name}: {e}"
+                    )
+
+        return (
+            pd.concat(location_records, ignore_index=True)
+            if location_records
+            else pd.DataFrame()
+        )
+
+    @staticmethod
+    def _combine_sensor_data(
+        sensors_df: pd.DataFrame, locations_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Combine sensor data from preprocessed files with location data."""
+        if locations_df.empty:
+            return sensors_df
+
+        # Merge to bring location data to known sensors
+        combined_df = pd.merge(
+            sensors_df,
+            locations_df,
+            on=["sensor_type", "structure", "code"],
+            how="left",
+            suffixes=("", "_loc"),
+        )
+
+        # Clean up merged columns
+        for col in combined_df.columns:
+            if col.endswith("_loc") and col.replace("_loc", "") in sensors_df.columns:
+                combined_df[col.replace("_loc", "")] = combined_df[col]
+                combined_df.drop(col, axis=1, inplace=True)
+
+        return combined_df
 
     @staticmethod
     def _read_or_create_operativity_file(file_path: Path) -> pd.DataFrame:
         """Read or create operativity file with default columns."""
-        if not file_path.exists():
+        default_columns = [
+            "structure",
+            "sensor_type",
+            "code",
+            "operativiy",
+            "first_record",
+            "first_value",
+            "last_record",
+            "last_value",
+            "max_value",
+            "max_record",
+        ]
+
+        if file_path.exists():
+            df = read_df_from_csv(file_path)
+            # Ensure all required columns exist
+            for col in default_columns:
+                if col not in df.columns:
+                    df[col] = None
+            return df
+        else:
             create_empty_file(file_path)
-            return pd.DataFrame(
-                columns=[
-                    "structure",
-                    "sensor_type",
-                    "code",
-                    "operativiy",
-                    "first_record",
-                    "first_value",
-                    "last_record",
-                    "last_value",
-                    "max_value",
-                    "max_record",
-                ]
-            )
-        return read_df_from_csv(file_path)
+            return pd.DataFrame(columns=default_columns)
 
 
 class SensorDataProcessor:
@@ -426,39 +522,57 @@ class SensorDataProcessor:
         def process_data_file(
             preprocessed_csv_path: Path, structure: str, code: str, sensor_type: str
         ) -> None:
-            processor = DataProcessor(sensor_type.lower())
-            config = processor.config
-            match_columns = config["process_config"]["match_columns"]
-            overall_columns = config["process_config"]["overall_columns"]
+            try:
+                # Cargar configuración específica para este sensor
+                processor = DataProcessor(sensor_type.lower())
+                config = processor.config
+                print("-" * 50)
+                print(config)
+                print("-" * 50)
 
-            processed_path = processed_data_folder_base / sensor_type
-            processed_csv_path = processed_path / f"{structure}.{code}.csv"
-            processed_path.mkdir(parents=True, exist_ok=True)
+                if not config or "process_config" not in config:
+                    logger.error(f"Invalid config for {sensor_type}")
+                    return
 
-            logger.info(f"Processing file: {preprocessed_csv_path}")
-            create_empty_file(processed_csv_path)
+                match_columns = config["process_config"]["match_columns"]
+                overall_columns = config["process_config"]["overall_columns"]
 
-            preprocess_df = read_df_on_time_from_csv(
-                preprocessed_csv_path, set_index=False
-            )
+                processed_path = processed_data_folder_base / sensor_type
+                processed_csv_path = processed_path / f"{structure}.{code}.csv"
+                processed_path.mkdir(parents=True, exist_ok=True)
 
-            if reprocess:
-                # For reprocessing, start fresh with just the preprocessed data
-                process_df = pd.DataFrame(columns=match_columns)
-            else:
-                # For normal processing, read existing processed data
-                process_df = read_or_create_df(
-                    processed_csv_path, default_columns=match_columns
+                logger.info(f"Processing file: {preprocessed_csv_path}")
+                create_empty_file(processed_csv_path)
+
+                preprocess_df = read_df_on_time_from_csv(
+                    preprocessed_csv_path, set_index=False
                 )
 
-            process_df = config_time_df(process_df, set_index=False)
-            temp_df = merge_new_records(
-                process_df, preprocess_df, match_columns=match_columns, match_type="all"
-            )
+                if reprocess:
+                    # For reprocessing, start fresh with just the preprocessed data
+                    process_df = pd.DataFrame(columns=match_columns)
+                else:
+                    # For normal processing, read existing processed data
+                    process_df = read_or_create_df(
+                        processed_csv_path, default_columns=match_columns
+                    )
 
-            df = processor.prepare_data(temp_df, match_columns, overall_columns)
-            df = processor.process_raw_data(df)
-            save_df_to_csv(df, processed_csv_path)
+                process_df = config_time_df(process_df, set_index=False)
+                temp_df = merge_new_records(
+                    process_df,
+                    preprocess_df,
+                    match_columns=match_columns,
+                    match_type="all",
+                )
+
+                df = processor.prepare_data(temp_df, match_columns, overall_columns)
+                df = processor.process_raw_data(df)
+                save_df_to_csv(df, processed_csv_path)
+
+            except Exception as e:
+                logger.exception(
+                    f"Error processing {sensor_type} file {preprocessed_csv_path}: {e}"
+                )
 
         for sensor_code in sensor_codes:
             preprocessed_path = preprocessed_data_folder_base / sensor_code
@@ -495,14 +609,21 @@ class RecordsUpdater:
 
         for sensor_code in sensor_codes:
             try:
+                # Cargar configuración específica para este sensor
                 config = load_toml(CALC_CONFIG_DIR, f"{sensor_code.lower()}")
                 target_column = config.get("target", {}).get("column")
+
+                logger.debug(
+                    f"Processing records for {sensor_code} with target column: {target_column}"
+                )
+
             except Exception as e:
                 logger.warning(f"Error reading TOML for {sensor_code}: {e}")
                 continue
 
             sensor_folder = processed_data_folder / sensor_code
             if not sensor_folder.exists():
+                logger.warning(f"No processed data folder for {sensor_code}")
                 continue
 
             for csv_file in sensor_folder.glob("*.csv"):
@@ -587,6 +708,8 @@ class SensorProcessor:
         seed_base_path, config_sensor_path = PathManager.setup_seed_paths(
             kwargs["cut_off"], kwargs["client_code"], kwargs["project_code"]
         )
+        
+
 
         sensor_data_paths = PathManager.iter_path_names(
             base_path=seed_base_path,
@@ -624,6 +747,7 @@ class SensorProcessor:
             location_data_folder_base=location_data_folder_base,
             work_path=kwargs["work_path"],
             sensor_codes=kwargs["sensor_codes"],
+            preprocessed_data_folder_base=preprocessed_data_folder_base,
         )
 
         # Process sensor data with reprocessing option
@@ -768,9 +892,12 @@ if __name__ == "__main__":
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
-            "cut_off": ["250530 Data Monitoreo Anddes MAYO"],
+            "cut_off": [
+                "250430 Data Monitoreo Anddes ABRIL",
+                "250530 Data Monitoreo Anddes MAYO",
+            ],
             "methods": ["preprocess", "process", "main_records"],
-            "sensor_codes": ["PTA"],
+            "sensor_codes": ["PCV", "PCT", "PTA"],
             "reprocess": False,  # Set to True to force reprocessing
         }
 

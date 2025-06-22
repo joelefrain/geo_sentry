@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 import pandas as pd
 
-from modules.calculations.excel_processor import ExcelProcessor
+from modules.calculations.excel_parser import ExcelParser
 from modules.calculations.data_processor import DataProcessor
 from modules.calculations.text_processor import text_folder_to_csv
 from libs.utils.config_variables import CALC_CONFIG_DIR, BASE_DIR, DATA_CONFIG
@@ -130,7 +130,7 @@ def preprocess_sensors(
 
         if type_reader == "excel_processor":
             # Procesar archivos Excel
-            processor = ExcelProcessor(reader_config)
+            processor = ExcelParser(reader_config)
 
             for structure in order_structure:
                 input_folder = sensor_data_paths[sensor_code][structure]

@@ -4,7 +4,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from modules.calculations.excel_processor import ExcelProcessor
+from modules.calculations.excel_parser import ExcelParser
 from modules.forecast.data_analysis import JumpDetector, AnomalyDetector
 from modules.calculations.data_processor import DataProcessor
 from libs.utils.df_helpers import read_df_on_time_from_csv
@@ -22,7 +22,7 @@ class TestExcelProcessor:
         self.toml_path = r"C:\Users\Joel Efraín\Desktop\_workspace\geo_sentry\data\config\Shahuindo_SAC\Shahuindo\excel_format\cpcv.toml"
 
     def test_process_directory(self):
-        processor = ExcelProcessor(self.toml_path)
+        processor = ExcelParser(self.toml_path)
         processor.preprocess_excel_directory(
             input_folder=self.input_folder,
             output_folder_base=self.output_folder_base,

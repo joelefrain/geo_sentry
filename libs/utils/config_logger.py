@@ -67,24 +67,36 @@ def log_execution_time(func=None, *, module=None):
 
     logger = get_logger(module) if module else get_logger("default")
 
+    def format_time(seconds: float) -> str:
+        if seconds < 60:
+            return f"{seconds:.2f} seconds"
+        elif seconds < 3600:
+            return f"{seconds / 60:.2f} minutes"
+        elif seconds < 86400:
+            return f"{seconds / 3600:.2f} hours"
+        else:
+            return f"{seconds / 86400:.2f} days"
+
     def wrapper(*args, **kwargs):
         start_time = time.time()
+
         if args and hasattr(args[0], "__class__"):
             class_name = args[0].__class__.__name__
             logger.info(f"Starting execution of {class_name}.{func.__name__}")
         else:
             logger.info(f"Starting execution of {func.__name__}")
+
         result = func(*args, **kwargs)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+        elapsed_time = time.time() - start_time
+        time_str = format_time(elapsed_time)
+
         if args and hasattr(args[0], "__class__"):
             logger.info(
-                f"Finished execution of {class_name}.{func.__name__} in {elapsed_time:.2f} seconds"
+                f"Finished execution of {class_name}.{func.__name__} in {time_str}"
             )
         else:
-            logger.info(
-                f"Finished execution of {func.__name__} in {elapsed_time:.2f} seconds"
-            )
+            logger.info(f"Finished execution of {func.__name__} in {time_str}")
+
         return result
 
     return wrapper
