@@ -581,25 +581,40 @@ class SensorPlotterOrchestrator:
 
 @log_execution_time(module="scripts.sensor_plotter")
 def exec_plotter(
-    plot_type: str,
+    plot_type: str | list,
     client_code: str,
     project_code: str,
     engineering_code: str,
     sensors: List[str],
     **kwargs,
 ) -> None:
-    """Main execution function with flexible kwargs support."""
-
-    orchestrator = SensorPlotterOrchestrator(
-        client_code, project_code, engineering_code
-    )
-    orchestrator.execute_plotting(plot_type, sensors, **kwargs)
+    if isinstance(plot_type, list):
+        start_item = kwargs.get("start_item", 1)
+        for pt in plot_type:
+            orchestrator = SensorPlotterOrchestrator(
+                client_code, project_code, engineering_code
+            )
+            orchestrator.execute_plotting(
+                pt, sensors, **{**kwargs, "start_item": start_item}
+            )
+            # Update start_item based on the number of charts generated (read from charts.txt)
+            output_dir = str(OUTPUTS_DIR / pt / client_code / project_code)
+            charts_file = Path(output_dir) / "charts.txt"
+            if charts_file.exists():
+                with open(charts_file, "r") as f:
+                    n_charts = len([line for line in f if line.strip()])
+                start_item += n_charts
+    else:
+        orchestrator = SensorPlotterOrchestrator(
+            client_code, project_code, engineering_code
+        )
+        orchestrator.execute_plotting(plot_type, sensors, **kwargs)
 
 
 if __name__ == "__main__":
     try:
         plotter_params = {
-            "plot_type": "sensor_plotter",
+            "plot_type": ["sensor_plotter", "map_creator"],
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
@@ -610,7 +625,7 @@ if __name__ == "__main__":
             "start_date": "2024-12-01 00:00:00",
             "end_date": "2025-06-15 00:00:00",
             "report_date": "15-06-25",
-            "start_item": 192,
+            "start_item": 1,
             "appendix_chapter": "4",
             "revision": "B",
         }
