@@ -1,26 +1,24 @@
+import os
+
+import pandas as pd
+
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
     SENSOR_VISUAL_CONFIG,
 )
-from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+
 from libs.utils.config_loader import load_toml
 from libs.utils.text_helpers import to_sentence_format
 from libs.utils.plot_helpers import get_unique_marker_convo
+
 from libs.utils.calc_helpers import get_symetric_range
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+
+from modules.reporter.plot_merger import PlotMerger
+from modules.reporter.plot_builder import PlotBuilder
 from modules.reporter.note_handler import NotesHandler
 from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.plot_builder import PlotBuilder
-from modules.reporter.plot_merger import PlotMerger
-
-import pandas as pd
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-
-# Add 'libs' path to sys.path
 
 
 COLOR_PALETTE_1 = "Spectral"
@@ -178,6 +176,9 @@ def get_note_content(
                 f"El último valor registrado de {target_column_name} fue de {round_decimal(last_value, 2)} {unit_target} "
                 f"a {round_decimal(last_serie_y, 2)} {y_unit} de {serie_y_name_decap} "
                 f"el día {format_date_short(last_date)}.",
+                f"La frecuencia de monitoreo promedio es de un registro cada {round_decimal(combined_df[serie_x].drop_duplicates().sort_values().diff().dt.days.mean(), 2)} días."
+                if len(combined_df[serie_x].drop_duplicates()) > 1
+                else "No es posible calcular la frecuencia de monitoreo promedio por falta de datos suficientes.",
             ],
             "format_type": "numbered",
         },
@@ -209,6 +210,7 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
     marker = sensor_visual_config.get("mpl_marker", "o")
 
     series_data = []
+    notes = []
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
@@ -227,16 +229,24 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
                 "label": "",
             }
         )
+        note = {
+            "text": name,
+            "x": data_sensors["east"][i],
+            "y": data_sensors["north"][i],
+        }
+        notes.append(note)
 
     plotter.plot_series(
         data=series_data,
         **map_args,
     )
+
+    plotter.add_notes(notes)
     
     return plotter.get_drawing()
 
 
-def create_non_ts_cell_1(
+def create_non_ts_cell(
     data_sensors,
     series_names,
     target_column,
@@ -246,7 +256,7 @@ def create_non_ts_cell_1(
     plotter = PlotBuilder(ts_serie=False, ymargin=0.0)
     # Plot formatting
     plot_format = {
-        "size": (8.5, 10),
+        "size": (8, 14),
         "title_x": series_names[target_column],
         "title_y": series_names[serie_y],
         "title_chart": f"{series_names[target_column]}",
@@ -305,86 +315,10 @@ def create_non_ts_cell_1(
         limit,
         plotter.get_drawing(),
         plotter.get_legend(
-            box_width=7.5,
+            box_width=2.0,
             box_height=1.0,
             ncol=2,
         ),
-    )
-
-
-def create_ts_cell_2(
-    data_sensors,
-    series_names,
-    target_column,
-    serie_x,
-    serie_y,
-    limit,
-):
-    plotter = PlotBuilder(ts_serie=True)
-    target_column_name = to_sentence_format(
-        series_names[target_column], mode="decapitalize"
-    )
-    serie_y_name = to_sentence_format(series_names[serie_y], mode="decapitalize")
-
-    # Plot formatting
-    plot_format = {
-        "size": (8, 4),
-        "title_x": series_names[serie_x],
-        "title_y": series_names[target_column],
-        "title_chart": f"Registro histórico de {target_column_name.split('(')[0]} por {serie_y_name.split('(')[0]}",
-        "show_legend": False,
-        "legend_location": "upper right",
-        "grid": True,
-    }
-
-    series = []
-    all_y_value = []
-    all_values = []
-
-    for df, name in zip(data_sensors["df"], data_sensors["names"]):
-        if target_column in df.columns and serie_y in df.columns:
-            unique_group = sorted(df[serie_y].unique())
-            all_y_value.extend(unique_group)
-            all_values.extend(df[target_column].dropna().tolist())
-
-            for i, y_value in enumerate(unique_group):
-                y_value_df = df[df[serie_y] == y_value]
-                color, marker = get_unique_marker_convo(
-                    i, len(unique_group), color_palette=COLOR_PALETTE_2
-                )
-                series.append(
-                    {
-                        "x": y_value_df[serie_x].tolist(),
-                        "y": y_value_df[target_column].tolist(),
-                        "label": y_value,
-                        "color": color,
-                        "linestyle": "-",
-                        "linewidth": 1,
-                        "marker": marker,
-                        "markersize": 4,
-                    }
-                )
-
-    plotter.plot_series(
-        data=series,
-        size=plot_format["size"],
-        title_x=plot_format["title_x"],
-        title_y=plot_format["title_y"],
-        title_chart=plot_format["title_chart"],
-        show_legend=plot_format["show_legend"],
-        ylim=limit,
-    )
-
-    # Get colors from series for colorbar
-    colors = [series["color"] for series in series]
-
-    return plotter.get_drawing(), plotter.get_colorbar(
-        box_width=7.5,
-        box_height=0.5,
-        label=series_names[serie_y],
-        vmin=min(all_y_value),
-        vmax=max(all_y_value),
-        colors=colors,
     )
 
 
@@ -440,7 +374,7 @@ def generate_report(
     chart_titles = []
     current_item = start_item
 
-    # Sort data_sensors by sensor name before processing
+    # Ordenar las series según el nombre del sensor antes de procesar
     sorted_indices = sorted(
         range(len(data_sensors["names"])), key=lambda k: data_sensors["names"][k]
     )
@@ -458,21 +392,12 @@ def generate_report(
         serie_y = plot["series_y"]
 
         # Generate chart components
-        limit, chart_cell1, legend1 = create_non_ts_cell_1(
+        limit, chart_cell, legend = create_non_ts_cell(
             data_sensors,
             series_names,
             target_column,
             serie_x,
             serie_y,
-        )
-
-        chart_cell2, legend2 = create_ts_cell_2(
-            data_sensors,
-            series_names,
-            target_column,
-            serie_x,
-            serie_y,
-            limit,
         )
 
         # Define mask for filtering data
@@ -484,16 +409,14 @@ def generate_report(
 
         # Create and configure plot grid
         plot_grid = PlotMerger(fig_size=(5, 8))
-        plot_grid.create_grid(3, 1, row_ratios=[0.03, 0.29, 0.68])
-        plot_grid.add_object(chart_cell1, (0, 0))
-        plot_grid.add_object(chart_cell2, (1, 0))
-        plot_grid.add_object(legend2, (2, 0))
+        plot_grid.create_grid(1, 1, row_ratios=[1.0])
+        plot_grid.add_object(chart_cell, (0, 0))
 
         chart_cell = plot_grid.build(color_border="white", cell_spacing=0)
 
         plot_grid = PlotMerger(fig_size=(1.5, 5.5))
         plot_grid.create_grid(1, 1, row_ratios=[1])
-        plot_grid.add_object(legend1, (0, 0))
+        plot_grid.add_object(legend, (0, 0))
 
         upper_cell = plot_grid.build(color_border="white", cell_spacing=0)
 

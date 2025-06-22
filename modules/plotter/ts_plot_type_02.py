@@ -1,26 +1,23 @@
+import os
+
+import pandas as pd
+
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
     SENSOR_VISUAL_CONFIG,
 )
-from libs.utils.calc_helpers import (
-    round_decimal,
-    format_date_long,
-    format_date_short,
-    get_typical_range,
-)
+
 from libs.utils.config_loader import load_toml
 from libs.utils.plot_helpers import get_unique_marker_convo
+
+from libs.utils.calc_helpers import get_typical_range
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+
+from modules.reporter.plot_merger import PlotMerger
+from modules.reporter.plot_builder import PlotBuilder
 from modules.reporter.note_handler import NotesHandler
 from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.plot_builder import PlotBuilder
-from modules.reporter.plot_merger import PlotMerger
-
-import pandas as pd
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
 COLOR_PALETTE = "cool"
@@ -68,7 +65,6 @@ def get_note_content(
     series_names,
     serie_x,
     sensor_aka,
-    limit,
     mask=None,
 ):
     # Initialize NotesHandler
@@ -76,20 +72,9 @@ def get_note_content(
 
     target_column_name = series_names[target_column].lower().split("(")[0]
 
-    # Filter dataframes by limit before analysis
-    filtered_dfs = []
-    for df in data_sensors["df"]:
-        # Apply value limits mask
-        if limit:
-            mask_limit = df[target_column].isna() | df[target_column].between(
-                limit[0], limit[1]
-            )
-            df = df[mask_limit]
-        filtered_dfs.append(df)
-
-    # Calculate variables for filtered data
+    # Calculate variables for all sensors
     calc_vars = calculate_note_variables(
-        filtered_dfs, data_sensors["names"], serie_x, target_column, mask
+        data_sensors["df"], data_sensors["names"], serie_x, target_column, mask
     )
 
     # Define sections with narrative style for each sensor
@@ -140,10 +125,8 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
         },
     }
 
-    # Set marker style from sensor visual config or default to 'o'
-    marker = sensor_visual_config.get("mpl_marker", "o")
-
     series_data = []
+    notes = []
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
@@ -157,16 +140,24 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
                 "color": color,
                 "linestyle": "",
                 "linewidth": 0,
-                "marker": marker,
+                "marker": "o",
                 "markersize": 10,
                 "label": "",
             }
         )
+        note = {
+            "text": name,
+            "x": data_sensors["east"][i],
+            "y": data_sensors["north"][i],
+        }
+        notes.append(note)
 
     plotter.plot_series(
         data=series_data,
         **map_args,
     )
+
+    plotter.add_notes(notes)
 
     return plotter.get_drawing()
 
@@ -174,29 +165,53 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
 def create_cell_1(
     data_sensors,
     series_names,
-    target_column,
+    primary_column,
+    top_reference_column,
+    bottom_reference_column,
     serie_x,
+    primary_title_y,
     sensor_type_name,
 ):
     plotter = PlotBuilder()
 
     # Series style definitions
     series_styles = {
-        target_column: {
+        top_reference_column: {
+            "color": "peru",
+            "linestyle": "-",
+            "linewidth": 1,
+            "marker": "s",
+            "markersize": 2,
+            "label_prefix": series_names[top_reference_column],
+        },
+        bottom_reference_column: {
+            "color": "dimgrey",
+            "linestyle": "-",
+            "linewidth": 1,
+            "marker": "s",
+            "markersize": 2,
+            "label_prefix": series_names[bottom_reference_column],
+        },
+    }
+
+    # Add primary_column style if provided
+    if primary_column:
+        series_styles[primary_column] = {
             "color": "blue",
             "linestyle": "-",
             "linewidth": 1,
             "marker": "o",
             "markersize": 4,
-            "label_prefix": series_names[target_column],
-        },
-    }
+            "label_prefix": series_names[primary_column],
+        }
+
+    unique_serie = primary_column
 
     # Plot formatting
     plot_format = {
         "size": (8, 3),
         "title_x": series_names[serie_x],
-        "title_y": series_names[target_column],
+        "title_y": primary_title_y,
         "title_chart": f"Registro histórico de {sensor_type_name}",
         "show_legend": False,
         "legend_location": "upper right",
@@ -204,30 +219,37 @@ def create_cell_1(
     }
 
     series = []
-    all_values = []  # List to collect all values for limit calculation
     total_dfs = len(data_sensors["df"])
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        if target_column in df.columns:
-            all_values.extend(df[target_column].dropna().tolist())
-            color, marker = get_unique_marker_convo(
-                i, total_dfs, color_palette=COLOR_PALETTE
-            )
+        for column, style in series_styles.items():
+            if column in df.columns:
+                # Special handling for unique_serie
+                if primary_column and column == unique_serie:
+                    color, marker = get_unique_marker_convo(
+                        i, total_dfs, color_palette=COLOR_PALETTE
+                    )
+                else:
+                    color = style["color"]
+                    marker = style["marker"]
 
-            series.append(
-                {
-                    "x": df[serie_x].tolist(),
-                    "y": df[target_column].tolist(),
-                    "label": name,
-                    "color": color,
-                    "linestyle": series_styles[target_column]["linestyle"],
-                    "linewidth": series_styles[target_column]["linewidth"],
-                    "marker": marker,
-                    "markersize": series_styles[target_column]["markersize"],
-                }
-            )
+                label = (
+                    name
+                    if primary_column and column == unique_serie
+                    else style["label_prefix"]
+                )
 
-    # Calculate typical range limits
-    limit = get_typical_range(all_values, percentile=98, scale=2.5)
+                series.append(
+                    {
+                        "x": df[serie_x].tolist(),
+                        "y": df[column].tolist(),
+                        "label": label,
+                        "color": color,
+                        "linestyle": style["linestyle"],
+                        "linewidth": style["linewidth"],
+                        "marker": marker,
+                        "markersize": style["markersize"],
+                    }
+                )
 
     plotter.plot_series(
         data=series,
@@ -236,82 +258,86 @@ def create_cell_1(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        ylim=limit,  # Apply the calculated limits
     )
-
-    return (
-        limit,
-        plotter.get_drawing(),
-        plotter.get_legend(
-            box_width=7.5,
-            box_height=0.5,
-            ncol=plotter.get_num_labels(),
-        ),
+    return plotter.get_drawing(), plotter.get_legend(
+        box_width=7.5,
+        box_height=0.5,
+        ncol=plotter.get_num_labels(),
     )
 
 
 def create_cell_2(
-    data_sensors,
-    start_query,
-    end_query,
-    series_names,
-    target_column,
-    serie_x,
-    limit,
+    data_sensors, start_query, end_query, series_names, secondary_column, serie_x
 ):
     plotter = PlotBuilder()
 
     # Series style definitions
     series_styles = {
-        target_column: {
+        secondary_column: {
             "color": "blue",
             "linestyle": "-",
             "linewidth": 1,
             "marker": "o",
             "markersize": 4,
-            "label_prefix": series_names[target_column],
+            "label_prefix": series_names[secondary_column],
         },
     }
 
-    # Format start and end dates
-    start_date_formatted = format_date_long(pd.to_datetime(start_query))
-    end_date_formatted = format_date_long(pd.to_datetime(end_query))
+    unique_serie = secondary_column
 
-    # Plot formatting
     plot_format = {
         "size": (8, 3),
         "title_x": series_names[serie_x],
-        "title_y": series_names[target_column],
-        "title_chart": f"Registro de {series_names[target_column].lower().split('(')[0]} entre {start_date_formatted} y {end_date_formatted}",
+        "title_y": series_names[secondary_column],
+        "title_chart": "",
         "show_legend": False,
         "legend_location": "upper right",
         "grid": True,
     }
 
     series = []
+    all_secondary_values = []
     total_dfs = len(data_sensors["df"])
+
     for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
-        # Aplicar máscara para filtrar datos según la consulta
-        mask = (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
-        filtered_df = df[mask]
+        for column, style in series_styles.items():
+            if column in df.columns:
+                if column == unique_serie:
+                    color, marker = get_unique_marker_convo(
+                        i, total_dfs, color_palette=COLOR_PALETTE
+                    )
+                else:
+                    color = style["color"]
+                    marker = style["marker"]
 
-        if target_column in filtered_df.columns:
-            color, marker = get_unique_marker_convo(
-                i, total_dfs, color_palette=COLOR_PALETTE
-            )
+                label = name if column == unique_serie else style["label_prefix"]
 
-            series.append(
-                {
-                    "x": filtered_df[serie_x].tolist(),
-                    "y": filtered_df[target_column].tolist(),
-                    "label": name,
-                    "color": color,
-                    "linestyle": series_styles[target_column]["linestyle"],
-                    "linewidth": series_styles[target_column]["linewidth"],
-                    "marker": marker,
-                    "markersize": series_styles[target_column]["markersize"],
-                }
-            )
+                x_vals = df[serie_x].tolist()
+                y_vals = df[column].tolist()
+
+                series.append(
+                    {
+                        "x": x_vals,
+                        "y": y_vals,
+                        "label": label,
+                        "color": color,
+                        "linestyle": style["linestyle"],
+                        "linewidth": style["linewidth"],
+                        "marker": marker,
+                        "markersize": style["markersize"],
+                    }
+                )
+
+                all_secondary_values.extend(y_vals)
+
+    # Calcular límites típicos solo si hay datos
+    if all_secondary_values:
+        lower_limit, upper_limit = get_typical_range(
+            all_secondary_values, percentile=90, scale=1.5
+        )
+        ylim = (lower_limit, upper_limit)
+    else:
+        ylim = None  # Dejar que el gráfico elija automáticamente
 
     plotter.plot_series(
         data=series,
@@ -320,7 +346,8 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        ylim=limit,  # Apply the calculated limits
+        invert_y=False,
+        ylim=ylim,  # Usamos ylim ya que aplica al eje Y
     )
 
     return plotter.get_drawing(), plotter.get_legend(
@@ -351,6 +378,11 @@ def generate_report(
     # Extract column configuration
     target_column = column_config["target_column"]
     unit_target = column_config["unit_target"]
+    primary_column = column_config["primary_column"]
+    primary_title_y = column_config["primary_title_y"]
+    secondary_column = column_config["secondary_column"]
+    top_reference_column = column_config["top_reference_column"]
+    bottom_reference_column = column_config["bottom_reference_column"]
     serie_x = column_config["serie_x"]
     sensor_type_name = column_config["sensor_type_name"]
     sensor_aka = column_config["sensor_aka"]
@@ -382,21 +414,18 @@ def generate_report(
         )
 
     # Generate chart components
-    limit, chart_cell1, legend1 = create_cell_1(
+    chart_cell1, legend1 = create_cell_1(
         data_sensors,
         series_names,
-        target_column,
+        primary_column,
+        top_reference_column,
+        bottom_reference_column,
         serie_x,
+        primary_title_y,
         sensor_type_name,
     )
     chart_cell2, legend2 = create_cell_2(
-        data_sensors,
-        start_query,
-        end_query,
-        series_names,
-        target_column,
-        serie_x,
-        limit,
+        data_sensors, start_query, end_query, series_names, secondary_column, serie_x
     )
 
     # Define mask for filtering data if start_query and end_query are provided
@@ -426,7 +455,6 @@ def generate_report(
         series_names,
         serie_x,
         sensor_aka,
-        limit,
         mask,
     )
     lower_cell = create_map(

@@ -1,9 +1,3 @@
-import os
-import sys
-
-# Add 'libs' path to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
 import rasterio
 
 import numpy as np
@@ -22,10 +16,6 @@ from libs.utils.config_variables import CHART_CONFIG_DIR
 from libs.utils.config_loader import load_toml
 from libs.utils.config_plot import PlotConfig
 from libs.utils.plot_helpers import dxfParser, parse_path_effects
-
-from libs.utils.config_logger import get_logger
-
-logger = get_logger("modules.reporter.plot_builder")
 
 
 class PlotBuilder:
@@ -274,7 +264,7 @@ class PlotBuilder:
                     **tif_params,
                 )
         except Exception as e:
-            logger.exception(f"No se pudo cargar el GeoTIFF '{tif_path}': {e}")
+            raise RuntimeError(f"No se pudo cargar el GeoTIFF '{tif_path}': {e}") from e
 
     def _plot_dxf(self, dxf_path: str, dxf_params: dict = None) -> None:
         """

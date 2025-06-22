@@ -7,9 +7,9 @@ from .config_variables import SEP_FORMAT
 
 def read_df_on_time_from_csv(
     path: Path,
-    set_index: bool = True,
+    set_index: bool = False,
     auto_convert: bool = False,
-    num_decimals: int = 4,
+    num_decimals: int = 3,
 ) -> pd.DataFrame:
     """Lee un DataFrame desde un archivo CSV y configura la columna de tiempo."""
 

@@ -1,8 +1,4 @@
 import os
-import sys
-
-# Add 'libs' path to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 import pandas as pd
 

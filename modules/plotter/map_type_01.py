@@ -1,25 +1,24 @@
+import os
+
+import pandas as pd
+
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
+    SENSOR_VISUAL_CONFIG,
 )
+
 from libs.utils.calc_helpers import (
     round_decimal,
-    format_date_long,
     format_date_short,
-    get_typical_range,
 )
+
 from libs.utils.config_loader import load_toml
-from libs.utils.config_variables import SENSOR_VISUAL_CONFIG
+
+from modules.reporter.plot_merger import PlotMerger
+from modules.reporter.plot_builder import PlotBuilder
 from modules.reporter.note_handler import NotesHandler
 from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.plot_builder import PlotBuilder
-from modules.reporter.plot_merger import PlotMerger
-
-import pandas as pd
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -354,7 +353,7 @@ def generate_report(
     chart_titles = []
 
     # Generate base filename
-    base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
+    base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}.pdf"
     pdf_filenames.append(base_filename)
     chart_titles.append(chart_title)
 

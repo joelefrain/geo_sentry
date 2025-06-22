@@ -1,28 +1,24 @@
+import os
+
+import pandas as pd
+
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
+    SENSOR_VISUAL_CONFIG,
 )
+
 from libs.utils.calc_helpers import (
     round_decimal,
-    format_date_long,
     format_date_short,
-    get_typical_range,
 )
+
 from libs.utils.config_loader import load_toml
-from libs.utils.config_variables import SENSOR_VISUAL_CONFIG
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.plot_builder import PlotBuilder
+
 from modules.reporter.plot_merger import PlotMerger
+from modules.reporter.plot_builder import PlotBuilder
 from modules.reporter.table_handler import TableHandler
-
-import pandas as pd
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-
-COLOR_PALETTE = "copper"
+from modules.reporter.report_builder import ReportBuilder, load_svg
 
 
 def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=None):
@@ -85,39 +81,47 @@ def get_table_content(
 
     # Preparar DataFrame para la tabla
     if calc_vars:
-        df_table = pd.DataFrame(calc_vars)[[
-            "sensor_name",
-            "total_records",
-            "max_value",
-            "max_date",
-            "last_value",
-            "first_date",
-            "last_date",
-            "mean_freq",
-        ]]
+        df_table = pd.DataFrame(calc_vars)[
+            [
+                "sensor_name",
+                "total_records",
+                "max_value",
+                "max_date",
+                "last_value",
+                "first_date",
+                "last_date",
+                "mean_freq",
+            ]
+        ]
         # Formatear fechas y valores
         df_table["max_date"] = df_table["max_date"].apply(format_date_short)
         df_table["first_date"] = df_table["first_date"].apply(format_date_short)
         df_table["last_date"] = df_table["last_date"].apply(format_date_short)
-        df_table["max_value"] = df_table["max_value"].apply(lambda v: round_decimal(v, 2))
-        df_table["last_value"] = df_table["last_value"].apply(lambda v: round_decimal(v, 2))
+        df_table["max_value"] = df_table["max_value"].apply(
+            lambda v: round_decimal(v, 2)
+        )
+        df_table["last_value"] = df_table["last_value"].apply(
+            lambda v: round_decimal(v, 2)
+        )
     else:
-        df_table = pd.DataFrame(columns=[
-            "sensor_name",
-            "total_records",
-            "max_value",
-            "max_date",
-            "last_value",
-            "first_date",
-            "last_date",
-            "mean_freq",
-        ])
+        df_table = pd.DataFrame(
+            columns=[
+                "sensor_name",
+                "total_records",
+                "max_value",
+                "max_date",
+                "last_value",
+                "first_date",
+                "last_date",
+                "mean_freq",
+            ]
+        )
 
     return table_handler.create_table(df_table)
 
 
 def create_map(
-        sensor_type,
+    sensor_type,
     dxf_path,
     data_sensors,
     target_column,
@@ -363,7 +367,7 @@ def generate_report(
     chart_titles = []
 
     # Generate base filename
-    base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}_{group_args['name']}.pdf"
+    base_filename = f"{output_dir}/{appendix}_{start_item:03}_{structure_formatted}_{sensor_type_formatted}.pdf"
     pdf_filenames.append(base_filename)
     chart_titles.append(chart_title)
 

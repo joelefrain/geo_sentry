@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Add 'libs' path to sys.path
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 from modules.calculations.excel_processor import ExcelProcessor

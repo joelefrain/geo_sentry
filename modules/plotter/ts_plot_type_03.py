@@ -1,23 +1,24 @@
 import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 import pandas as pd
 
-from modules.reporter.plot_builder import PlotBuilder
-from modules.reporter.plot_merger import PlotMerger
-from modules.reporter.report_builder import ReportBuilder, load_svg
-from modules.reporter.note_handler import NotesHandler
-from libs.utils.plot_helpers import get_unique_marker_convo
-from libs.utils.calc_helpers import get_typical_range
-from libs.utils.config_loader import load_toml
-from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
 from libs.utils.config_variables import (
     LOGO_SVG,
     CALC_CONFIG_DIR,
     SENSOR_VISUAL_CONFIG,
 )
+
+from libs.utils.config_loader import load_toml
+from libs.utils.plot_helpers import get_unique_marker_convo
+
+from libs.utils.calc_helpers import get_typical_range
+from libs.utils.calc_helpers import round_decimal, format_date_long, format_date_short
+
+from modules.reporter.plot_merger import PlotMerger
+from modules.reporter.plot_builder import PlotBuilder
+from modules.reporter.note_handler import NotesHandler
+from modules.reporter.report_builder import ReportBuilder, load_svg
+
 
 COLOR_PALETTE = "cool"
 
@@ -125,6 +126,7 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
     }
 
     series_data = []
+    notes = []
 
     # Generate unique color combinations for each sensor
     for i, name in enumerate(data_sensors["names"]):
@@ -143,12 +145,20 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
                 "label": "",
             }
         )
+        note = {
+            "text": name,
+            "x": data_sensors["east"][i],
+            "y": data_sensors["north"][i],
+        }
+        notes.append(note)
 
     plotter.plot_series(
         data=series_data,
         **map_args,
     )
-    
+
+    plotter.add_notes(notes)
+
     return plotter.get_drawing()
 
 
@@ -336,7 +346,7 @@ def create_cell_2(
         title_y=plot_format["title_y"],
         title_chart=plot_format["title_chart"],
         show_legend=plot_format["show_legend"],
-        invert_y=False,
+        invert_y=True,
         ylim=ylim,  # Usamos ylim ya que aplica al eje Y
     )
 

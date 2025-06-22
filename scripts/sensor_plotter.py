@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Add 'libs' path to sys.path
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 import importlib
@@ -112,7 +112,7 @@ def generate_structure_plots(
         plot_template = sensor_config["plot_template"]
         try:
             plotter_module = importlib.import_module(
-                f"modules.reporter.data.plotters.{plot_template}"
+                f"modules.plotter.{plot_template}"
             )
             generate_report = plotter_module.generate_report
         except ImportError as e:
@@ -350,7 +350,7 @@ def exec_plotter(
 if __name__ == "__main__":
     try:
         plotter_params = {
-            "plot_type": "map_creator",
+            "plot_type": "sensor_plotter",
             "client_code": "sample_client",
             "project_code": "sample_project",
             "engineering_code": "eor_2025",

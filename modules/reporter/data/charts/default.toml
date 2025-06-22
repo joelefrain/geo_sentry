@@ -10,3 +10,29 @@ origin = "upper"
 zorder = 0
 alpha = 0.7
 interpolation = "lanczos"
+
+[note_params.text_style]
+color = "black"
+fontsize = 8
+
+[[note_params.path_effects]]
+type = "withStroke"
+linewidth = 2.5
+foreground = "white"
+
+[[note_params.path_effects]]
+type = "Normal"
+
+[[note_params.path_effects]]
+type = "SimpleLineShadow"
+offset = [2, -2]
+shadow_color = "black"
+
+[adjust_text_params]
+expand_points = [1.2, 1.2]
+expand_text = [1.2, 1.2]
+
+[adjust_text_params.arrow_props]
+arrowstyle = "->"
+color = "gray"
+lw = 0.5

@@ -183,3 +183,25 @@ def get_iqr_limits(data: list, margin_factor: float = 1.5) -> Tuple[float, float
     q1, q3 = np.nanquantile(data_arr, [0.25, 0.75])
     margin = (q3 - q1) * margin_factor
     return q1 - margin, q3 + margin
+
+
+def calc_epsg_from_utm(utm_zone: int, northern_hemisphere: bool = True) -> int:
+    """
+    Calculate the EPSG code for a given UTM zone.
+
+    Parameters
+    ----------
+    utm_zone : int
+        UTM zone number (1-60).
+    northern_hemisphere : bool, optional
+        True if the zone is in the Northern Hemisphere, False if in the Southern Hemisphere, by default True.
+
+    Returns
+    -------
+    int
+        EPSG code for the specified UTM zone.
+    """
+    if not 1 <= utm_zone <= 60:
+        raise ValueError(f"UTM zone must be between 1 and 60, got {utm_zone}.")
+
+    return 32600 + utm_zone if northern_hemisphere else 32700 + utm_zone
