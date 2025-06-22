@@ -282,7 +282,9 @@ class PlotMerger:
         return Rect(x, y, width, height, strokeColor=color, fillColor=None)
 
     @staticmethod
-    def scale_figure(figure: Drawing, size: Tuple[int, int] = (2, 2)) -> Drawing:
+    def scale_figure(
+        drawing: Drawing, fig_size: Tuple[int, int] = (2, 2), color_border: str = "white"
+    ) -> Drawing:
         """Scale a figure to the specified size using PlotMerger.
 
         A convenience method that creates a single-cell grid and places the figure in it,
@@ -305,7 +307,7 @@ class PlotMerger:
         >>> original_fig = some_drawing_object
         >>> scaled_fig = PlotMerger.scale_figure(original_fig, size=(2, 2))
         """
-        grid = PlotMerger(fig_size=size)
+        grid = PlotMerger(fig_size=fig_size)
         grid.create_grid(1, 1)
-        grid.add_object(figure, (0, 0))
-        return grid.build(color_border="white")
+        grid.add_object(drawing, (0, 0))
+        return grid.build(color_border=color_border)

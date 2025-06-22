@@ -51,7 +51,7 @@ class SensorDataLoader:
         return self.operativity_df[
             (self.operativity_df["structure"] == structure_code)
             & (self.operativity_df["sensor_type"] == sensor_type.upper())
-            & (self.operativity_df["operativiy"] is True)
+            & (self.operativity_df["operativiy"] == True)
         ].dropna(subset=["first_record", "last_record"])
 
     def load_sensor_readings(
@@ -451,7 +451,6 @@ class SensorPlotterOrchestrator:
             DATA_CONFIG / self.client_code / self.project_code / "processor"
         )
         processor_config = load_toml(processor_config_dir, self.engineering_code)
-        print(processor_config)
 
         try:
             utm_zone = get_field_from_dict(["location", "utm_zone"], processor_config)
@@ -611,7 +610,7 @@ if __name__ == "__main__":
             "start_date": "2024-12-01 00:00:00",
             "end_date": "2025-06-15 00:00:00",
             "report_date": "15-06-25",
-            "start_item": 1,
+            "start_item": 192,
             "appendix_chapter": "4",
             "revision": "B",
         }

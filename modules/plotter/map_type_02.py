@@ -14,10 +14,12 @@ from libs.utils.calc_helpers import (
 )
 
 from libs.utils.config_loader import load_toml
+from libs.utils.text_helpers import to_sentence_format
 
 from modules.reporter.plot_merger import PlotMerger
 from modules.reporter.plot_builder import PlotBuilder
 from modules.reporter.note_handler import NotesHandler
+from modules.reporter.table_handler import TableHandler
 from modules.reporter.report_builder import ReportBuilder, load_svg
 
 
@@ -59,6 +61,35 @@ def calculate_note_variables(dfs, sensor_names, serie_x, target_column, mask=Non
     return all_vars
 
 
+def get_table_content(
+    data_sensors,
+    target_column,
+    serie_x,
+    sensor_type_name,
+    target_column_name,
+    mask=None,
+):
+    sensor_type_name = to_sentence_format(text=sensor_type_name, mode="capitalize")
+
+    table_handler = TableHandler()
+    calc_vars = calculate_note_variables(
+        data_sensors["df"], data_sensors["code"], serie_x, target_column, mask
+    )
+    df_table = pd.DataFrame(calc_vars)[
+        [
+            "sensor_name",
+            "last_date",
+            "last_value",
+        ]
+    ]
+    df_table["last_date"] = df_table["last_date"].apply(format_date_short)
+    df_table["last_value"] = df_table["last_value"].apply(lambda v: round_decimal(v, 2))
+    # Rename columns with new headers
+    df_table.columns = [sensor_type_name, "Último registro", target_column_name]
+
+    return table_handler.create_table(df_table, width=150, height=660)
+
+
 def get_note_content(
     group_args,
     data_sensors,
@@ -78,7 +109,7 @@ def get_note_content(
 
     # Calculate variables for all data
     calc_vars = calculate_note_variables(
-        data_sensors["df"], data_sensors["names"], serie_x, target_column, mask
+        data_sensors["df"], data_sensors["code"], serie_x, target_column, mask
     )
 
     # Find the maximum value among the last values of each sensor
@@ -129,7 +160,7 @@ def create_map(
 
     # Recopilar la última información de cada sensor por ubicación
     for name, df, east, north in zip(
-        data_sensors["names"],
+        data_sensors["code"],
         data_sensors["df"],
         data_sensors["east"],
         data_sensors["north"],
@@ -219,12 +250,9 @@ def create_map(
     # Generate discrete colorbar
     return (
         plotter.get_drawing(),
-        plotter.get_legend(
-            box_width=6.0, box_height=4.5, ncol=1 if len(series_data) <= 25 else 2
-        ),
         plotter.get_colorbar(
-            box_width=2.0,
-            box_height=1.0,
+            box_width=3.0,
+            box_height=0.3,
             label=series_names[target_column],
             vmin=min([s["value"] for s in series_data]),
             vmax=max([s["value"] for s in series_data]),
@@ -282,6 +310,8 @@ def generate_report(
     # Load configuration
     calc_config = load_toml(CALC_CONFIG_DIR, sensor_type)
     series_names = calc_config["names"]["es"]
+    target_column_name = series_names[target_column]
+    measure_name = series_names[target_column].lower().split("(")[0]
 
     # Define mask for filtering data if start_query and end_query are provided
     mask = (
@@ -291,7 +321,7 @@ def generate_report(
     )
 
     # Create map and get its legend
-    chart_cell, legend, colorbar = create_map(
+    chart_cell, colorbar = create_map(
         sensor_type,
         dxf_path,
         data_sensors,
@@ -304,15 +334,12 @@ def generate_report(
         project_epsg=project_epsg,
     )
 
-    plot_grid = PlotMerger(fig_size=(2, 4.5))
-    plot_grid.create_grid(2, 1, row_ratios=[0.20, 0.80])
-    plot_grid.add_object(legend, (0, 0))
-    plot_grid.add_object(colorbar, (1, 0))
-
-    map_legend = plot_grid.build(color_border="white", cell_spacing=0)
+    middle_cell = PlotMerger.scale_figure(drawing=colorbar, fig_size=(2.2, 0.5))
 
     # Create report components
-    upper_cell = map_legend  # Map legend goes to upper_cell
+    upper_cell = get_table_content(
+        data_sensors, target_column, serie_x, sensor_type_name, target_column_name, mask
+    )
 
     lower_cell = get_note_content(
         group_args,
@@ -328,14 +355,14 @@ def generate_report(
     )
 
     logo_cell = load_svg(LOGO_SVG, 0.95)
-    target_column_name = series_names[target_column].lower().split("(")[0]
-    chart_title = f"Mapa de distribución de {target_column_name} / {structure_name}"
+    chart_title = f"Mapa de distribución de {measure_name} / {structure_name}"
 
     # Set up PDF generator
     pdf_generator = ReportBuilder(
-        sample="chart_landscape_a4_type_04",
+        sample="chart_landscape_a4_type_05",
         logo_cell=logo_cell,
         upper_cell=upper_cell,
+        middle_cell=middle_cell,
         lower_cell=lower_cell,
         chart_cell=chart_cell,
         chart_title=chart_title,

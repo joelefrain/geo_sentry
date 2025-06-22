@@ -148,9 +148,9 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg):
     notes = []
 
     # Generate unique color combinations for each sensor
-    for i, name in enumerate(data_sensors["names"]):
+    for i, name in enumerate(data_sensors["code"]):
         color, marker = get_unique_marker_convo(
-            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE
+            i, len(data_sensors["code"]), color_palette=COLOR_PALETTE
         )
         series_data.append(
             {
@@ -217,7 +217,7 @@ def create_ts_cell_1(
     series = []
     all_values = []  # List to collect all values for limit calculation
     total_dfs = len(data_sensors["df"])
-    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
+    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["code"])):
         if target_column in df.columns:
             all_values.extend(df[target_column].dropna().tolist())
             color, marker = get_unique_marker_convo(
@@ -238,7 +238,7 @@ def create_ts_cell_1(
             )
 
     # Calculate typical range limits
-    limit = get_typical_range(all_values, percentile=97, scale=2.5)
+    limit = get_typical_range(all_values, percentile=99, scale=2.5)
 
     plotter.plot_series(
         data=series,
@@ -304,7 +304,7 @@ def create_ts_cell_2(
 
     series = []
     total_dfs = len(data_sensors["df"])
-    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
+    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["code"])):
         # Aplicar máscara para filtrar datos según la consulta
         mask = (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
         filtered_df = df[mask]
@@ -412,7 +412,7 @@ def create_non_ts_cell_1(
     series = []
     total_dfs = len(data_sensors["df"])
     for i, (df, series_name) in enumerate(
-        zip(data_sensors["df"], data_sensors["names"])
+        zip(data_sensors["df"], data_sensors["code"])
     ):
         if target_column in df.columns:
             color, marker = get_unique_marker_convo(
@@ -621,19 +621,19 @@ def generate_report(
 
         else:
             # Generate chart components for ts_serie=False
-            for i, (df, name) in enumerate(
-                zip(data_sensors["df"], data_sensors["names"])
+            for i, (df, code) in enumerate(
+                zip(data_sensors["df"], data_sensors["code"])
             ):
                 chart_cell1 = create_non_ts_cell_1(
                     # Pass only the current series
-                    {"df": [df], "names": [name]},
+                    {"df": [df], "code": [code]},
                     series_names,
                     target_column,
                     serie_x,
                     series_names[target_column],
                     serie_aka,
                     sensor_type_name,
-                    name,  # Pass name to the function
+                    code,  # Pass name to the function
                 )
 
                 # Create and configure plot grid
@@ -645,7 +645,7 @@ def generate_report(
 
                 chart_title_elements = [
                     f"{serie_aka} de {sensor_type_name}",
-                    name,
+                    code,
                     group_args["name"],
                     structure_name,
                 ]
@@ -667,7 +667,7 @@ def generate_report(
                 # Format the PDF filename
                 structure_formatted = structure_code.replace(" ", "_")
                 sensor_type_formatted = sensor_type.replace(" ", "_").upper()
-                pdf_filename = f"{output_dir}/{appendix}_{current_item:03}_{structure_formatted}_{sensor_type_formatted}_{name.replace(' ', '_')}.pdf"
+                pdf_filename = f"{output_dir}/{appendix}_{current_item:03}_{structure_formatted}_{sensor_type_formatted}_{code.replace(' ', '_')}.pdf"
 
                 # Generate PDF
                 pdf_generator.generate_pdf(pdf_path=pdf_filename)

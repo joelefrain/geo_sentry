@@ -210,9 +210,9 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
     notes = []
 
     # Generate unique color combinations for each sensor
-    for i, name in enumerate(data_sensors["names"]):
+    for i, name in enumerate(data_sensors["code"]):
         color, _ = get_unique_marker_convo(
-            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE_1
+            i, len(data_sensors["code"]), color_palette=COLOR_PALETTE_1
         )
         series_data.append(
             {
@@ -265,7 +265,7 @@ def create_non_ts_cell_1(
     series = []
     max_abs_values = []  # Lista para almacenar valores máximos absolutos
 
-    for df, name in zip(data_sensors["df"], data_sensors["names"]):
+    for df, name in zip(data_sensors["df"], data_sensors["code"]):
         if target_column in df.columns and serie_y in df.columns:
             # Get unique dates
             unique_dates = sorted(df[serie_x].unique())
@@ -348,7 +348,7 @@ def create_ts_cell_2(
     all_y_value = []
     all_values = []
 
-    for df, name in zip(data_sensors["df"], data_sensors["names"]):
+    for df, name in zip(data_sensors["df"], data_sensors["code"]):
         if target_column in df.columns and serie_y in df.columns:
             unique_group = sorted(df[serie_y].unique())
             all_y_value.extend(unique_group)
@@ -449,11 +449,11 @@ def generate_report(
 
     # Sort data_sensors by sensor name before processing
     sorted_indices = sorted(
-        range(len(data_sensors["names"])), key=lambda k: data_sensors["names"][k]
+        range(len(data_sensors["code"])), key=lambda k: data_sensors["code"][k]
     )
     data_sensors = {
         "df": [data_sensors["df"][i] for i in sorted_indices],
-        "names": [data_sensors["names"][i] for i in sorted_indices],
+        "code": [data_sensors["code"][i] for i in sorted_indices],
         "east": [data_sensors["east"][i] for i in sorted_indices],
         "north": [data_sensors["north"][i] for i in sorted_indices],
     }

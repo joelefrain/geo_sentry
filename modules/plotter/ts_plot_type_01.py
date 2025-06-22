@@ -86,7 +86,7 @@ def get_note_content(
 
     # Calculate variables for filtered data
     calc_vars = calculate_note_variables(
-        filtered_dfs, data_sensors["names"], serie_x, target_column, mask
+        filtered_dfs, data_sensors["code"], serie_x, target_column, mask
     )
 
     # Define sections with narrative style for each sensor
@@ -144,9 +144,9 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
     notes = []
 
     # Generate unique color combinations for each sensor
-    for i, name in enumerate(data_sensors["names"]):
+    for i, name in enumerate(data_sensors["code"]):
         color, _ = get_unique_marker_convo(
-            i, len(data_sensors["names"]), color_palette=COLOR_PALETTE
+            i, len(data_sensors["code"]), color_palette=COLOR_PALETTE
         )
         series_data.append(
             {
@@ -212,7 +212,7 @@ def create_cell_1(
     series = []
     all_values = []  # List to collect all values for limit calculation
     total_dfs = len(data_sensors["df"])
-    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
+    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["code"])):
         if target_column in df.columns:
             all_values.extend(df[target_column].dropna().tolist())
             color, marker = get_unique_marker_convo(
@@ -296,7 +296,7 @@ def create_cell_2(
 
     series = []
     total_dfs = len(data_sensors["df"])
-    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["names"])):
+    for i, (df, name) in enumerate(zip(data_sensors["df"], data_sensors["code"])):
         # Aplicar máscara para filtrar datos según la consulta
         mask = (df[serie_x] >= start_query) & (df[serie_x] <= end_query)
         filtered_df = df[mask]
@@ -441,7 +441,7 @@ def generate_report(
     logo_cell = load_svg(LOGO_SVG, 0.95)
     chart_title_elements = [
         f"Registro histórico de {sensor_type_name}",
-        " - ".join(data_sensors["names"]),
+        " - ".join(data_sensors["code"]),
         structure_name,
     ]
     chart_title = " / ".join(filter(None, chart_title_elements))
