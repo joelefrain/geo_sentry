@@ -435,7 +435,7 @@ def create_non_ts_cell_1(
             )
 
             # Calculate and add the initial position
-            initial_x = df[serie_x].iloc[0]
+            initial_x = df.loc[df["base_line"], serie_x].iloc[-1]
             initial_y = df[target_column].iloc[0]
             series.append(
                 {
