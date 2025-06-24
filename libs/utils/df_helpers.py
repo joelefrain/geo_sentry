@@ -95,6 +95,9 @@ def merge_new_records(df1, df2, match_columns=["time"], match_type="all"):
     # Eliminar duplicados basados en las columnas de coincidencia
     df1 = df1.drop_duplicates(subset=match_columns, keep="first")
 
+    # Ordenar por las columnas de coincidencia
+    df1 = df1.sort_values(by=match_columns, ignore_index=True)
+
     return df1
 
 

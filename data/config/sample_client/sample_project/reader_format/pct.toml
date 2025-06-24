@@ -1,4 +1,4 @@
-type = "excel_processor"
+type = "excel_parser"
 
 [process]
 start_row = 20

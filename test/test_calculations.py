@@ -23,11 +23,11 @@ class TestExcelProcessor:
 
     def test_process_directory(self):
         processor = ExcelParser(self.toml_path)
-        processor.preprocess_excel_directory(
+        processor.parse_excel_dir(
             input_folder=self.input_folder,
             output_folder_base=self.output_folder_base,
             sensor_type="CPCV",
-            code="PAD2A",
+            structure_code="PAD2A",
             exclude_sheets=[],
             data_config=processor.config,
             custom_functions={},

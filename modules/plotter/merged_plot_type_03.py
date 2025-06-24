@@ -90,6 +90,8 @@ def get_note_content(
     historical_combined_df = pd.concat(
         [df for df in data_sensors["df"]], ignore_index=True
     )
+    base_line_data = pd.to_datetime(historical_combined_df[serie_x].iloc[0])
+
     if limit:
         # Group by date and check if all values are within limits
         date_groups = historical_combined_df.groupby(serie_x)
@@ -184,7 +186,7 @@ def get_note_content(
         },
     ]
 
-    return note_handler.create_notes(sections), first_date
+    return note_handler.create_notes(sections), base_line_data
 
 
 def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_config):
@@ -242,7 +244,7 @@ def create_map(data_sensors, dxf_path, tif_path, project_epsg, sensor_visual_con
     )
 
     plotter.add_notes(notes)
-    
+
     return plotter.get_drawing()
 
 
@@ -425,7 +427,7 @@ def generate_report(
         )
 
         # Create report components
-        middle_cell, first_date = get_note_content(
+        middle_cell, base_line_data = get_note_content(
             group_args,
             data_sensors,
             target_column,
@@ -446,7 +448,7 @@ def generate_report(
                 [
                     f"Registro histórico de {target_column_name.split('(')[0]}",
                     group_args["name"],
-                    f"Medida base en {format_date_short(first_date)}",
+                    f"Medida base en {format_date_short(base_line_data)}",
                     structure_name,
                 ],
             )

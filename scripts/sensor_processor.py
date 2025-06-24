@@ -137,11 +137,11 @@ def preprocess_sensors(
                 if os.path.exists(input_folder):
                     output_folder_base = os.path.join(work_path, cut_off)
                     custom_functions_for_sensor = custom_functions.copy()
-                    processor.preprocess_excel_directory(
+                    processor.parse_excel_dir(
                         input_folder=input_folder,
                         output_folder_base=output_folder_base,
                         sensor_type=sensor_code,
-                        code=structure,
+                        structure_code=structure,
                         exclude_sheets=exclude_sheets,
                         data_config=processor.config,
                         custom_functions=custom_functions_for_sensor,

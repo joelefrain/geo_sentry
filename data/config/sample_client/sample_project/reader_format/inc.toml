@@ -1,4 +1,4 @@
-type = "match_csv_processor"
+type = "match_csv_parser"
 
 [default_params]
 folders = ["A", "B"]

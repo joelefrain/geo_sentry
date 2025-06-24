@@ -65,7 +65,7 @@ class SensorDataLoader:
                 df_sensor = read_df_on_time_from_csv(
                     csv_path, set_index=False, auto_convert=True, num_decimals=3
                 )
-                # df_sensor = df_sensor[~df_sensor["base_line"]]
+                df_sensor = df_sensor[~df_sensor["base_line"]]
 
                 if len(df_sensor) > MINIMUN_RECORDS:
                     dfs.append(df_sensor)
@@ -619,7 +619,7 @@ if __name__ == "__main__":
             "project_code": "sample_project",
             "engineering_code": "eor_2025",
             "sensors": ["PCV", "PTA", "PCT", "SACV", "CPCV", "INC"],
-            # "sensors": ["PCT"],
+            # "sensors": ["INC"],
             # Required parameters
             "elaborated_by": "J.A.",
             "approved_by": "R.L.",

@@ -2,6 +2,7 @@ import re
 import json
 import pandas as pd
 
+from pathlib import Path
 from datetime import datetime
 
 from .config_variables import (
@@ -134,7 +135,12 @@ def read_json(filepath, encoding="utf-8"):
 
 
 def write_lines(list_to_write, filepath, encoding="utf-8"):
-    with open(file=filepath, mode="w", encoding=encoding) as f:
+    filepath = Path(filepath)
+    filepath.parent.mkdir(
+        parents=True, exist_ok=True
+    )  # Crea el directorio si no existe
+
+    with filepath.open(mode="w", encoding=encoding) as f:
         for element in list_to_write:
             f.write(f"{element}\n")
 

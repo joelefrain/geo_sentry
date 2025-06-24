@@ -22,6 +22,7 @@ from libs.utils.df_helpers import (
     merge_new_records,
     assign_params,
 )
+from libs.utils.validation_helpers import validate_folder
 
 logger = get_logger("scripts.sensor_processor")
 
@@ -69,9 +70,6 @@ class SensorPreprocessor:
 
     def __init__(self, config: Dict):
         self.config = config
-        print("*" * 50)
-        print(config)
-        print("*" * 50)
 
     def preprocess_sensors(self, **kwargs) -> None:
         """Main preprocessing method that routes to specific processors with base_line filtering."""
@@ -98,9 +96,6 @@ class SensorPreprocessor:
                 logger.info(
                     f"Config loaded for {sensor_code} from {config_sensor_path}"
                 )
-                print("/" * 50)
-                print(reader_config)
-                print("/" * 50)
 
                 # Verificar que la configuración sea válida
                 if not reader_config or "type" not in reader_config:
@@ -112,7 +107,7 @@ class SensorPreprocessor:
                 continue
 
             processor_method = getattr(
-                self, f"_process_{reader_config['type']}", self._process_unknown_type
+                self, f"_exec_{reader_config['type']}", self._exec_unknown_type_parser
             )
             processor_method(
                 sensor_code=sensor_code,
@@ -125,31 +120,41 @@ class SensorPreprocessor:
                 work_path=work_path,
             )
 
-    def _process_excel_processor(self, **kwargs) -> None:
+    def _exec_excel_parser(self, **kwargs) -> None:
         """Process Excel files with base_line filtering."""
-        print("&" * 50) 
-        print(kwargs["reader_config"])
-        print("&" * 50) 
 
-        processor = ExcelParser(kwargs["reader_config"])
+        excel_parser = ExcelParser(kwargs["reader_config"])
 
         for structure in kwargs["order_structure"]:
             input_folder = kwargs["sensor_data_paths"][kwargs["sensor_code"]][structure]
             if input_folder.exists():
-                output_folder_base = kwargs["work_path"] / kwargs["cut_off"]
-
-                processor.preprocess_excel_directory(
+                excel_parser.parse_excel_dir(
                     input_folder=input_folder,
-                    output_folder_base=output_folder_base,
-                    sensor_type=kwargs["sensor_code"],
-                    code=structure,
                     exclude_sheets=kwargs["exclude_sheets"],
-                    data_config=processor.config,
+                    data_config=excel_parser.config,
                     custom_functions=kwargs["custom_functions"],
-                    selected_attr=processor.config["process"].get("selected_attr"),
+                    selected_attr=excel_parser.config["process"].get("selected_attr"),
                 )
 
-    def _process_text_processor(self, **kwargs) -> None:
+                sensor_type = kwargs["sensor_code"]
+                preprocess_folder_base = kwargs["work_path"] / kwargs["cut_off"] / sensor_type
+                location_file_path = preprocess_folder_base / "location.csv"
+
+                validate_folder(preprocess_folder_base, create_if_missing=True)
+
+                sheet_data = excel_parser.sheet_data
+                location_data = excel_parser.location_data
+
+                for code in excel_parser.sheet_data:
+                    self._save_sensor_data(
+                        sheet_data[code], preprocess_folder_base, structure, code
+                    )
+
+                save_df_to_csv(location_data, location_file_path)
+
+                excel_parser.clear_memory()
+
+    def _exec_text_parser(self, **kwargs) -> None:
         """Process text files with base_line filtering."""
         match_columns = kwargs["reader_config"]["process_config"]["match_columns"]
 
@@ -194,7 +199,7 @@ class SensorPreprocessor:
                         df, output_folder_base, structure, sensor_name
                     )
 
-    def _process_match_csv_processor(self, **kwargs) -> None:
+    def _exec_match_csv_parser(self, **kwargs) -> None:
         """Process CSV files with matching columns and base_line filtering."""
         match_columns = kwargs["reader_config"]["process_config"]["match_columns"]
 
@@ -269,7 +274,7 @@ class SensorPreprocessor:
                     except Exception as e:
                         logger.exception(f"Error processing {subfolder_name.name}: {e}")
 
-    def _process_unknown_type(self, **kwargs) -> None:
+    def _exec_unknown_type_parser(self, **kwargs) -> None:
         """Handle unknown processor types."""
         logger.error(f"Unknown processor type: {kwargs['reader_config']['type']}")
 
@@ -296,20 +301,26 @@ class SensorPreprocessor:
             # If no 'code' column, save single file
             file_path = output_folder / f"{structure}.{sensor_name}.csv"
             save_df_to_csv(df=df, file_path=file_path)
+            logger.info(f"Archivo guardado en {file_path} (sin columna 'code')")
             return
 
-        # For each unique code value
-        for code_value in df["code"].unique():
-            # Filter data for this code
-            df_subset = df[df["code"] == code_value].copy()
+        else:
+            # For each unique code value
+            for code_value in df["code"].unique():
+                logger.warning(f"DataFrame de {code_value} con columna 'code' ...")
 
-            # Remove 'code' column before saving
-            df_subset = df_subset.drop(columns=["code"])
+                # Filter data for this code
+                df_subset = df[df["code"] == code_value].copy()
 
-            # Create filename with structure.sensor_name.code_value format
-            file_path = output_folder / f"{structure}.{sensor_name}.{code_value}.csv"
-            save_df_to_csv(df=df_subset, file_path=file_path)
-            logger.debug(f"Saved data for code {code_value} to {file_path}")
+                # Remove 'code' column before saving
+                df_subset = df_subset.drop(columns=["code"])
+
+                # Create filename with structure.sensor_name.code_value format
+                file_path = (
+                    output_folder / f"{structure}.{sensor_name}.{code_value}.csv"
+                )
+                save_df_to_csv(df=df_subset, file_path=file_path)
+                logger.info(f"Saved data for code {code_value} to {file_path}")
 
 
 class OperativityManager:
@@ -526,9 +537,6 @@ class SensorDataProcessor:
                 # Cargar configuración específica para este sensor
                 processor = DataProcessor(sensor_type.lower())
                 config = processor.config
-                print("-" * 50)
-                print(config)
-                print("-" * 50)
 
                 if not config or "process_config" not in config:
                     logger.error(f"Invalid config for {sensor_type}")
@@ -708,8 +716,6 @@ class SensorProcessor:
         seed_base_path, config_sensor_path = PathManager.setup_seed_paths(
             kwargs["cut_off"], kwargs["client_code"], kwargs["project_code"]
         )
-        
-
 
         sensor_data_paths = PathManager.iter_path_names(
             base_path=seed_base_path,
